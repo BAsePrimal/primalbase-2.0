@@ -66,6 +66,11 @@ export async function POST(req: NextRequest) {
               .eq('id', userId);
 
             // Salvar/atualizar dados da assinatura
+            const currentPeriodEnd = (subscription as any).current_period_end;
+            const safeCurrentPeriodEnd = currentPeriodEnd && typeof currentPeriodEnd === 'number' && !isNaN(currentPeriodEnd)
+              ? new Date(currentPeriodEnd * 1000).toISOString()
+              : new Date().toISOString();
+
             await supabase
               .from('stripe_subscriptions')
               .upsert(
@@ -74,9 +79,7 @@ export async function POST(req: NextRequest) {
                   stripe_customer_id: subscription.customer as string,
                   stripe_subscription_id: subscription.id,
                   status: subscription.status,
-                  current_period_end: new Date(
-                    ((subscription as any).current_period_end as number) * 1000
-                  ).toISOString(),
+                  current_period_end: safeCurrentPeriodEnd,
                   updated_at: new Date().toISOString(),
                 },
                 { onConflict: 'user_id' }
@@ -126,6 +129,11 @@ export async function POST(req: NextRequest) {
           .eq('id', userId);
 
         // Salvar/atualizar dados da assinatura
+        const currentPeriodEnd = subscription.current_period_end;
+        const safeCurrentPeriodEnd = currentPeriodEnd && typeof currentPeriodEnd === 'number' && !isNaN(currentPeriodEnd)
+          ? new Date(currentPeriodEnd * 1000).toISOString()
+          : new Date().toISOString();
+
         await supabase
           .from('stripe_subscriptions')
           .upsert({
@@ -133,7 +141,7 @@ export async function POST(req: NextRequest) {
             stripe_customer_id: subscription.customer as string,
             stripe_subscription_id: subscription.id,
             status: subscription.status,
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_end: safeCurrentPeriodEnd,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
 
