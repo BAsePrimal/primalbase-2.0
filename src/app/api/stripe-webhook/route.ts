@@ -161,27 +161,42 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata.userId;
+        const stripeCustomerId =
+          typeof subscription.customer === 'string'
+            ? subscription.customer
+            : subscription.customer?.id;
 
-        if (!userId) {
-          console.error('No userId in subscription metadata');
+        if (!stripeCustomerId) {
+          console.error('No customer ID in subscription');
           break;
         }
 
-        // Remover status de assinante
+        const { data: row } = await supabaseAdmin
+          .from('stripe_subscriptions')
+          .select('user_id')
+          .eq('stripe_customer_id', stripeCustomerId)
+          .maybeSingle();
+
+        const userId = row?.user_id;
+        if (!userId) {
+          console.error(
+            `No user_id in stripe_subscriptions for customer ${stripeCustomerId}`
+          );
+          break;
+        }
+
         await supabaseAdmin
           .from('profiles')
           .update({ is_subscriber: false })
           .eq('id', userId);
 
-        // Atualizar status da assinatura
         await supabaseAdmin
           .from('stripe_subscriptions')
           .update({
             status: 'canceled',
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', userId);
+          .eq('stripe_customer_id', stripeCustomerId);
 
         console.log(`❌ Subscription canceled for user ${userId}`);
         break;
@@ -189,22 +204,44 @@ export async function POST(req: NextRequest) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        const subscription = (invoice as any).subscription;
+        const stripeCustomerId =
+          typeof invoice.customer === 'string'
+            ? invoice.customer
+            : (invoice.customer as any)?.id;
 
-        if (subscription && typeof subscription === 'string') {
-          const sub = (await stripe.subscriptions.retrieve(subscription)) as Stripe.Subscription;
-          const userId = sub.metadata.userId;
-
-          if (userId) {
-            // Remover status de assinante em caso de falha de pagamento
-            await supabaseAdmin
-              .from('profiles')
-              .update({ is_subscriber: false })
-              .eq('id', userId);
-
-            console.log(`⚠️ Payment failed for user ${userId}`);
-          }
+        if (!stripeCustomerId) {
+          console.error('No customer ID in invoice');
+          break;
         }
+
+        const { data: row } = await supabaseAdmin
+          .from('stripe_subscriptions')
+          .select('user_id')
+          .eq('stripe_customer_id', stripeCustomerId)
+          .maybeSingle();
+
+        const userId = row?.user_id;
+        if (!userId) {
+          console.error(
+            `No user_id in stripe_subscriptions for customer ${stripeCustomerId}`
+          );
+          break;
+        }
+
+        await supabaseAdmin
+          .from('profiles')
+          .update({ is_subscriber: false })
+          .eq('id', userId);
+
+        await supabaseAdmin
+          .from('stripe_subscriptions')
+          .update({
+            status: 'canceled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_customer_id', stripeCustomerId);
+
+        console.log(`⚠️ Payment failed for user ${userId}`);
         break;
       }
 
