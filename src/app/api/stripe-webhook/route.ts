@@ -51,9 +51,9 @@ export async function POST(req: NextRequest) {
           const subscriptionId = session.subscription as string | null;
 
           if (subscriptionId) {
-            const subscription = await stripe.subscriptions.retrieve(
+            const subscription = (await stripe.subscriptions.retrieve(
               subscriptionId
-            );
+            )) as Stripe.Subscription;
 
             const isActive = ['active', 'trialing'].includes(
               subscription.status
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
                   stripe_subscription_id: subscription.id,
                   status: subscription.status,
                   current_period_end: new Date(
-                    subscription.current_period_end * 1000
+                    ((subscription as any).current_period_end as number) * 1000
                   ).toISOString(),
                   updated_at: new Date().toISOString(),
                 },
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
         const subscription = (invoice as any).subscription;
 
         if (subscription && typeof subscription === 'string') {
-          const sub = await stripe.subscriptions.retrieve(subscription);
+          const sub = (await stripe.subscriptions.retrieve(subscription)) as Stripe.Subscription;
           const userId = sub.metadata.userId;
 
           if (userId) {
