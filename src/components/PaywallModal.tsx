@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Sparkles, Check, Zap } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -40,26 +40,19 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-zinc-900 to-black border-2 border-amber-500/50 rounded-3xl p-8 max-w-md w-full shadow-[0_0_50px_rgba(251,191,36,0.3)] relative animate-in fade-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 pb-24">
+      <div className="bg-gradient-to-br from-zinc-900 to-black border-2 border-amber-500/50 rounded-3xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-[0_0_50px_rgba(251,191,36,0.3)] relative animate-in fade-in zoom-in duration-300">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-zinc-800/50 rounded-full transition-colors"
+          className="absolute top-4 right-4 p-2 hover:bg-zinc-800/50 rounded-full transition-colors z-10"
           aria-label="Fechar"
         >
           <X className="w-6 h-6 text-zinc-400 hover:text-white" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              <Sparkles className="w-16 h-16 text-amber-500 animate-pulse" />
-              <Zap className="w-6 h-6 text-yellow-300 absolute -top-1 -right-1 animate-bounce" />
-            </div>
-          </div>
-
+        <div className="text-center mb-6 pt-6">
           <h2 className="text-3xl font-bold text-amber-500 mb-2">
-            Desbloqueie o Poder Total
+            Desbloqueie Sua Melhor Versão
           </h2>
           <p className="text-zinc-400 text-lg">
             Teste <span className="text-amber-500 font-bold">GRÁTIS por 3 dias</span>
@@ -70,40 +63,40 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
           <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
             <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-semibold">Cardápios Ilimitados</p>
-              <p className="text-zinc-400 text-sm">Gere quantos cardápios quiser, todos os dias</p>
+              <p className="text-white font-semibold">Cardápios Inteligentes</p>
+              <p className="text-zinc-400 text-sm">Planos alimentares criados sob medida para secar ou crescer.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
             <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-semibold">Scanner Ilimitado</p>
-              <p className="text-zinc-400 text-sm">Escaneie todos os alimentos sem limites</p>
+              <p className="text-white font-semibold">Scanner Sem Limites</p>
+              <p className="text-zinc-400 text-sm">Leia rótulos em segundos e fuja das armadilhas da indústria.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
             <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-semibold">Receitas Infinitas</p>
-              <p className="text-zinc-400 text-sm">Chef Criativo sem restrições</p>
+              <p className="text-white font-semibold">Chef IA Particular</p>
+              <p className="text-zinc-400 text-sm">Ideias deliciosas com o que você já tem na geladeira.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
             <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-semibold">Chat Ilimitado</p>
-              <p className="text-zinc-400 text-sm">Converse sem limites com o Especialista IA</p>
+              <p className="text-white font-semibold">Nutri 24h no Bolso</p>
+              <p className="text-zinc-400 text-sm">Tire dúvidas e receba orientação da nossa IA a qualquer momento.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
             <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-white font-semibold">Guia Completo</p>
-              <p className="text-zinc-400 text-sm">Acesso total ao guia de alimentos</p>
+              <p className="text-white font-semibold">Guia VIP</p>
+              <p className="text-zinc-400 text-sm">Acesso total à base de dados para você dominar sua alimentação.</p>
             </div>
           </div>
         </div>

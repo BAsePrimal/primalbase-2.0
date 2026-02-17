@@ -832,25 +832,27 @@ export default function NutritionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-4 pb-28 font-sans">
-      <header className="mb-6 pt-4">
-        <h1 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><Utensils /> Nutricionista</h1>
-        <p className="text-zinc-500 text-sm mt-1">
-          Plano Inteligente: {userGoal.includes('ganho') ? 'Ganho de Massa 💪' : 'Queima de Gordura 🔥'}
-        </p>
-      </header>
+    <div className="flex flex-col min-h-screen bg-zinc-950 text-white font-sans overflow-x-hidden">
+      <div className="flex-1 p-4 pb-44">
+        <header className="mb-6 pt-4">
+          <h1 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><Utensils /> Nutricionista</h1>
+          <p className="text-zinc-500 text-sm mt-1">
+            Plano Inteligente: {userGoal.includes('ganho') ? 'Ganho de Massa 💪' : 'Queima de Gordura 🔥'}
+          </p>
+        </header>
 
-      {menu.length > 0 && (
-        <>
-          <button 
-            onClick={handleGenerateClick}
-            disabled={loading} 
-            className={`w-full border p-4 rounded-xl mb-6 shadow-lg active:scale-95 flex justify-center items-center gap-2 transition-all ${
-              isSubscriber 
-                ? 'bg-zinc-900 border-amber-500/30 text-amber-500 font-bold hover:bg-zinc-800' 
-                : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:bg-zinc-800'
-            }`}
-          >
+        {menu.length > 0 && (
+          <> {/* <--- Esse símbolo é essencial aqui */}
+            <button 
+              onClick={handleGenerateClick}
+              disabled={loading} 
+              className={`w-full border p-4 rounded-xl mb-6 shadow-lg active:scale-95 flex justify-center items-center gap-2 transition-all ${
+                isSubscriber 
+                  ? 'bg-zinc-900 border-amber-500/30 text-amber-500 font-bold hover:bg-zinc-800' 
+                  : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:bg-zinc-800'
+              }`}
+            >
+    
             {isSubscriber ? (
               <>
                 <Sparkles size={20} /> Gerar Novo Cardápio
@@ -867,22 +869,27 @@ export default function NutritionPage() {
             <div className="flex overflow-x-auto gap-2 pb-4 scrollbar-hide">
               {menu.map((day, idx) => {
                 // PAYWALL: Apenas segunda-feira visível para não-assinantes
-                const isLocked = !isSubscriber && idx > 0;
+                const isLocked = !isSubscriber && idx > 2;
                 
                 return (
                   <button 
                     key={idx} 
-                    onClick={() => !isLocked && setActiveDay(idx)} 
-                    disabled={isLocked}
+                    onClick={() => {
+                      if (isLocked) {
+                        setShowPaywall(true);
+                      } else {
+                        setActiveDay(idx);
+                      }
+                    }} 
                     className={`px-5 py-2 rounded-full whitespace-nowrap text-sm font-bold transition-all relative ${
                       isLocked 
-                        ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' 
+                        ? 'bg-zinc-800 text-zinc-500 hover:text-amber-500 hover:bg-zinc-800/80 cursor-pointer' 
                         : activeDay === idx 
                           ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
-                          : 'bg-zinc-800 text-zinc-400'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                     }`}
                   >
-                    {isLocked && <Lock size={12} className="inline mr-1" />}
+                    {isLocked && <Lock size={12} className="inline mr-1 mb-0.5" />}
                     {day.day}
                   </button>
                 );
@@ -890,7 +897,7 @@ export default function NutritionPage() {
             </div>
             
             {/* CARDS DE REFEIÇÃO */}
-            <div className={`bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-8 shadow-xl relative ${!isSubscriber && activeDay > 0 ? 'blur-sm pointer-events-none' : ''}`}>
+            <div className={`bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-8 shadow-xl relative ${!isSubscriber && activeDay > 2 ? 'blur-sm pointer-events-none' : ''}`}>
               {/* Café */}
               <div>
                 <h3 className="text-amber-500 font-bold mb-2 flex items-center gap-2 text-lg"><Coffee size={18}/> Café da Manhã</h3>
@@ -953,7 +960,7 @@ export default function NutritionPage() {
               </div>
 
               {/* Overlay de Blur para dias bloqueados */}
-              {!isSubscriber && activeDay > 0 && (
+              {!isSubscriber && activeDay > 2 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-2xl">
                   <button
                     onClick={() => setShowPaywall(true)}
@@ -1027,12 +1034,13 @@ export default function NutritionPage() {
         </div>
       )}
 
-      {/* Modal de Paywall */}
-      <PaywallModal 
+ {/* Modal de Paywall */}
+ <PaywallModal 
         isOpen={showPaywall} 
         onClose={() => setShowPaywall(false)} 
         userId={user?.id || ''} 
       />
-    </div>
-  );
+    </div> 
+  </div>
+);
 }

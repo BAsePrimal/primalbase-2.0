@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Camera, CheckCircle, Skull, Loader2, RotateCcw } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import PaywallModal from '@/components/PaywallModal';
 
 interface ScanResult {
   verdict: 'ALLOWED' | 'BANNED';
@@ -14,6 +16,50 @@ export default function ScannerPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- NOVOS ESTADOS DE CONTROLE DO PAYWALL ---
+  const [user, setUser] = useState<any>(null);
+  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [scanCount, setScanCount] = useState(0);
+
+  // --- 1. VERIFICAR SE É ASSINANTE E CARREGAR CONTADOR ---
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        setUser(authUser);
+        // Buscar no perfil se ele é assinante
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_subscriber')
+          .eq('id', authUser.id)
+          .single();
+          
+        setIsSubscriber(profile?.is_subscriber || false);
+      }
+    };
+    checkUserStatus();
+
+    // Puxar da memória do celular quantas vezes ele já usou grátis
+    const savedCount = localStorage.getItem('free_scans_used');
+    if (savedCount) {
+      setScanCount(parseInt(savedCount, 10));
+    }
+  }, []);
+
+  // --- 2. TRAVA DA CÂMERA (INTERCEPTAÇÃO DO CLIQUE) ---
+  const handleCaptureClick = () => {
+    if (!isSubscriber && scanCount >= 3) {
+      // Bloqueia e joga a tela de vendas na cara dele
+      setShowPaywall(true);
+      return;
+    }
+    // Se for assinante ou ainda tiver testes grátis, abre a câmera normalmente
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -34,6 +80,13 @@ export default function ScannerPage() {
     setResult(null);
 
     try {
+      // --- 3. COBRAR O "TICKET" DO TESTE GRÁTIS ASSIM QUE ELE ANALISA ---
+      if (!isSubscriber) {
+        const newCount = scanCount + 1;
+        setScanCount(newCount);
+        localStorage.setItem('free_scans_used', newCount.toString());
+      }
+
       const response = await fetch('/api/scanner', {
         method: 'POST',
         headers: {
@@ -114,7 +167,7 @@ export default function ScannerPage() {
                 </div>
               )}
 
-              {/* Camera Input - REMOVIDO capture="environment" */}
+              {/* Camera Input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -127,13 +180,25 @@ export default function ScannerPage() {
               {/* Action Buttons */}
               <div className="space-y-4">
                 {!image ? (
-                  <label
-                    htmlFor="camera-input"
-                    className="block w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-5 px-6 rounded-2xl cursor-pointer transition-all duration-300 text-center shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 text-lg"
-                  >
-                    <Camera className="w-7 h-7 inline-block mr-3" />
-                    Capturar Foto
-                  </label>
+                  <div className="space-y-2">
+                    {/* AQUI ESTÁ A MÁGICA DO BOTÃO SUBSTITUINDO A LABEL */}
+                    <button
+                      onClick={handleCaptureClick}
+                      className="block w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-5 px-6 rounded-2xl cursor-pointer transition-all duration-300 text-center shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 text-lg"
+                    >
+                      <Camera className="w-7 h-7 inline-block mr-3" />
+                      Capturar Foto
+                    </button>
+                    
+                    {/* Aviso visual de quantos testes faltam (só aparece pra quem não pagou) */}
+                    {!isSubscriber && (
+                      <p className="text-center text-gray-500 text-sm font-medium mt-2">
+                        {scanCount >= 3 
+                          ? 'Limite de testes grátis atingido 🔒' 
+                          : `Testes grátis restantes: ${3 - scanCount}/3`}
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <button
@@ -224,6 +289,13 @@ export default function ScannerPage() {
           )}
         </div>
       </div>
+
+      {/* INSERÇÃO DO PAYWALL NO FUNDO DA PÁGINA */}
+      <PaywallModal 
+        isOpen={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+        userId={user?.id || ''} 
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { JOURNEY_DATA } from '@/lib/journeyData';
 import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Trophy, Sparkles, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import PaywallModal from '@/components/PaywallModal';
 
 type Protocol = 'male' | 'female' | null;
 
@@ -14,6 +15,9 @@ interface FastingTimer {
 }
 
 export default function JornadaPage() {
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
   const [protocol, setProtocol] = useState<Protocol>(null);
   const [currentDay, setCurrentDay] = useState(1);
@@ -45,6 +49,17 @@ export default function JornadaPage() {
   async function loadUserJourney() {
     try {
       setIsLoadingProfile(true);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        setUser(authUser);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_subscriber')
+          .eq('id', authUser.id)
+          .single();
+        setIsSubscriber(profile?.is_subscriber || false);
+      }
+    
       
       // Verificar autenticação
       const { data: { user } } = await supabase.auth.getUser();
@@ -524,10 +539,12 @@ export default function JornadaPage() {
 
         {/* Timeline de Dias - DARK PREMIUM */}
         <div className="space-y-4">
-          {protocolData.days.map((day) => {
+        {protocolData.days.map((day) => {
             const status = getDayStatus(day.day);
             const isExpanded = expandedDay === day.day;
-            const isLocked = status === 'locked';
+            
+            // Regra: Bloqueia se o sistema diz 'locked' OU se passou do dia 3 e não é assinante
+            const isLocked = status === 'locked' || (day.day > 3 && !isSubscriber);
 
             const allTasksCompleted = day.tasks.every(task => {
               const taskKey = `day${day.day}_${task.id}`;
@@ -547,12 +564,18 @@ export default function JornadaPage() {
                     : status === 'current' 
                     ? 'border-orange-500/80 shadow-[0_0_20px_rgba(249,115,22,0.4)] animate-[pulse_2s_ease-in-out_infinite]' 
                     : 'border-zinc-800/50'
-                } ${isLocked ? 'opacity-50' : ''}`}
+                } ${isLocked ? 'opacity-70 hover:opacity-100' : ''}`} // Melhorei a opacidade para parecer clicável
               >
                 <button
-                  onClick={() => !isLocked && setExpandedDay(isExpanded ? null : day.day)}
-                  disabled={isLocked}
-                  className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors disabled:cursor-not-allowed"
+                  onClick={() => {
+                    if (isLocked) {
+                      setShowPaywall(true); // Se tiver bloqueado, abre a venda!
+                    } else {
+                      setExpandedDay(isExpanded ? null : day.day);
+                    }
+                  }}
+                  // Removi o disabled={isLocked} para o botão funcionar
+                  className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     {(status === 'completed' || isDay21Complete) && (
@@ -562,24 +585,28 @@ export default function JornadaPage() {
                       <Circle className="w-8 h-8 text-orange-500 flex-shrink-0 drop-shadow-[0_0_10px_rgba(249,115,22,0.6)]" />
                     )}
                     {status === 'locked' && (
-                      <Lock className="w-8 h-8 text-zinc-600 flex-shrink-0" />
+                      <Lock className="w-8 h-8 text-amber-500/50 flex-shrink-0 animate-pulse" /> // Cadeado agora brilha em âmbar
                     )}
                     
                     <div className="text-left">
-                      <div className="text-sm text-gray-500 font-medium">Dia {day.day}</div>
+                      <div className={`text-sm font-medium ${isLocked ? 'text-amber-500/50' : 'text-gray-500'}`}>
+                        {isLocked ? 'Conteúdo VIP' : `Dia ${day.day}`}
+                      </div>
                       <div className="text-xl font-bold text-gray-100">{day.title}</div>
                     </div>
                   </div>
 
-                  {!isLocked && (
-                    <div>
-                      {isExpanded ? (
-                        <ChevronUp className="w-6 h-6 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                  )}
+                  <div>
+                    {isLocked ? (
+                      <div className="bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
+                         <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Liberar</span>
+                      </div>
+                    ) : isExpanded ? (
+                      <ChevronUp className="w-6 h-6 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
                 </button>
 
                 {isExpanded && !isLocked && (
@@ -842,13 +869,20 @@ export default function JornadaPage() {
               >
                 Entendi
               </button>
-
-              {/* Espaçador para evitar corte pela Navbar */}
-              <div className="h-32"></div>
             </div>
           </div>
         </div>
       )}
+
+      {/* --- ADICIONE O PAYWALL AQUI --- */}
+      <PaywallModal 
+        isOpen={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+        userId={user?.id || ''} 
+      />
+
+      {/* Espaçador para evitar corte pela Navbar */}
+      <div className="h-32"></div>
     </div>
   );
 }

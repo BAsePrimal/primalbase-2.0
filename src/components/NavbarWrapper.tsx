@@ -2,8 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import BottomNav from './BottomNav';
+import { Suspense } from 'react';
 
-export default function NavbarWrapper() {
+function NavbarLogic() {
   const pathname = usePathname();
   
   // Não renderizar navbar na página de login
@@ -12,4 +13,12 @@ export default function NavbarWrapper() {
   }
   
   return <BottomNav />;
+}
+
+export default function NavbarWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <NavbarLogic />
+    </Suspense>
+  );
 }

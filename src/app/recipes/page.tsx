@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { ChefHat, Home, Apple, ScanLine, BookOpen, Map, X, Clock } from 'lucide-react'
+import { ChefHat, Home, Apple, ScanLine, BookOpen, Map, X, Clock, Lock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import PaywallModal from '@/components/PaywallModal' // IMPORT DO PAYWALL
 
 interface Recipe {
   id: string
@@ -20,8 +21,13 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
 
+  // --- ESTADOS DO PAYWALL ---
+  const [user, setUser] = useState<any>(null);
+  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
   useEffect(() => {
-    async function fetchRecipes() {
+    async function fetchData() {
       if (!supabase) {
         console.warn('Supabase não configurado')
         setLoading(false)
@@ -29,6 +35,19 @@ export default function RecipesPage() {
       }
 
       try {
+        // 1. Verifica Assinatura
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser) {
+          setUser(authUser);
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_subscriber')
+            .eq('id', authUser.id)
+            .single();
+          setIsSubscriber(profile?.is_subscriber || false);
+        }
+
+        // 2. Busca Receitas
         const { data, error } = await supabase
           .from('recipes')
           .select('*')
@@ -45,7 +64,7 @@ export default function RecipesPage() {
       }
     }
 
-    fetchRecipes()
+    fetchData()
   }, [])
 
   // Formatar ingredientes e instruções para listas legíveis
@@ -62,9 +81,9 @@ export default function RecipesPage() {
           <ChefHat className="w-7 h-7 text-amber-500" />
           <h1 className="text-2xl font-bold text-amber-500">Receitas Ancestrais</h1>
         </div>
-        <Link href="/">
+        <Link href="/guide">
           <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center hover:bg-zinc-700 transition-colors">
-            <Home className="w-5 h-5 text-zinc-400" />
+            <BookOpen className="w-5 h-5 text-zinc-400" />
           </button>
         </Link>
       </header>
@@ -89,33 +108,63 @@ export default function RecipesPage() {
             <p className="text-sm text-zinc-500">Adicione receitas na tabela do Supabase</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recipes.map((recipe) => (
-              <div
-                key={recipe.id}
-                onClick={() => setSelectedRecipe(recipe)}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-300 cursor-pointer flex flex-col"
-              >
-                {/* Título */}
-                <h3 className="text-xl font-bold text-amber-500 mb-3">
-                  {recipe.title}
-                </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative pb-16">
+            {recipes.map((recipe, index) => {
+              // REGRA FREEMIUM: Desfocar a partir da 3ª receita se não for assinante
+              const isBlurred = !isSubscriber && index >= 2;
 
-                {/* Botão Ver Receita - Fixo no rodapé */}
-                <button className="w-full mt-auto px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-lg font-medium transition-colors">
-                  Ver Receita Completa
+              return (
+                <div
+                  key={recipe.id}
+                  onClick={() => {
+                    if (isBlurred) {
+                      setShowPaywall(true);
+                    } else {
+                      setSelectedRecipe(recipe);
+                    }
+                  }}
+                  className={`bg-zinc-900 border border-zinc-800 rounded-2xl p-6 transition-all duration-300 flex flex-col ${
+                    isBlurred 
+                      ? 'blur-[3px] opacity-60 select-none cursor-pointer' 
+                      : 'hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10 cursor-pointer'
+                  }`}
+                >
+                  {/* Título */}
+                  <h3 className="text-xl font-bold text-amber-500 mb-3">
+                    {recipe.title}
+                  </h3>
+
+                  {/* Botão Ver Receita */}
+                  <button className={`w-full mt-auto px-4 py-2 rounded-lg font-medium transition-colors ${
+                    isBlurred 
+                      ? 'bg-zinc-800 text-zinc-500' 
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-500'
+                  }`}>
+                    {isBlurred ? <Lock size={16} className="mx-auto" /> : 'Ver Receita Completa'}
+                  </button>
+                </div>
+              );
+            })}
+
+            {/* OVERLAY E BOTÃO DE DESBLOQUEIO (Só aparece se não for assinante e tiver mais de 2 receitas) */}
+            {!isSubscriber && recipes.length > 2 && (
+              <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-zinc-950 via-zinc-950/90 to-transparent flex items-end justify-center pb-8 z-10 pointer-events-none">
+                <button 
+                  onClick={() => setShowPaywall(true)}
+                  className="pointer-events-auto bg-gradient-to-r from-amber-500 to-orange-500 hover:scale-105 transition-transform text-black font-bold py-4 px-8 rounded-2xl shadow-[0_0_30px_rgba(251,191,36,0.3)] flex items-center gap-2"
+                >
+                  <Lock size={18} /> Desbloquear Todas as Receitas
                 </button>
               </div>
-            ))}
+            )}
           </div>
         )}
       </main>
 
-      {/* Modal de Detalhes */}
+      {/* Modal de Detalhes da Receita (MANTIDO INTACTO) */}
       {selectedRecipe && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header do Modal */}
             <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-amber-500">{selectedRecipe.title}</h2>
               <button
@@ -126,9 +175,7 @@ export default function RecipesPage() {
               </button>
             </div>
 
-            {/* Conteúdo do Modal */}
             <div className="px-6 py-6 space-y-6">
-              {/* Categoria */}
               <div className="flex items-center gap-4">
                 {selectedRecipe.category && (
                   <span className="px-3 py-1 text-sm font-medium rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30">
@@ -137,7 +184,6 @@ export default function RecipesPage() {
                 )}
               </div>
 
-              {/* Benefícios - DESTAQUE VISUAL */}
               {selectedRecipe.benefits && (
                 <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 rounded-xl p-5">
                   <h3 className="text-lg font-bold text-amber-500 mb-3 flex items-center gap-2">
@@ -148,7 +194,6 @@ export default function RecipesPage() {
                 </div>
               )}
 
-              {/* Ingredientes */}
               {selectedRecipe.ingredients && (
                 <div>
                   <h3 className="text-lg font-bold text-amber-500 mb-3 flex items-center gap-2">
@@ -166,7 +211,6 @@ export default function RecipesPage() {
                 </div>
               )}
 
-              {/* Modo de Preparo */}
               {selectedRecipe.instructions && (
                 <div>
                   <h3 className="text-lg font-bold text-amber-500 mb-3 flex items-center gap-2">
@@ -187,7 +231,6 @@ export default function RecipesPage() {
               )}
             </div>
 
-            {/* Footer do Modal */}
             <div className="sticky bottom-0 bg-zinc-900 border-t border-zinc-800 px-6 py-4">
               <button
                 onClick={() => setSelectedRecipe(null)}
@@ -200,8 +243,15 @@ export default function RecipesPage() {
         </div>
       )}
 
+      {/* MODAL DE VENDAS (PAYWALL) */}
+      <PaywallModal 
+        isOpen={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+        userId={user?.id || ''} 
+      />
+
       {/* Bottom Navigation - Fixed */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 px-6 py-4">
+      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 px-6 py-4 z-40">
         <div className="flex items-center justify-around max-w-2xl mx-auto">
           <Link href="/" className="flex flex-col items-center gap-1 text-zinc-500 hover:text-amber-500 transition-colors">
             <Home className="w-6 h-6" />

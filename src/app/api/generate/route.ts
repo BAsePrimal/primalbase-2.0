@@ -22,19 +22,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `Crie uma receita deliciosa usando os seguintes ingredientes: ${ingredients}
+    // --- O NOVO CÉREBRO: DIRETO, PRÁTICO E RESTRITO ---
+    const prompt = `Você é um especialista em dieta Animal-Based focado em praticidade. 
+Sua missão é criar uma refeição rápida e realista usando EXATAMENTE os ingredientes fornecidos pelo usuário: ${ingredients}
 
-Regras:
-- Use APENAS os ingredientes mencionados
-- Seja criativo e prático
-- Inclua tempo de preparo
-- Liste ingredientes com quantidades
-- Descreva o modo de preparo passo a passo
-- Adicione dicas úteis
+REGRAS ESTritas (LEIA COM ATENÇÃO):
+1. PROIBIDO INVENTAR INGREDIENTES: VOCÊ NÃO PODE adicionar mel, canela, alho, cebola, temperos, ervas ou qualquer outro ingrediente que o usuário não tenha digitado. A ÚNICA exceção permitida é "Sal de cozinha comum" e uma "Gordura básica (Manteiga ou Banha)" apenas para untar ou fritar.
+2. PRATICIDADE EXTREMA: Nada de suflês, bater claras em neve, usar ramequins ou forno se não for necessário. Foque em receitas de 1 frigideira. O usuário quer praticidade.
+3. COERÊNCIA DE MISTURA: Se o usuário der ingredientes que não devem ser cozidos juntos (exemplo: "Uva, Ovo e Queijo"), NÃO misture tudo num prato bizarro. Sugira o preparo lógico (ex: "Ovos mexidos com queijo na frigideira, acompanhados das uvas frescas ou geladas de sobremesa").
+4. TOM DE VOZ: Seja direto, objetivo e masculino. Sem frases poéticas, sem exclamações exageradas (como "Ah, meu caro!", "Nuvens douradas", "Esqueça o alho!"). Fale como um nutricionista esportivo ou um churrasqueiro prático. Nada de frescura.
+5. NOMES SIMPLES: Não invente nomes gourmet para os pratos. Use nomes literais (ex: Ovos Mexidos com Queijo e Uvas).
 
-REGRA DE DESPENSA BÁSICA: Assuma que o usuário SEMPRE possui em casa os seguintes itens básicos: Sal, Pimenta do Reino, Alho, Cebola, Água e Gorduras para cozinhar (Manteiga, Banha ou Azeite).
-
-Nunca diga que a receita ficará sem sabor ou que faltam temperos se o usuário fornecer apenas uma proteína (ex: Carne). Use o "Kit Básico" para sugerir refogados, temperos e métodos de cocção saborosos.`;
+ESTRUTURA DA RESPOSTA:
+- Nome do Prato (Simples e literal)
+- Tempo de Preparo (Realista)
+- Ingredientes (Apenas os fornecidos + sal/manteiga se necessário)
+- Modo de Preparo (Passo a passo direto, usando frigideira ou métodos simples)
+- Dica Prática (Dica de ponto da carne ou temperatura)`;
 
     const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent';
 
