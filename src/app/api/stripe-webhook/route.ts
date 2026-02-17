@@ -33,6 +33,79 @@ export async function POST(req: NextRequest) {
   // Processar eventos do Stripe
   try {
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        // userId vindo do metadata da sessão de checkout
+        const userId =
+          (session.metadata && (session.metadata as any).userId) ||
+          (session.client_reference_id as string | null);
+
+        if (!userId) {
+          console.error('No userId in checkout.session.completed metadata');
+          break;
+        }
+
+        try {
+          // Buscar a assinatura criada a partir da sessão
+          const subscriptionId = session.subscription as string | null;
+
+          if (subscriptionId) {
+            const subscription = await stripe.subscriptions.retrieve(
+              subscriptionId
+            );
+
+            const isActive = ['active', 'trialing'].includes(
+              subscription.status
+            );
+
+            // Atualizar perfil do usuário para assinante
+            await supabase
+              .from('profiles')
+              .update({ is_subscriber: isActive })
+              .eq('id', userId);
+
+            // Salvar/atualizar dados da assinatura
+            await supabase
+              .from('stripe_subscriptions')
+              .upsert(
+                {
+                  user_id: userId,
+                  stripe_customer_id: subscription.customer as string,
+                  stripe_subscription_id: subscription.id,
+                  status: subscription.status,
+                  current_period_end: new Date(
+                    subscription.current_period_end * 1000
+                  ).toISOString(),
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: 'user_id' }
+              );
+
+            console.log(
+              `✅ checkout.session.completed processed for user ${userId}`
+            );
+          } else {
+            // Caso extremo: não há subscription ainda, mas já marcamos o usuário como assinante
+            await supabase
+              .from('profiles')
+              .update({ is_subscriber: true })
+              .eq('id', userId);
+
+            console.log(
+              `✅ checkout.session.completed without subscriptionId for user ${userId}`
+            );
+          }
+        } catch (error: any) {
+          console.error(
+            'Error processing checkout.session.completed:',
+            error?.message || error
+          );
+        }
+
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as any; // FORÇANDO ANY AQUI
