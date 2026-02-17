@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 // Webhook secret (você precisa configurar no Stripe Dashboard)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+// Cliente Supabase com Service Role para uso exclusivo em ambiente server (webhook)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Usa Service Role para burlar o RLS apenas aqui no backend
+const supabaseAdmin =
+  supabaseUrl && supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : (null as any);
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -60,7 +70,7 @@ export async function POST(req: NextRequest) {
             );
 
             // Atualizar perfil do usuário para assinante
-            await supabase
+            await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: isActive })
               .eq('id', userId);
@@ -71,7 +81,7 @@ export async function POST(req: NextRequest) {
               ? new Date(currentPeriodEnd * 1000).toISOString()
               : new Date().toISOString();
 
-            await supabase
+            await supabaseAdmin
               .from('stripe_subscriptions')
               .upsert(
                 {
@@ -90,7 +100,7 @@ export async function POST(req: NextRequest) {
             );
           } else {
             // Caso extremo: não há subscription ainda, mas já marcamos o usuário como assinante
-            await supabase
+            await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: true })
               .eq('id', userId);
@@ -123,7 +133,7 @@ export async function POST(req: NextRequest) {
         const isActive = ['active', 'trialing'].includes(subscription.status);
 
         // Atualizar is_subscriber no perfil
-        await supabase
+        await supabaseAdmin
           .from('profiles')
           .update({ is_subscriber: isActive })
           .eq('id', userId);
@@ -134,7 +144,7 @@ export async function POST(req: NextRequest) {
           ? new Date(currentPeriodEnd * 1000).toISOString()
           : new Date().toISOString();
 
-        await supabase
+        await supabaseAdmin
           .from('stripe_subscriptions')
           .upsert({
             user_id: userId,
@@ -159,13 +169,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Remover status de assinante
-        await supabase
+        await supabaseAdmin
           .from('profiles')
           .update({ is_subscriber: false })
           .eq('id', userId);
 
         // Atualizar status da assinatura
-        await supabase
+        await supabaseAdmin
           .from('stripe_subscriptions')
           .update({
             status: 'canceled',
@@ -187,7 +197,7 @@ export async function POST(req: NextRequest) {
 
           if (userId) {
             // Remover status de assinante em caso de falha de pagamento
-            await supabase
+            await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: false })
               .eq('id', userId);
