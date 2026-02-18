@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User as UserIcon, Edit3, X } from 'lucide-react';
+import { LogOut, User as UserIcon, Edit3, X, CreditCard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 
@@ -12,6 +12,7 @@ interface Profile {
   current_weight: number;
   height: number;
   goal: string;
+  is_subscriber?: boolean;
 }
 
 export default function PerfilPage() {
@@ -21,6 +22,7 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   
   // Estados do formulário de edição
   const [editForm, setEditForm] = useState({
@@ -100,6 +102,36 @@ export default function PerfilPage() {
     setIsModalOpen(false);
   }
 
+  async function handleManageSubscription() {
+    setPortalLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Faça login para gerenciar sua assinatura.');
+        return;
+      }
+      const res = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Erro ao abrir portal.');
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error('URL do portal não retornada.');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao abrir portal de assinatura.');
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
   async function handleSaveProfile() {
     setSaving(true);
     
@@ -138,14 +170,15 @@ export default function PerfilPage() {
         return;
       }
 
-      // Atualizar estado local
-      setProfile({
+      // Atualizar estado local (preserva is_subscriber)
+      setProfile(prev => prev ? {
+        ...prev,
         full_name: editForm.full_name,
         gender: editForm.gender,
         current_weight: editForm.current_weight,
         height: editForm.height,
         goal: editForm.goal
-      });
+      } : null);
 
       // Fechar modal e mostrar toast
       closeEditModal();
@@ -205,8 +238,8 @@ export default function PerfilPage() {
             <p className="text-sm text-zinc-500">{email}</p>
           </div>
 
-          {/* Botão de Edição */}
-          <div className="flex justify-center">
+          {/* Botão de Edição e Gerenciar Assinatura */}
+          <div className="flex flex-col items-center gap-3">
             <button
               onClick={openEditModal}
               className="flex items-center gap-2 px-6 py-2.5 bg-transparent border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 hover:border-zinc-600 transition-all duration-300"
@@ -214,6 +247,16 @@ export default function PerfilPage() {
               <Edit3 className="w-4 h-4" />
               <span className="text-sm font-medium">Editar Dados</span>
             </button>
+            {profile?.is_subscriber && (
+              <button
+                onClick={handleManageSubscription}
+                disabled={portalLoading}
+                className="flex items-center gap-2 px-6 py-2.5 bg-zinc-900 border border-amber-500/30 text-amber-500 rounded-lg hover:bg-zinc-800 hover:border-amber-500 transition-all duration-300 disabled:opacity-50"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span className="text-sm font-medium">{portalLoading ? 'Redirecionando...' : 'Gerenciar Assinatura'}</span>
+              </button>
+            )}
           </div>
 
           {/* Bloco de Dados Biológicos - Grid 2x2 */}
