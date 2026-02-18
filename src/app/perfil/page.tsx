@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, User as UserIcon, Edit3, X, CreditCard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface Profile {
   full_name: string;
@@ -23,6 +24,7 @@ export default function PerfilPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Estados do formulário de edição
   const [editForm, setEditForm] = useState({
@@ -35,6 +37,30 @@ export default function PerfilPage() {
 
   useEffect(() => {
     loadProfile();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const url = new URL(window.location.href);
+      const success = url.searchParams.get('success');
+
+      if (success === 'true') {
+        setShowSuccessModal(true);
+
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+
+        url.searchParams.delete('success');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch (error) {
+      console.error('Erro ao processar parâmetro de sucesso:', error);
+    }
   }, []);
 
   async function loadProfile() {
@@ -318,6 +344,30 @@ export default function PerfilPage() {
           </div>
         </main>
       </div>
+
+      {/* Modal de Sucesso Premium */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md bg-zinc-900 border border-amber-500/30 rounded-2xl p-8 text-center shadow-2xl shadow-amber-500/20 transform scale-100 animate-in zoom-in-95 duration-300">
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-zinc-900 rounded-full p-4 border-4 border-zinc-950 shadow-xl">
+              <span className="text-5xl">🦁</span>
+            </div>
+            
+            <h2 className="mt-6 text-2xl font-bold text-white">Bem-vindo à Tribo!</h2>
+            <p className="mt-3 text-zinc-400">
+              Seu acesso <span className="text-amber-500 font-semibold">Premium</span> foi liberado com sucesso. Agora você tem controle total da sua evolução.
+            </p>
+            <div className="mt-8 space-y-3">
+              <button 
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-amber-500/25"
+              >
+                Começar Agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Edição */}
       {isModalOpen && (
