@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { JOURNEY_DATA } from '@/lib/journeyData';
-import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Trophy, Sparkles, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Trophy, Sparkles, AlertTriangle, Clock, Activity, Flame, Shield, Zap} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
+import Confetti from 'react-confetti';
 
 type Protocol = 'male' | 'female' | null;
 
@@ -419,83 +420,73 @@ export default function JornadaPage() {
 
   const protocolData = JOURNEY_DATA[protocol];
 
-  // Tela de Introdução (Onboarding) - DARK MODE PREMIUM COM SKELETON
-  if (showIntro) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4 pb-32">
-        <div className="max-w-2xl w-full">
-          {/* Container Glassmorphism */}
-          <div className="relative backdrop-blur-xl bg-white/5 rounded-[32px] shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border border-white/10 p-8 md:p-12 text-center overflow-hidden">
-            {/* Gradiente de fundo sutil */}
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 pointer-events-none"></div>
+// Tela de Introdução (Onboarding) - DARK MODE PREMIUM COM SKELETON RESPONSIVO
+if (showIntro) {
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950">
+      {/* Fundo escuro fixo para não dar barra branca ao rolar */}
+      <div className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-black to-zinc-950 pointer-events-none"></div>
+
+      <div className="relative z-10 max-w-3xl w-full my-auto py-10">
+        {/* CONTAINER PRINCIPAL DO MODAL - Borda redonda e contorno elegante */}
+        <div className="relative bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] p-8 md:p-14 text-center overflow-hidden flex flex-col justify-center min-h-[50vh]">
+          
+          {/* Gradiente de fundo sutil */}
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 pointer-events-none"></div>
+          
+          {/* Conteúdo */}
+          <div className="relative z-10">
             
-            {/* Conteúdo */}
-            <div className="relative z-10">
-              {/* Ícone com brilho */}
-              <div className="flex justify-center mb-8">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                  <div className="relative text-7xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]">
-                    {protocol === 'male' ? '🦁' : '🐆'}
-                  </div>
+            {/* Ícone com brilho */}
+            <div className="flex justify-center mb-8 md:mb-12">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                <div className="relative text-7xl md:text-8xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]">
+                  {protocol === 'male' ? '🦁' : '🐆'}
                 </div>
               </div>
-              
-              {/* Título com gradiente */}
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
-                <span className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-                  O Protocolo de 21 Dias vai{' '}
-                </span>
-                <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent animate-pulse">
-                  Resetar
-                </span>
-                <span className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
-                  {' '}seu corpo e mente
-                </span>
-              </h1>
-              
-              {/* Subtítulo com lógica de gênero CORRIGIDA + SKELETON */}
-              {isLoadingProfile ? (
-                <div className="flex flex-col items-center gap-3 mb-10">
-                  <div className="h-8 w-3/4 bg-gray-700/50 rounded-lg animate-pulse"></div>
-                  <div className="h-8 w-1/2 bg-gray-700/50 rounded-lg animate-pulse"></div>
-                </div>
-              ) : (
-                <p className="text-2xl md:text-3xl font-semibold text-gray-300 mb-10 leading-relaxed">
-                  Você está {userGender?.toLowerCase().includes('masculino') || userGender?.toLowerCase().includes('leão') ? 'pronto' : 'pronta'} para assumir o{' '}
-                  <span className="bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent font-bold">
-                    Controle
-                  </span>
-                  ?
-                </p>
-              )}
-
-              {/* Card de informação */}
-              <div className="backdrop-blur-md bg-white/5 rounded-2xl p-6 mb-10 border border-white/10">
-                <p className="text-gray-300 leading-relaxed text-lg">
-                  Durante os próximos 21 dias, você seguirá um protocolo científico 
-                  baseado em jejum intermitente, nutrição ancestral e hábitos que 
-                  transformarão sua energia, foco e composição corporal.
-                </p>
-              </div>
-
-              {/* Botão de ação com gradiente e sombra */}
-              <button
-                onClick={handleStartChallenge}
-                disabled={isLoadingProfile}
-                className="group relative w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-600 hover:via-orange-600 hover:to-amber-600 text-black font-bold text-xl py-6 px-8 rounded-2xl shadow-[0_0_40px_rgba(251,191,36,0.3)] hover:shadow-[0_0_60px_rgba(251,191,36,0.5)] transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10 tracking-wide">
-                  {isLoadingProfile ? 'CARREGANDO...' : 'COMEÇAR O DESAFIO'}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-              </button>
             </div>
+
+            {/* Título Minimalista e Impactante */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight leading-tight">
+              <span className="text-white">O DESPERTAR </span>
+              <span className="text-amber-500 block sm:inline">BIOLÓGICO</span>
+            </h1>
+            
+            {/* Subtítulo Dinâmico */}
+            {isLoadingProfile ? (
+              <div className="flex flex-col items-center gap-3 mb-10">
+                <div className="h-6 w-3/4 bg-zinc-800 rounded-md animate-pulse"></div>
+              </div>
+            ) : (
+              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-400 mb-10">
+                Você está {userGender?.toLowerCase().includes('masculino') || userGender?.toLowerCase().includes('leão') ? 'pronto' : 'pronta'} para assumir o controle?
+              </p>
+            )}
+
+            {/* Card de Informação */}
+            <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mb-10 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div> 
+              <p className="text-gray-300 leading-relaxed text-base md:text-lg pl-4">
+                Nos próximos 21 dias, você executará um protocolo prático de restrição intencional, nutrição ancestral e regulação hormonal. Nós vamos remover a inflamação, dominar o cortisol e <strong className="text-amber-400 font-medium">transformar o seu corpo em uma máquina de alta performance.</strong>
+              </p>
+            </div>
+
+            {/* Botão Sólido - Sem margem branca e sem borda falhada */}
+            <button
+              onClick={handleStartChallenge}
+              disabled={isLoadingProfile}
+              className="w-full max-w-md mx-auto bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 md:py-6 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest relative z-10 outline-none border-none"
+            >
+              {isLoadingProfile ? 'CARREGANDO...' : 'INICIAR PROTOCOLO'}
+            </button>
+
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-zinc-950 py-8 px-4 pb-40">
@@ -540,11 +531,22 @@ export default function JornadaPage() {
         {/* Timeline de Dias - DARK PREMIUM */}
         <div className="space-y-4">
         {protocolData.days.map((day) => {
-            const status = getDayStatus(day.day);
+            // LÓGICA BLINDADA DE STATUS
+            const prevDayCompleted = day.day === 1 || completedDays.includes(day.day - 1);
+            const isDayCompleted = completedDays.includes(day.day);
+            
+            let status = 'locked';
+            if (isDayCompleted) {
+              status = 'completed';
+            } else if (prevDayCompleted) {
+              status = 'current';
+            }
             const isExpanded = expandedDay === day.day;
             
-            // Regra: Bloqueia se o sistema diz 'locked' OU se passou do dia 3 e não é assinante
-            const isLocked = status === 'locked' || (day.day > 3 && !isSubscriber);
+            // NOVAS REGRAS SEPARADAS: Paywall vs Sequência
+            const isPaywallLocked = day.day > 3 && !isSubscriber;
+            const isSequentiallyLocked = status === 'locked';
+            const isLocked = isPaywallLocked || isSequentiallyLocked;
 
             const allTasksCompleted = day.tasks.every(task => {
               const taskKey = `day${day.day}_${task.id}`;
@@ -556,26 +558,27 @@ export default function JornadaPage() {
             return (
               <div
                 key={day.day}
-                className={`backdrop-blur-xl bg-zinc-900/80 rounded-xl shadow-lg overflow-hidden transition-all duration-300 border ${
+                className={`backdrop-blur-xl rounded-xl shadow-lg overflow-hidden transition-all duration-300 border ${
                   status === 'completed' 
-                    ? 'border-amber-500/60 shadow-[0_0_20px_rgba(251,191,36,0.3)]' 
+                    ? 'bg-zinc-900/80 border-amber-500/60 shadow-[0_0_15px_rgba(251,191,36,0.2)]' 
                     : status === 'current' && allTasksCompleted
-                    ? 'border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.4)] animate-pulse' 
+                    ? 'bg-zinc-800/90 border-yellow-500 shadow-[0_0_20px_rgba(234,179,8,0.4)]' 
                     : status === 'current' 
-                    ? 'border-orange-500/80 shadow-[0_0_20px_rgba(249,115,22,0.4)] animate-[pulse_2s_ease-in-out_infinite]' 
-                    : 'border-zinc-800/50'
-                } ${isLocked ? 'opacity-70 hover:opacity-100' : ''}`} // Melhorei a opacidade para parecer clicável
+                    ? 'bg-zinc-800/90 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] relative' 
+                    : 'bg-zinc-900/80 border-zinc-800/50'
+                } ${isLocked ? 'opacity-70 hover:opacity-100' : ''}`}
               >
                 <button
                   onClick={() => {
-                    if (isLocked) {
-                      setShowPaywall(true); // Se tiver bloqueado, abre a venda!
+                    if (isPaywallLocked) {
+                      setShowPaywall(true); // Abre a venda SÓ se for bloqueio de pagamento
+                    } else if (isSequentiallyLocked) {
+                      // Não faz nada, a pessoa tem que terminar o dia anterior
                     } else {
                       setExpandedDay(isExpanded ? null : day.day);
                     }
                   }}
-                  // Removi o disabled={isLocked} para o botão funcionar
-                  className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                  className={`w-full p-6 flex items-center justify-between transition-colors ${!isSequentiallyLocked ? 'hover:bg-white/5 cursor-pointer' : 'cursor-not-allowed'}`}
                 >
                   <div className="flex items-center gap-4">
                     {(status === 'completed' || isDay21Complete) && (
@@ -584,23 +587,25 @@ export default function JornadaPage() {
                     {status === 'current' && !allTasksCompleted && (
                       <Circle className="w-8 h-8 text-orange-500 flex-shrink-0 drop-shadow-[0_0_10px_rgba(249,115,22,0.6)]" />
                     )}
-                    {status === 'locked' && (
-                      <Lock className="w-8 h-8 text-amber-500/50 flex-shrink-0 animate-pulse" /> // Cadeado agora brilha em âmbar
+                    {isLocked && (
+                      <Lock className={`w-8 h-8 flex-shrink-0 ${isPaywallLocked ? 'text-amber-500/50 animate-pulse' : 'text-zinc-600'}`} /> 
                     )}
                     
                     <div className="text-left">
-                      <div className={`text-sm font-medium ${isLocked ? 'text-amber-500/50' : 'text-gray-500'}`}>
-                        {isLocked ? 'Conteúdo VIP' : `Dia ${day.day}`}
+                      <div className={`text-sm font-medium ${isPaywallLocked ? 'text-amber-500/50' : 'text-gray-500'}`}>
+                        {isPaywallLocked ? 'Conteúdo VIP' : isSequentiallyLocked ? `Dia ${day.day} (Bloqueado)` : `Dia ${day.day}`}
                       </div>
-                      <div className="text-xl font-bold text-gray-100">{day.title}</div>
+                      <div className={`text-xl font-bold ${isLocked ? 'text-gray-400' : 'text-gray-100'}`}>{day.title}</div>
                     </div>
                   </div>
 
                   <div>
-                    {isLocked ? (
+                    {isPaywallLocked ? (
                       <div className="bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">
                          <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">Liberar</span>
                       </div>
+                    ) : isSequentiallyLocked ? (
+                      <Lock className="w-5 h-5 text-zinc-700" />
                     ) : isExpanded ? (
                       <ChevronUp className="w-6 h-6 text-gray-400" />
                     ) : (
@@ -751,125 +756,220 @@ export default function JornadaPage() {
         </div>
       )}
 
-      {/* Modal de Vitória */}
-      {showVictoryModal && (
-        <div className="fixed inset-0 bg-black/90 flex items-end justify-center z-50 backdrop-blur-sm">
-          <div className="fixed bottom-4 left-4 right-4 max-h-[80vh] overflow-y-auto bg-zinc-950 rounded-[35px] shadow-[0_0_50px_-10px_rgba(234,179,8,0.3)] z-50 flex flex-col items-center text-center p-6 pb-24 [&::-webkit-scrollbar]:hidden scrollbar-hide">
+{/* Modal de Vitória - O GRAND FINALE (Emoji Livre sem Borda) */}
+{showVictoryModal && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] backdrop-blur-md p-4 animate-in fade-in duration-500">
+          
+          {/* CHUVA DE CONFETES DOURADOS PREMIUM */}
+          <div className="fixed inset-0 pointer-events-none z-0">
+             <Confetti 
+               width={typeof window !== 'undefined' ? window.innerWidth : 1000}
+               height={typeof window !== 'undefined' ? window.innerHeight : 1000}
+               colors={['#fbbf24', '#f59e0b', '#d97706', '#b45309', '#000000']} 
+               recycle={false} 
+               numberOfPieces={400} 
+               gravity={0.15}
+             />
+          </div>
+
+          {/* Container Principal */}
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-[2.5rem] shadow-[0_0_80px_rgba(251,191,36,0.15)] z-50 flex flex-col items-center text-center p-8 md:p-12 [&::-webkit-scrollbar]:hidden scrollbar-hide">
+            
+            {/* Botão Fechar */}
             <button
               onClick={() => setShowVictoryModal(false)}
-              className="absolute top-6 right-6 p-2 hover:bg-zinc-800/50 rounded-full transition-colors z-10"
+              className="absolute top-6 right-6 p-2 bg-zinc-900/50 hover:bg-zinc-800 rounded-full transition-colors z-10 border border-zinc-700/50"
               aria-label="Fechar"
             >
-              <X className="w-6 h-6 text-zinc-400 hover:text-white" />
+              <X className="w-5 h-5 text-zinc-400 hover:text-white" />
             </button>
 
-            <div className="w-full max-w-2xl space-y-8">
-              <div className="flex justify-center mt-4">
-                <div className="relative">
-                  <Trophy className="w-14 h-14 text-yellow-500 animate-pulse" />
-                  <Sparkles className="w-6 h-6 text-yellow-300 absolute -top-1 -right-1 animate-bounce" />
-                </div>
+            <div className="w-full space-y-6 md:space-y-8 relative z-10 mt-4">
+              
+              {/* ÍCONE DO ANIMAL (LIVRE, SEM BORDA) */}
+              <div className="flex justify-center relative mb-6">
+                {/* Luz difusa atrás do emoji para ele não ficar chapado */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-amber-500/30 blur-[50px] rounded-full"></div>
+                {/* O Emoji em si, bem grande */}
+                <span className="relative z-10 text-7xl md:text-8xl filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                  {protocol === 'male' ? '🦁' : '🐆'}
+                </span>
               </div>
 
-              <h2 className="text-yellow-500 font-bold tracking-[0.2em] text-lg uppercase">
-                JORNADA DOMINADA {protocol === 'male' ? '🦁' : '🐆'}
-              </h2>
+              {/* TÍTULOS */}
+              <div className="flex flex-col gap-3">
+                <h1 className="text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600 font-black text-4xl md:text-5xl tracking-tighter leading-none uppercase drop-shadow-lg">
+                  Jornada Dominada
+                </h1>
+                <h2 className="text-zinc-400 font-bold tracking-[0.2em] text-sm md:text-base uppercase">
+                  O Rebanho Ficou Para Trás
+                </h2>
+              </div>
 
-              <h1 className="text-white font-extrabold text-3xl tracking-tight leading-none">
-                O REBANHO FICOU PARA TRÁS.
-              </h1>
+              {/* Corpo do Texto Premium */}
+              <div className="bg-zinc-900/60 rounded-2xl p-6 md:p-8 border border-zinc-800/80 relative text-left shadow-inner mx-auto max-w-sm md:max-w-full mt-4">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(251,191,36,0.5)]"></div>
+                <p className="text-zinc-300 font-light tracking-wide leading-relaxed text-sm md:text-base pl-5">
+                  Você completou o que <strong className="text-white font-bold">99% iniciam e desistem</strong>. O que antes era sacrifício, hoje é sua natureza. A disciplina deixou de ser uma escolha para se tornar <strong className="text-amber-400 font-medium tracking-wide">QUEM VOCÊ É</strong>. A base foi forjada.
+                </p>
+              </div>
 
-              <p className="text-zinc-300 font-light tracking-wide leading-relaxed text-lg max-w-[280px] mx-auto">
-                Você completou o que 99% iniciam e desistem. O que antes era sacrifício, hoje é sua natureza. A disciplina deixou de ser uma escolha para se tornar quem você é. A base foi forjada.
+              {/* Divisor Elegante */}
+              <div className="w-24 h-px bg-gradient-to-r from-transparent via-zinc-600 to-transparent mx-auto"></div>
+
+              {/* Frase de Impacto */}
+              <p className="font-serif italic text-zinc-500 text-base md:text-lg">
+                "A selva não perdoa. Isso foi apenas o aquecimento."
               </p>
 
-              <div className="w-12 h-1 bg-zinc-800 rounded-full my-8 mx-auto"></div>
-
-              <p className="font-serif italic text-yellow-500 text-base">
-                A selva não perdoa. Isso foi apenas o aquecimento.
-              </p>
-
+              {/* Botão Nível 2 - "Cofre" Mais Imponente */}
               <button
-                className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 text-gray-900 font-bold py-4 px-8 rounded-2xl shadow-lg shadow-yellow-500/50 text-lg flex items-center justify-center gap-2 mt-8 cursor-not-allowed opacity-75 active:scale-95 transition-transform duration-100"
+                className="w-full relative bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-500 font-black py-5 md:py-6 rounded-2xl text-lg flex items-center justify-center gap-3 mt-8 cursor-not-allowed uppercase tracking-widest shadow-inner transition-colors"
                 disabled
               >
-                ACESSAR NÍVEL 2 🔒
+                <Lock className="w-5 h-5" /> ACESSAR NÍVEL 2
               </button>
+
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Benefícios do Jejum - RAIO-X DINÂMICO */}
-      {showBenefitsModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="backdrop-blur-xl bg-zinc-900/95 border border-zinc-800/50 rounded-2xl p-8 max-w-md w-full shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setShowBenefitsModal(false)}
-              className="absolute top-4 right-4 p-2 hover:bg-zinc-800/50 rounded-full transition-colors"
-              aria-label="Fechar"
-            >
-              <X className="w-6 h-6 text-zinc-400 hover:text-white" />
-            </button>
+     {/* Modal de Benefícios do Jejum - RAIO-X + DOSSIÊ DA SOBREVIVÊNCIA */}
+     {showBenefitsModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-lg bg-zinc-900 border border-zinc-700/50 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden max-h-[90vh] flex flex-col">
+            
+            {/* Cabeçalho Fixo do Modal */}
+            <div className="relative z-20 bg-zinc-900/90 backdrop-blur-sm p-5 md:p-6 border-b border-zinc-800 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-white font-black uppercase tracking-wider text-sm">A Cirurgia da Natureza</h3>
+                  <p className="text-zinc-400 text-xs font-medium uppercase tracking-widest">Arquivo Biológico</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBenefitsModal(false)}
+                className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-full transition-colors"
+                aria-label="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <div className="text-center">
-              <div className="text-6xl mb-4">⚡</div>
-              <h2 className="text-2xl font-bold text-gray-100 mb-2">
-                {getBenefitsContent(currentTaskGoal).title}
-              </h2>
+            {/* Área de Rolagem do Conteúdo */}
+            <div className="overflow-y-auto p-6 md:p-8 [&::-webkit-scrollbar]:hidden scrollbar-hide flex-1">
               
-              <div className="my-8">
-                <div className="relative w-48 h-48 mx-auto">
-                  <svg className="transform -rotate-90 w-48 h-48">
-                    <circle
-                      cx="96"
-                      cy="96"
-                      r="88"
-                      stroke="#27272a"
-                      strokeWidth="16"
-                      fill="none"
-                    />
-                    <circle
-                      cx="96"
-                      cy="96"
-                      r="88"
-                      className="stroke-amber-500"
-                      strokeWidth="16"
-                      fill="none"
-                      strokeDasharray="553"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-4xl font-bold text-gray-100">
-                      {getBenefitsContent(currentTaskGoal).ring}h
+              {/* LÓGICA DINÂMICA ENTRANDO EM AÇÃO */}
+              {(() => {
+                const content = getBenefitsContent(currentTaskGoal); 
+                return (
+                  <div className="flex flex-col items-center mb-10">
+                    {/* Círculo da Meta */}
+                    <div className="relative w-32 h-32 md:w-36 md:h-36 mb-6">
+                      <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 192 192">
+                        <circle cx="96" cy="96" r="88" stroke="#18181b" strokeWidth="8" fill="none" />
+                        <circle cx="96" cy="96" r="88" className="stroke-amber-500 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]" strokeWidth="8" fill="none" strokeDasharray="553" strokeLinecap="round" />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-lg">
+                          {content.ring}<span className="text-2xl text-amber-500">h</span>
+                        </div>
+                        <div className="text-xs text-zinc-400 font-bold uppercase tracking-widest mt-1">Meta</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400">
-                      Meta
+
+                    <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight leading-none mb-6 text-center">
+                      {content.title}
+                    </h2>
+
+                    {/* Linha do Tempo Dinâmica */}
+                    <div className="w-full space-y-0 relative">
+                      <div className="absolute left-[1.35rem] top-4 bottom-4 w-px bg-zinc-800"></div>
+                      {content.timeline.map((phase, index) => (
+                        <div key={index} className="flex items-start gap-4 relative pb-6 last:pb-0">
+                          <div className="w-11 h-11 rounded-full bg-zinc-950 border border-zinc-700 flex items-center justify-center shadow-inner z-10 shrink-0 relative">
+                            <span className="relative z-10">{phase.icon}</span>
+                          </div>
+                          <div className="pt-1.5 pb-2">
+                            <span className="inline-block text-amber-500 font-bold text-xs bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 mb-1">
+                              {phase.time}
+                            </span>
+                            <p className="text-zinc-200 font-medium text-sm md:text-base leading-snug">
+                              {phase.label}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* DIVISOR ÉPICO */}
+              <div className="flex items-center gap-4 my-8 opacity-60">
+                <div className="flex-1 h-px bg-zinc-800"></div>
+                <Info className="w-4 h-4 text-zinc-500" />
+                <div className="flex-1 h-px bg-zinc-800"></div>
+              </div>
+
+              {/* A CIÊNCIA DO BRANDINI - "Dossiê" */}
+              <div className="space-y-6">
+                <h3 className="text-amber-500 font-black text-lg uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Flame className="w-5 h-5" /> A Mecânica Ancestral
+                </h3>
+
+                {/* Card 1: Grelina e Leptina */}
+                <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5">
+                  <h4 className="text-white font-bold text-sm uppercase mb-2">A Ilusão da Fome</h4>
+                  <p className="text-zinc-400 text-sm leading-relaxed font-light">
+                    O corpo é como uma criança exigindo comida. Esse sinal chama-se <strong className="text-amber-500/80 font-medium">Grelina</strong>. Ao resistir às primeiras horas, ela despenca. Você descobre que a dor no estômago era apenas um alerta falso do sistema, não risco de morte.
+                  </p>
+                </div>
+
+                {/* Card 2: Queima Inteligente */}
+                <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5 border-l-2 border-l-amber-500">
+                  <h4 className="text-white font-bold text-sm uppercase mb-2">Preservação Muscular</h4>
+                  <p className="text-zinc-400 text-sm leading-relaxed font-light">
+                    Por que queimar o açúcar primeiro? Porque é fácil. Quando ele acaba, o fígado escolhe. Se você não usar os músculos, ele os queima. Se você treina, ele <strong className="text-amber-500/80 font-medium">protege a massa muscular</strong> e passa a derreter gordura pura como combustível primário.
+                  </p>
+                </div>
+
+                {/* Card 3: Cérebro e Evolução (BDNF & GH) */}
+                <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5">
+                  <h4 className="text-white font-bold text-sm uppercase mb-2">Sobrevivência do Mais Forte</h4>
+                  <p className="text-zinc-400 text-sm leading-relaxed font-light">
+                    No jejum longo, o corpo aumenta a produção de <strong className="text-amber-500/80 font-medium">BDNF</strong> (criando novos neurônios) e o <strong className="text-amber-500/80 font-medium">Hormônio do Crescimento (GH)</strong> vai ao teto. O código biológico entende: <span className="italic text-zinc-500">"Se esse cara não ficar mais inteligente e maior agora, ele morre e não reproduz."</span>
+                  </p>
+                </div>
+
+                {/* Card de Regra Prática (Sal e Água) */}
+                <div className="bg-zinc-900 border border-orange-500/30 rounded-xl p-4 flex items-start gap-3 mt-4 shadow-inner">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-orange-500 font-bold text-xs uppercase mb-1 tracking-wider">Protocolo de Combate</h4>
+                    <p className="text-zinc-300 text-xs leading-relaxed">
+                      Treinar em jejum sem ingerir sais pode causar desmaios. Substitua o pré-treino por <strong className="text-white">Água + 1 colher de chá de sal</strong>. Se a mente fraquejar, tome café preto.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="text-left space-y-4 mb-6">
-                {getBenefitsContent(currentTaskGoal).timeline.map((phase, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
-                    <span className="text-2xl flex-shrink-0">{phase.icon}</span>
-                    <div>
-                      <div className="font-semibold text-amber-400 text-sm">{phase.time}</div>
-                      <div className="text-gray-300 text-sm">{phase.label}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            </div>
 
+            {/* Botão Inferior Fixo */}
+            <div className="p-4 bg-zinc-900 border-t border-zinc-800 shrink-0">
               <button
                 onClick={() => setShowBenefitsModal(false)}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold py-3 rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+                className="w-full relative group bg-zinc-950 hover:bg-zinc-800 text-amber-500 hover:text-amber-400 font-black py-4 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.1)]"
               >
-                Entendi
+                Dominar a Fome
               </button>
             </div>
+
           </div>
         </div>
       )}

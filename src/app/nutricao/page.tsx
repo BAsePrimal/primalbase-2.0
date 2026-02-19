@@ -147,18 +147,39 @@ const generateAndSaveMenu = async (goal: string) => {
     
     const allFoods = (rawFoods as unknown as Food[]);
 
-    // --- FILTROS & LISTA NEGRA ---
-    const globalBlacklist = [
-        'limão', 'água', 'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 'chá',
-        'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
-    ];
+// --- FILTROS & LISTA NEGRA GERAL ---
+const globalBlacklist = [
+  'limão', 'água', 'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 'chá',
+  'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
+];
 
-    const primalFoods = allFoods.filter(f => {
-       const n = f.name.toLowerCase();
-       if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
-       if (globalBlacklist.some(b => n.includes(b))) return false;
-       return true;
-    });
+// --- TRAVA CALÓRICA (PERDA DE GORDURA) ---
+// Identifica se a meta é emagrecimento
+const isFatLoss = goal.toLowerCase().includes('perda') || goal.toLowerCase().includes('emagrecimento');
+
+// Bombas calóricas (Gordura + Carbo Denso) que serão banidas apenas no cutting
+const fatLossBlacklist = [
+  // Carnes Gordas e Embutidos
+  'bacon', 'torresmo', 'barriga', 'panceta', 'costela', 'cupim', 
+  // Queijos Pesados
+  'parmesão', 'mussarela', 'prato', 'amarelo', 'curado', 'provolone',
+  // Frutas Ultra-Densas e Doces (Açúcar/Caloria Alta)
+  'tâmara', 'coco seco', 'banana da terra', 'manga', 'caqui', 'uva'
+];
+
+const primalFoods = allFoods.filter(f => {
+ const n = f.name.toLowerCase();
+ // 1. Remove Grãos e Processados (Sempre)
+ if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
+ 
+ // 2. Remove Lista Negra Geral (Temperos e Vegetais fracos)
+ if (globalBlacklist.some(b => n.includes(b))) return false;
+ 
+ // 3. SE FOR PERDA DE GORDURA: Remove as bombas calóricas
+ if (isFatLoss && fatLossBlacklist.some(b => n.includes(b))) return false;
+
+ return true;
+});
 
     // --- BUCKETS (CESTAS DE ALIMENTOS) ---
 
@@ -255,11 +276,12 @@ const generateAndSaveMenu = async (goal: string) => {
       else if (n.includes('bacon') || n.includes('torresmo') || n.includes('barriga')) cleanName = 'Bacon & Torresmo';
       else if (n.includes('manteiga')) cleanName = 'Manteiga';
       else if (n.includes('sebo') || n.includes('banha')) cleanName = 'Gordura (Banha/Sebo)';
-      else if (n.includes('mel')) cleanName = 'Mel de Abelha';
+      // CORREÇÃO AQUI: Exigir a palavra exata para não confundir com Melão/Melancia
+      else if (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) cleanName = 'Mel de Abelha';
 
       let cat = food.category;
       if (cleanName.includes('Ovos') || cleanName.includes('Queijos')) cat = 'Laticínios & Ovos';
-      else if (weeklyMeatPool.some(m => m.name === food.name)) cat = 'Açougue (Carnes & Órgãos)'; // Só marca as 4 da semana
+      else if (weeklyMeatPool.some(m => m.name === food.name)) cat = 'Açougue (Carnes & Órgãos)'; 
       else if (cat === 'Gordura') cat = 'Gorduras & Óleos';
       else cat = 'Hortifruti (Frutas & Raízes)';
 
