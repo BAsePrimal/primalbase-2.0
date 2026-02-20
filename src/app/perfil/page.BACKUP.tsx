@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone } from 'lucide-react';
+import { LogOut, User as UserIcon, Edit3, X, CreditCard } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -333,23 +333,7 @@ export default function PerfilPage() {
           </div>
 
           {/* Área de Ação - Rodapé */}
-          <div className="pt-8 space-y-4">
-            
-            {/* NOVO BOTÃO DE INSTALAR PWA */}
-            <button 
-              onClick={() => window.dispatchEvent(new Event('forceInstallModal'))}
-              className="w-full flex items-center gap-4 p-4 bg-zinc-900/40 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
-
-            >
-              <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
-                <Smartphone className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <h3 className="text-zinc-200 font-semibold text-base">Instalar Aplicativo</h3>
-                <p className="text-zinc-500 text-sm">Adicionar à tela inicial para acesso rápido</p>
-              </div>
-            </button>
-
+          <div className="pt-8">
             <button
               onClick={handleLogout}
               className="w-full bg-transparent border-2 border-red-500/50 text-red-500 rounded-xl py-4 px-6 font-semibold hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 flex items-center justify-center gap-3"

@@ -7,8 +7,8 @@ import { Suspense } from 'react';
 function NavbarLogic() {
   const pathname = usePathname();
   
-  // Não renderizar navbar na página de login
-  if (pathname === '/login') {
+  // Não renderizar navbar na página de login e nem no funil do Quiz
+  if (pathname === '/login' || pathname === '/quiz') {
     return null;
   }
   
