@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Sun, Moon, ChefHat, Brain, User, Flame, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+// Importamos a Catraca AQUI
+import CompleteProfileGate from '@/components/CompleteProfileGate';
 
 interface Profile {
   full_name: string;
@@ -60,7 +62,7 @@ export default function HomePage() {
 
   function getGreeting() {
     const hour = new Date().getHours();
-    const firstName = profile?.full_name.split(' ')[0] || 'Guerreiro';
+    const firstName = profile?.full_name?.split(' ')[0] || 'Guerreiro';
     
     let greeting = '';
     if (hour >= 5 && hour < 12) {
@@ -114,6 +116,10 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col pb-20">
+      
+      {/* 🚀 A Catraca fica no topo. Se os dados estiverem faltando, ela bloqueia a tela! */}
+      <CompleteProfileGate />
+
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
         <img 
