@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
 import InstallModal from "@/components/InstallModal";
+import AuthProvider from "@/components/AuthProvider"; // <-- Importamos o Guardião
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,9 +31,12 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        {children}
-        <InstallModal />
-        <NavbarWrapper />
+        {/* O AuthProvider agora abraça todo o aplicativo */}
+        <AuthProvider>
+          {children}
+          <InstallModal />
+          <NavbarWrapper />
+        </AuthProvider>
       </body>
     </html>
   );

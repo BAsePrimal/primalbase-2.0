@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Sun, Moon, ChefHat, Brain, User, Flame, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 // Importamos a Catraca AQUI
@@ -18,13 +17,12 @@ interface Profile {
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [diasFeitos, setDiasFeitos] = useState(0);
 
   useEffect(() => {
-    checkUser();
+    fetchProfile();
   }, []);
 
   useEffect(() => {
@@ -32,20 +30,18 @@ export default function HomePage() {
     if (saved) setDiasFeitos(parseInt(saved));
   }, []);
 
-  async function checkUser() {
+  async function fetchProfile() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!user) {
-        router.push('/login');
-        return;
-      }
+      // Se não tiver sessão, apenas para a função silenciosamente (O AuthProvider já vai chutar pro login)
+      if (!session) return;
 
       // Buscar perfil na tabela profiles
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .single();
 
       if (error) {
@@ -54,7 +50,7 @@ export default function HomePage() {
         setProfile(profileData);
       }
     } catch (error) {
-      console.error('Erro ao verificar usuário:', error);
+      console.error('Erro ao buscar dados do usuário:', error);
     } finally {
       setLoading(false);
     }

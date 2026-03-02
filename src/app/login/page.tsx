@@ -50,7 +50,8 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        router.push('/');
+        // Usando replace em vez de push para não acumular histórico e quebrar a tela cheia no iOS
+        router.replace('/');
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
@@ -112,8 +113,8 @@ export default function LoginPage() {
 
         if (signInError) throw signInError;
 
-        // Redirecionar para a página inicial
-        router.push('/');
+        // Usando replace para não acumular histórico no iOS
+        router.replace('/');
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta');
