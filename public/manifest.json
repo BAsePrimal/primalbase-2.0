@@ -1,0 +1,25 @@
+{
+    "name": "PrimalBase",
+    "short_name": "PrimalBase",
+    "description": "Sua jornada ancestral começa aqui.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#09090b",
+    "theme_color": "#09090b",
+    "icons": [
+      {
+        "src": "https://k6hrqrxuu8obbfwn.public.blob.vercel-storage.com/temp/905744e0-151e-4a59-971e-0ad2b245c700.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "https://k6hrqrxuu8obbfwn.public.blob.vercel-storage.com/temp/905744e0-151e-4a59-971e-0ad2b245c700.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }
