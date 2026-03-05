@@ -354,7 +354,7 @@ export default function PerfilPage() {
 
             {/* 📱 BOTÃO DE INSTALAR APP RESTAURADO COM VISUAL PADRONIZADO 📱 */}
             <button
-              onClick={() => window.dispatchEvent(new Event('show-install-prompt'))}
+              onClick={() => window.dispatchEvent(new Event('forceInstallModal'))}
               className="w-full flex items-center gap-4 p-4 mt-3 bg-zinc-900/40 hover:bg-amber-500/10 border border-zinc-800 hover:border-amber-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
             >
               <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
