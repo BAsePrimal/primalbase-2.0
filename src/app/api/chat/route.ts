@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 const SYSTEM_INSTRUCTION = `Você é um Mentor Especialista em Nutrição Animal-Based (Estilo Paul Saladino) e Saúde Ancestral.
 
@@ -28,10 +28,16 @@ export async function POST(req: NextRequest) {
   let userEmail = 'Email não identificado';
 
   try {
-    // Tenta identificar o usuário para o alerta de erro ser preciso
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email) {
-      userEmail = user.email;
+    // PROTEÇÃO PARA O BUILD: Só tenta falar com o Supabase se não estiver no meio de um build da Vercel
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          userEmail = user.email;
+        }
+      } catch (authError) {
+        console.log('Autenticação ignorada no build');
+      }
     }
 
     const { message, history } = await req.json();
@@ -93,9 +99,11 @@ export async function POST(req: NextRequest) {
     const text = data.candidates[0].content.parts[0].text;
 
     return NextResponse.json({ response: text });
-  } catch (error) {
-    // DISPARA O ALARME COM O E-MAIL DO GUERREIRO
-    await logError('IA Mentor (Chat)', error, userEmail);
+  } catch (error: any) {
+    // Só loga no banco de erros se não for um erro de build (evita spam de erro na Vercel)
+    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+      await logError('IA Mentor (Chat)', error, userEmail);
+    }
   
     console.error('Erro na API de chat:', error);
     return NextResponse.json(
