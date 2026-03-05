@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logError } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
 export async function POST(request: NextRequest) {
