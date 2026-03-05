@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logError } from '@/lib/logger';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -28,16 +26,16 @@ export async function POST(req: NextRequest) {
   let userEmail = 'Email não identificado';
 
   try {
-    // PROTEÇÃO PARA O BUILD: Só tenta falar com o Supabase se não estiver no meio de um build da Vercel
-    if (process.env.NEXT_PHASE !== 'phase-production-build') {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          userEmail = user.email;
-        }
-      } catch (authError) {
-        console.log('Autenticação ignorada no build');
+    // IMPORTAÇÃO DINÂMICA DO SUPABASE (Esconde a conexão da Vercel durante o build)
+    const { supabase } = await import('@/lib/supabase');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        userEmail = user.email;
       }
+    } catch (authError) {
+      console.log('Autenticação ignorada no build');
     }
 
     const { message, history } = await req.json();
@@ -100,11 +98,14 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response: text });
   } catch (error: any) {
-    // Só loga no banco de erros se não for um erro de build (evita spam de erro na Vercel)
-    if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    // IMPORTAÇÃO DINÂMICA DO LOGGER (Impede o mesmo erro de build)
+    try {
+      const { logError } = await import('@/lib/logger');
       await logError('IA Mentor (Chat)', error, userEmail);
+    } catch (logErr) {
+      console.log('Erro ao salvar log');
     }
-  
+
     console.error('Erro na API de chat:', error);
     return NextResponse.json(
       { error: 'Erro ao processar a mensagem' },
