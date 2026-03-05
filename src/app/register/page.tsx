@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Phone } from 'lucide-react'; // <-- Ícone do WhatsApp aqui
 
 export default function Register() {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  // <-- WhatsApp adicionado no estado inicial
+  const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '', password: '' });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -15,8 +16,8 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // 1. Criar a conta SEM emailRedirectTo (isso pode estar causando a mensagem)
-      const { error: signUpError } = await supabase.auth.signUp({
+      // 1. Criar a conta
+      const { error: signUpError, data: authData } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -27,14 +28,22 @@ export default function Register() {
       if (signUpError) throw signUpError;
 
       // 2. Fazer login automático imediatamente
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
       });
 
       if (signInError) throw signInError;
 
-      // 3. Redirecionar IMEDIATAMENTE
+      // 3. Salvar o WhatsApp no perfil do usuário
+      if (signInData.user && formData.whatsapp) {
+        await supabase
+          .from('profiles')
+          .update({ whatsapp: formData.whatsapp })
+          .eq('id', signInData.user.id);
+      }
+
+      // 4. Redirecionar IMEDIATAMENTE
       router.replace('/');
       
     } catch (err: any) {
@@ -58,6 +67,8 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleRegister} className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 p-8 rounded-3xl shadow-2xl space-y-5">
+          
+          {/* Nome */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">Nome</label>
             <div className="relative">
@@ -73,6 +84,7 @@ export default function Register() {
             </div>
           </div>
 
+          {/* E-mail */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">E-mail</label>
             <div className="relative">
@@ -88,6 +100,23 @@ export default function Register() {
             </div>
           </div>
 
+          {/* 👇 CAMPO DO WHATSAPP 👇 */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">WhatsApp</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
+              <input 
+                type="tel" 
+                placeholder="(11) 99999-9999"
+                value={formData.whatsapp}
+                onChange={e => setFormData({...formData, whatsapp: e.target.value})}
+                className="w-full bg-zinc-950 border border-zinc-800 text-white pl-12 pr-4 py-4 rounded-xl focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Senha */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">Senha</label>
             <div className="relative">

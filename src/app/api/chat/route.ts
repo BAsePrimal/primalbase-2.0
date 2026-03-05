@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
@@ -20,7 +22,15 @@ Alta Toxicidade (Evitar): Folhas (oxalatos), Sementes/Nozes (ácido fítico), Gr
 Personalidade: Seja flexível e inteligente. Se o usuário perguntar de "arroz", não diga apenas "NÃO". Explique que é menos tóxico que o trigo, mas é puro amido. Ajude o usuário a navegar nas escolhas. Adapte-se ao objetivo dele (perda de peso vs performance).`;
 
 export async function POST(req: NextRequest) {
+  let userEmail = 'Email não identificado';
+
   try {
+    // Tenta identificar o usuário para o alerta de erro ser preciso
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      userEmail = user.email;
+    }
+
     const { message, history } = await req.json();
 
     if (!message) {
@@ -81,6 +91,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response: text });
   } catch (error) {
+    // DISPARA O ALARME COM O E-MAIL DO GUERREIRO
+    await logError('IA Mentor (Chat)', error, userEmail);
+  
     console.error('Erro na API de chat:', error);
     return NextResponse.json(
       { error: 'Erro ao processar a mensagem' },

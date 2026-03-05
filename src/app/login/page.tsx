@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [whatsapp, setWhatsapp] = useState(''); // <-- Adicionamos a variável do WhatsApp aqui
   const [gender, setGender] = useState<'Masculino' | 'Feminino' | ''>('');
   const [currentWeight, setCurrentWeight] = useState('');
   const [height, setHeight] = useState('');
@@ -65,8 +66,8 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Validações
-    if (!fullName || !gender || !currentWeight || !height || !goal) {
+    // Validações (Agora inclui o WhatsApp)
+    if (!fullName || !email || !password || !whatsapp || !gender || !currentWeight || !height || !goal) {
       setError('Por favor, preencha todos os campos');
       setLoading(false);
       return;
@@ -90,12 +91,13 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        // Atualizar perfil na tabela profiles (upsert para evitar conflito com trigger)
+        // Atualizar perfil na tabela profiles (Agora salva o WhatsApp junto!)
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
             full_name: fullName,
+            whatsapp: whatsapp, // <-- Enviando o zap pro banco de dados
             gender: gender,
             current_weight: Number(currentWeight),
             height: Number(height),
@@ -286,6 +288,21 @@ export default function LoginPage() {
                     required
                     className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     placeholder="seu@email.com"
+                  />
+                </div>
+
+                {/* 👇 O NOVO CAMPO DO WHATSAPP 👇 */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    WhatsApp (com DDD)
+                  </label>
+                  <input
+                    type="tel"
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
 

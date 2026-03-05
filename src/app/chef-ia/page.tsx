@@ -17,27 +17,29 @@ export default function ChefIAPage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
+  // 👇 Nova variável do Odômetro Total de Receitas
+  const [totalRecipesCount, setTotalRecipesCount] = useState(0);
   const [user, setUser] = useState<any>(null);
 
-  // Carrega Assinatura e Memória do Chef
+  // Carrega Assinatura e Memória do Chef do BANCO DE DADOS
   useEffect(() => {
     async function loadChefData() {
-      // Verifica Assinatura
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         setUser(authUser);
+        
+        // 👇 Puxa o perfil completo, incluindo o total_recipes
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber')
+          .select('is_subscriber, daily_recipe_count, total_recipes')
           .eq('id', authUser.id)
           .single();
-        setIsSubscriber(profile?.is_subscriber || false);
-      }
-
-      // Carrega Memória de Uso (Chave exclusiva do Chef)
-      const savedUsage = localStorage.getItem('ai_chef_usage');
-      if (savedUsage) {
-        setUsageCount(parseInt(savedUsage));
+          
+        if (profile) {
+          setIsSubscriber(profile.is_subscriber || false);
+          setUsageCount(profile.daily_recipe_count || 0);
+          setTotalRecipesCount(profile.total_recipes || 0); // Guarda o total histórico
+        }
       }
     }
     loadChefData();
@@ -46,7 +48,7 @@ export default function ChefIAPage() {
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
 
-    // --- TRAVA DE SEGURANÇA ---
+    // --- TRAVA DE SEGURANÇA (Verifica limite de 3 para não VIPs) ---
     if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
       return;
@@ -72,11 +74,22 @@ export default function ChefIAPage() {
 
       setReceita(data.recipe || data.receita || '');
 
-      // --- ATUALIZA CONTADOR E SALVA NA MEMÓRIA ---
-      if (!isSubscriber) {
+      // --- ATUALIZA CONTADOR NO SUPABASE ---
+      if (user) {
         const nextCount = usageCount + 1;
-        setUsageCount(nextCount);
-        localStorage.setItem('ai_chef_usage', nextCount.toString());
+        const nextTotal = totalRecipesCount + 1; // Odômetro sobe 1
+
+        setUsageCount(nextCount); // Atualiza na tela
+        setTotalRecipesCount(nextTotal); // Atualiza na tela
+        
+        // 👇 Salva NO BANCO os dois contadores de uma vez
+        await supabase
+          .from('profiles')
+          .update({ 
+            daily_recipe_count: nextCount,
+            total_recipes: nextTotal
+          })
+          .eq('id', user.id);
       }
 
     } catch (err: any) {
@@ -146,11 +159,11 @@ export default function ChefIAPage() {
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-700" 
-                  style={{ width: `${(usageCount / 3) * 100}%` }}
+                  style={{ width: `${Math.min((usageCount / 3) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
-                Receitas Gratuitas: {3 - usageCount} / 3
+                Receitas Gratuitas: {Math.max(3 - usageCount, 0)} / 3
               </p>
             </div>
           )}

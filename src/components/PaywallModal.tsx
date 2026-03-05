@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, MessageCircle } from 'lucide-react'; // Adicionei o ícone do WhatsApp (MessageCircle)
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -37,6 +37,13 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para abrir o WhatsApp
+  const handleSupportClick = () => {
+    const phoneNumber = "5531997374012"; // Coloque o seu número de suporte aqui! (DDD + Número, sem espaços)
+    const message = encodeURIComponent("Olá! Tenho uma dúvida sobre o plano VIP do PrimalBase.");
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
   return (
@@ -118,9 +125,21 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
           {loading ? 'Processando...' : 'COMEÇAR TESTE GRÁTIS'}
         </button>
 
-        <p className="text-center text-zinc-500 text-xs mt-4">
+        <p className="text-center text-zinc-500 text-xs mt-4 mb-4">
           Sem compromisso. Cancele a qualquer momento.
         </p>
+
+        {/* 👇 NOVO BOTÃO DE SUPORTE NO PAYWALL 👇 */}
+        <div className="pt-4 border-t border-zinc-800/50 flex justify-center">
+          <button 
+            onClick={handleSupportClick}
+            className="flex items-center gap-2 text-zinc-400 hover:text-green-500 transition-colors text-sm font-medium group"
+          >
+            <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            Dúvidas sobre o plano? Fale conosco
+          </button>
+        </div>
+
       </div>
     </div>
   );

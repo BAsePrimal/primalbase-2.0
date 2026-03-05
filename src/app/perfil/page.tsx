@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone } from 'lucide-react';
+import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCircle, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -13,7 +13,9 @@ interface Profile {
   current_weight: number;
   height: number;
   goal: string;
+  whatsapp?: string; // <-- Adicionado aqui
   is_subscriber?: boolean;
+  is_admin?: boolean; 
 }
 
 export default function PerfilPage() {
@@ -26,13 +28,14 @@ export default function PerfilPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  // Estados do formulário de edição
+  // Estados do formulário de edição atualizados com WhatsApp
   const [editForm, setEditForm] = useState({
     full_name: '',
     gender: '',
     current_weight: 0,
     height: 0,
-    goal: ''
+    goal: '',
+    whatsapp: '' // <-- Adicionado aqui
   });
 
   useEffect(() => {
@@ -74,7 +77,6 @@ export default function PerfilPage() {
 
       setEmail(user.email || '');
 
-      // Buscar perfil na tabela profiles
       const { data: profileData, error } = await supabase
         .from('profiles')
         .select('*')
@@ -85,13 +87,13 @@ export default function PerfilPage() {
         console.error('Erro ao buscar perfil:', error);
       } else {
         setProfile(profileData);
-        // Preencher formulário com dados atuais
         setEditForm({
           full_name: profileData?.full_name || '',
           gender: profileData?.gender || '',
           current_weight: profileData?.current_weight || 0,
           height: profileData?.height || 0,
-          goal: profileData?.goal || ''
+          goal: profileData?.goal || '',
+          whatsapp: profileData?.whatsapp || '' // <-- Adicionado aqui
         });
       }
     } catch (error) {
@@ -111,14 +113,14 @@ export default function PerfilPage() {
   }
 
   function openEditModal() {
-    // Atualizar formulário com dados atuais antes de abrir
     if (profile) {
       setEditForm({
         full_name: profile.full_name || '',
         gender: profile.gender || '',
         current_weight: profile.current_weight || 0,
         height: profile.height || 0,
-        goal: profile.goal || ''
+        goal: profile.goal || '',
+        whatsapp: profile.whatsapp || '' // <-- Adicionado aqui
       });
     }
     setIsModalOpen(true);
@@ -169,7 +171,6 @@ export default function PerfilPage() {
         return;
       }
 
-      // Preparar dados para upsert
       const updates = {
         id: user.id,
         full_name: editForm.full_name,
@@ -177,41 +178,33 @@ export default function PerfilPage() {
         current_weight: editForm.current_weight,
         height: editForm.height,
         goal: editForm.goal,
+        whatsapp: editForm.whatsapp, // <-- Adicionado aqui
         updated_at: new Date().toISOString()
       };
 
-      // Usar UPSERT para garantir que funcione mesmo se perfil não existir
       const { error } = await supabase
         .from('profiles')
         .upsert(updates, { onConflict: 'id' });
 
       if (error) {
-        console.error('Erro detalhado ao atualizar perfil:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
         toast.error('Erro ao atualizar: ' + (error.message || 'Erro desconhecido'));
         return;
       }
 
-      // Atualizar estado local (preserva is_subscriber)
       setProfile(prev => prev ? {
         ...prev,
         full_name: editForm.full_name,
         gender: editForm.gender,
         current_weight: editForm.current_weight,
         height: editForm.height,
-        goal: editForm.goal
+        goal: editForm.goal,
+        whatsapp: editForm.whatsapp // <-- Adicionado aqui
       } : null);
 
-      // Fechar modal e mostrar toast
       closeEditModal();
       toast.success('Perfil atualizado com sucesso!');
       
     } catch (error: any) {
-      console.error('Erro detalhado:', error.message || error);
       toast.error('Erro ao atualizar: ' + (error.message || 'Erro desconhecido'));
     } finally {
       setSaving(false);
@@ -220,13 +213,10 @@ export default function PerfilPage() {
 
   function getGenderIcon() {
     if (!profile) return '🦁';
-    
     const gender = profile.gender?.toLowerCase() || '';
-    
     if (gender.includes('feminino') || gender.includes('leoa')) {
       return '🐆';
     }
-    
     return '🦁';
   }
 
@@ -262,6 +252,12 @@ export default function PerfilPage() {
               {profile?.full_name || 'Usuário'}
             </h2>
             <p className="text-sm text-zinc-500">{email}</p>
+            {/* 👇 Mostra o WhatsApp se o guerreiro tiver preenchido 👇 */}
+            {profile?.whatsapp && (
+              <p className="text-xs text-amber-500 font-mono font-medium tracking-wide">
+                📱 {profile.whatsapp}
+              </p>
+            )}
           </div>
 
           {/* Botão de Edição e Gerenciar Assinatura */}
@@ -287,7 +283,6 @@ export default function PerfilPage() {
 
           {/* Bloco de Dados Biológicos - Grid 2x2 */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Card Gênero */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
               <div className="text-4xl">{getGenderIcon()}</div>
               <div className="text-center">
@@ -298,7 +293,6 @@ export default function PerfilPage() {
               </div>
             </div>
 
-            {/* Card Peso */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
               <div className="text-3xl font-bold text-amber-500">
                 {profile?.current_weight || 0}
@@ -309,7 +303,6 @@ export default function PerfilPage() {
               </div>
             </div>
 
-            {/* Card Altura */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
               <div className="text-3xl font-bold text-amber-500">
                 {profile?.height || 0}
@@ -320,7 +313,6 @@ export default function PerfilPage() {
               </div>
             </div>
 
-            {/* Card Meta */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
               <div className="text-2xl">🎯</div>
               <div className="text-center">
@@ -335,20 +327,39 @@ export default function PerfilPage() {
           {/* Área de Ação - Rodapé */}
           <div className="pt-8 space-y-4">
             
-            {/* NOVO BOTÃO DE INSTALAR PWA */}
-            <button 
-              onClick={() => window.dispatchEvent(new Event('forceInstallModal'))}
-              className="w-full flex items-center gap-4 p-4 bg-zinc-900/40 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
-
+            {/* 🛡️ BOTÃO SECRETO ADMIN - Aparece apenas para você! 🛡️ */}
+            {profile?.is_admin && (
+              <button
+                onClick={() => router.push('/admin')}
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/30 text-amber-500 rounded-xl hover:bg-amber-500/30 transition-all duration-300 shadow-[0_0_15px_rgba(251,191,36,0.1)]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
+                    <ShieldAlert className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-bold uppercase tracking-widest text-sm block">Sala de Comando</span>
+                    <span className="text-zinc-500 text-xs font-medium">Painel de Administração</span>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-amber-500 text-black px-2 py-1 rounded-md font-black tracking-widest">ADMIN</span>
+              </button>
+            )}
+            {/* BOTÃO DE SUPORTE WHATSAPP */}
+            <a 
+              href="https://wa.me/5531997374012?text=Ol%C3%A1%2C+sou+guerreiro+da+PrimalBase+e+preciso+de+suporte!" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 p-4 mt-3 bg-zinc-900/40 hover:bg-green-500/10 border border-zinc-800 hover:border-green-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
             >
-              <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
-                <Smartphone className="w-5 h-5 text-amber-500" />
+              <div className="bg-green-500/10 p-2.5 rounded-lg flex-shrink-0">
+                <MessageCircle className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <h3 className="text-zinc-200 font-semibold text-base">Instalar Aplicativo</h3>
-                <p className="text-zinc-500 text-sm">Adicionar à tela inicial para acesso rápido</p>
+                <h3 className="text-zinc-200 font-semibold text-base">Central de Suporte</h3>
+                <p className="text-zinc-500 text-sm">Fale diretamente com nossa equipe no WhatsApp</p>
               </div>
-            </button>
+            </a>
 
             <button
               onClick={handleLogout}
@@ -400,7 +411,6 @@ export default function PerfilPage() {
               </button>
             </div>
 
-            {/* Formulário com padding-bottom generoso */}
             <div className="p-6 space-y-5 pb-32">
               {/* Nome Completo */}
               <div>
@@ -413,6 +423,20 @@ export default function PerfilPage() {
                   onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   placeholder="Digite seu nome completo"
+                />
+              </div>
+
+              {/* 👇 NOVO CAMPO: WhatsApp 👇 */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  WhatsApp (Contato)
+                </label>
+                <input
+                  type="tel"
+                  value={editForm.whatsapp}
+                  onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="Ex: (31) 99999-9999"
                 />
               </div>
 

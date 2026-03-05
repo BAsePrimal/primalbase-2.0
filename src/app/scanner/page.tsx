@@ -17,45 +17,44 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- NOVOS ESTADOS DE CONTROLE DO PAYWALL ---
+  // --- ESTADOS DE CONTROLE DO PAYWALL E BANCO ---
   const [user, setUser] = useState<any>(null);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [scanCount, setScanCount] = useState(0);
+  // 👇 Nova variável do Odômetro Total do Scanner
+  const [totalScansCount, setTotalScansCount] = useState(0);
 
-  // --- 1. VERIFICAR SE É ASSINANTE E CARREGAR CONTADOR ---
+  // --- 1. CARREGAR DADOS REAIS DO SUPABASE ---
   useEffect(() => {
     const checkUserStatus = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         setUser(authUser);
-        // Buscar no perfil se ele é assinante
+        
+        // 👇 Puxa o perfil completo, incluindo o total_scans
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber')
+          .select('is_subscriber, daily_scan_count, total_scans')
           .eq('id', authUser.id)
           .single();
           
-        setIsSubscriber(profile?.is_subscriber || false);
+        if (profile) {
+          setIsSubscriber(profile.is_subscriber || false);
+          setScanCount(profile.daily_scan_count || 0);
+          setTotalScansCount(profile.total_scans || 0); // Guarda o total histórico
+        }
       }
     };
     checkUserStatus();
-
-    // Puxar da memória do celular quantas vezes ele já usou grátis
-    const savedCount = localStorage.getItem('free_scans_used');
-    if (savedCount) {
-      setScanCount(parseInt(savedCount, 10));
-    }
   }, []);
 
-  // --- 2. TRAVA DA CÂMERA (INTERCEPTAÇÃO DO CLIQUE) ---
+  // --- 2. TRAVA DA CÂMERA ---
   const handleCaptureClick = () => {
     if (!isSubscriber && scanCount >= 3) {
-      // Bloqueia e joga a tela de vendas na cara dele
       setShowPaywall(true);
       return;
     }
-    // Se for assinante ou ainda tiver testes grátis, abre a câmera normalmente
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -80,13 +79,7 @@ export default function ScannerPage() {
     setResult(null);
 
     try {
-      // --- 3. COBRAR O "TICKET" DO TESTE GRÁTIS ASSIM QUE ELE ANALISA ---
-      if (!isSubscriber) {
-        const newCount = scanCount + 1;
-        setScanCount(newCount);
-        localStorage.setItem('free_scans_used', newCount.toString());
-      }
-
+      // Chamada para a API do Gemini
       const response = await fetch('/api/scanner', {
         method: 'POST',
         headers: {
@@ -101,6 +94,25 @@ export default function ScannerPage() {
 
       const data = await response.json();
       setResult(data);
+
+      // --- 3. ATUALIZA CONTADOR NO SUPABASE APÓS SUCESSO ---
+      if (user) {
+        const nextCount = scanCount + 1;
+        const nextTotal = totalScansCount + 1; // Odômetro sobe 1
+
+        setScanCount(nextCount); // Atualiza na tela
+        setTotalScansCount(nextTotal); // Atualiza na tela
+        
+        // 👇 Salva NO BANCO os dois contadores de uma vez
+        await supabase
+          .from('profiles')
+          .update({ 
+            daily_scan_count: nextCount,
+            total_scans: nextTotal
+          })
+          .eq('id', user.id);
+      }
+
     } catch (error) {
       console.error('Erro:', error);
       alert('Erro ao analisar a imagem. Tente novamente.');
@@ -134,7 +146,7 @@ export default function ScannerPage() {
         <div className="flex items-center justify-center">
           {!result ? (
             <div className="w-full">
-              {/* Área da Câmera - Estado Inicial */}
+              {/* Área da Câmera */}
               {image ? (
                 <div className="mb-6 relative">
                   <img
@@ -145,19 +157,13 @@ export default function ScannerPage() {
                 </div>
               ) : (
                 <div className="mb-6 h-80 bg-gradient-to-br from-gray-900 to-black rounded-2xl relative overflow-hidden">
-                  {/* Moldura Viewfinder - Cantos Marcados */}
                   <div className="absolute inset-0 p-8">
-                    {/* Canto Superior Esquerdo */}
                     <div className="absolute top-8 left-8 w-16 h-16 border-l-4 border-t-4 border-orange-500"></div>
-                    {/* Canto Superior Direito */}
                     <div className="absolute top-8 right-8 w-16 h-16 border-r-4 border-t-4 border-orange-500"></div>
-                    {/* Canto Inferior Esquerdo */}
                     <div className="absolute bottom-8 left-8 w-16 h-16 border-l-4 border-b-4 border-orange-500"></div>
-                    {/* Canto Inferior Direito */}
                     <div className="absolute bottom-8 right-8 w-16 h-16 border-r-4 border-b-4 border-orange-500"></div>
                   </div>
 
-                  {/* Ícone de Câmera Pulsante */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <Camera className="w-20 h-20 text-orange-500 mx-auto mb-4 animate-pulse" />
@@ -167,7 +173,6 @@ export default function ScannerPage() {
                 </div>
               )}
 
-              {/* Camera Input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -177,11 +182,9 @@ export default function ScannerPage() {
                 id="camera-input"
               />
 
-              {/* Action Buttons */}
               <div className="space-y-4">
                 {!image ? (
                   <div className="space-y-2">
-                    {/* AQUI ESTÁ A MÁGICA DO BOTÃO SUBSTITUINDO A LABEL */}
                     <button
                       onClick={handleCaptureClick}
                       className="block w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-5 px-6 rounded-2xl cursor-pointer transition-all duration-300 text-center shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 text-lg"
@@ -190,12 +193,11 @@ export default function ScannerPage() {
                       Capturar Foto
                     </button>
                     
-                    {/* Aviso visual de quantos testes faltam (só aparece pra quem não pagou) */}
                     {!isSubscriber && (
                       <p className="text-center text-gray-500 text-sm font-medium mt-2">
                         {scanCount >= 3 
                           ? 'Limite de testes grátis atingido 🔒' 
-                          : `Testes grátis restantes: ${3 - scanCount}/3`}
+                          : `Testes grátis restantes: ${Math.max(3 - scanCount, 0)}/3`}
                       </p>
                     )}
                   </div>
@@ -227,7 +229,6 @@ export default function ScannerPage() {
               </div>
             </div>
           ) : (
-            /* Card de Resultado - Glassmorphism Premium */
             <div
               className={`w-full rounded-3xl p-8 backdrop-blur-xl bg-gradient-to-br from-gray-900/90 to-black/90 border-4 shadow-2xl ${
                 result.verdict === 'ALLOWED'
@@ -235,7 +236,6 @@ export default function ScannerPage() {
                   : 'border-red-500 shadow-red-500/20'
               }`}
             >
-              {/* Icon Neon */}
               <div className="text-center mb-8">
                 {result.verdict === 'ALLOWED' ? (
                   <CheckCircle
@@ -250,7 +250,6 @@ export default function ScannerPage() {
                 )}
               </div>
 
-              {/* Verdict */}
               <div className="text-center mb-6">
                 <h2
                   className={`text-4xl md:text-6xl font-black mb-3 ${
@@ -270,14 +269,12 @@ export default function ScannerPage() {
                 </p>
               </div>
 
-              {/* Explanation */}
               <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/10">
                 <p className="text-white text-lg text-center leading-relaxed">
                   {result.explanation}
                 </p>
               </div>
 
-              {/* Reset Button - Estilo Secundário */}
               <button
                 onClick={handleReset}
                 className="w-full bg-gray-800 hover:bg-gray-700 border-2 border-gray-600 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-lg"
@@ -290,7 +287,6 @@ export default function ScannerPage() {
         </div>
       </div>
 
-      {/* INSERÇÃO DO PAYWALL NO FUNDO DA PÁGINA */}
       <PaywallModal 
         isOpen={showPaywall} 
         onClose={() => setShowPaywall(false)} 

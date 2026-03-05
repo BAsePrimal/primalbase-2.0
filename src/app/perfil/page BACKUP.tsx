@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User as UserIcon, Edit3, X, CreditCard } from 'lucide-react';
+// Adicionamos o ShieldAlert aqui 👇
+import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCircle, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
 
+// Adicionamos o is_admin na interface 👇
 interface Profile {
   full_name: string;
   gender: string;
@@ -14,6 +16,7 @@ interface Profile {
   height: number;
   goal: string;
   is_subscriber?: boolean;
+  is_admin?: boolean; 
 }
 
 export default function PerfilPage() {
@@ -196,7 +199,7 @@ export default function PerfilPage() {
         return;
       }
 
-      // Atualizar estado local (preserva is_subscriber)
+      // Atualizar estado local (preserva is_subscriber e is_admin)
       setProfile(prev => prev ? {
         ...prev,
         full_name: editForm.full_name,
@@ -333,7 +336,42 @@ export default function PerfilPage() {
           </div>
 
           {/* Área de Ação - Rodapé */}
-          <div className="pt-8">
+          <div className="pt-8 space-y-4">
+            
+            {/* 🛡️ BOTÃO SECRETO ADMIN - Aparece apenas para você! 🛡️ */}
+            {profile?.is_admin && (
+              <button
+                onClick={() => router.push('/admin')}
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-amber-500/20 to-orange-500/10 border border-amber-500/30 text-amber-500 rounded-xl hover:bg-amber-500/30 transition-all duration-300 shadow-[0_0_15px_rgba(251,191,36,0.1)]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
+                    <ShieldAlert className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-bold uppercase tracking-widest text-sm block">Sala de Comando</span>
+                    <span className="text-zinc-500 text-xs font-medium">Painel de Administração</span>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-amber-500 text-black px-2 py-1 rounded-md font-black tracking-widest">ADMIN</span>
+              </button>
+            )}
+            {/* BOTÃO DE SUPORTE WHATSAPP */}
+            <a 
+              href="https://wa.me/5531997374012?text=Ol%C3%A1%2C+sou+guerreiro+da+PrimalBase+e+preciso+de+suporte!" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 p-4 mt-3 bg-zinc-900/40 hover:bg-green-500/10 border border-zinc-800 hover:border-green-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
+            >
+              <div className="bg-green-500/10 p-2.5 rounded-lg flex-shrink-0">
+                <MessageCircle className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-zinc-200 font-semibold text-base">Central de Suporte</h3>
+                <p className="text-zinc-500 text-sm">Fale diretamente com nossa equipe no WhatsApp</p>
+              </div>
+            </a>
+
             <button
               onClick={handleLogout}
               className="w-full bg-transparent border-2 border-red-500/50 text-red-500 rounded-xl py-4 px-6 font-semibold hover:bg-red-500/10 hover:border-red-500 transition-all duration-300 flex items-center justify-center gap-3"

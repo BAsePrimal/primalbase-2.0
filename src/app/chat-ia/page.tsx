@@ -22,6 +22,8 @@ export default function ChatIAPage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
+  // 👇 Nova variável do Odômetro Total
+  const [totalChatsCount, setTotalChatsCount] = useState(0); 
   const [user, setUser] = useState<any>(null);
 
   const scrollToBottom = () => {
@@ -32,25 +34,25 @@ export default function ChatIAPage() {
     scrollToBottom();
   }, [messages]);
 
-  // 1. Carrega o status do Assinante e a Memória de uso
+  // 1. Carrega o status do Assinante e a Memória de uso direto do SUPABASE
   useEffect(() => {
     async function loadInitialData() {
-      // Verifica Assinatura
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         setUser(authUser);
+        
+        // 👇 Agora ele puxa o total_chats também!
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber')
+          .select('is_subscriber, daily_chat_count, total_chats')
           .eq('id', authUser.id)
           .single();
-        setIsSubscriber(profile?.is_subscriber || false);
-      }
-
-      // Carrega Memória de Uso (localStorage)
-      const savedUsage = localStorage.getItem('ai_mentor_usage');
-      if (savedUsage) {
-        setUsageCount(parseInt(savedUsage));
+          
+        if (profile) {
+          setIsSubscriber(profile.is_subscriber || false);
+          setUsageCount(profile.daily_chat_count || 0);
+          setTotalChatsCount(profile.total_chats || 0);
+        }
       }
     }
     loadInitialData();
@@ -89,11 +91,22 @@ export default function ChatIAPage() {
       
       setMessages([...newMessages, { role: 'assistant', content: data.response }]);
 
-      // --- ATUALIZA CONTADOR E SALVA NA MEMÓRIA DO CELULAR ---
-      if (!isSubscriber) {
+      // --- ATUALIZA CONTADOR NO SUPABASE ---
+      if (user) {
         const nextCount = usageCount + 1;
-        setUsageCount(nextCount);
-        localStorage.setItem('ai_mentor_usage', nextCount.toString());
+        const nextTotal = totalChatsCount + 1; // Odômetro sobe 1
+
+        setUsageCount(nextCount); // Atualiza na tela
+        setTotalChatsCount(nextTotal); // Atualiza na tela
+        
+        // 👇 Salva NO BANCO os dois contadores de uma vez
+        await supabase
+          .from('profiles')
+          .update({ 
+            daily_chat_count: nextCount,
+            total_chats: nextTotal 
+          })
+          .eq('id', user.id);
       }
 
     } catch (error) {
@@ -190,11 +203,11 @@ export default function ChatIAPage() {
               <div className="w-full max-w-[200px] h-1 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-500 transition-all duration-500" 
-                  style={{ width: `${(usageCount / 3) * 100}%` }}
+                  style={{ width: `${Math.min((usageCount / 3) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-black">
-                Créditos: {3 - usageCount} / 3
+                Créditos: {Math.max(3 - usageCount, 0)} / 3
               </p>
             </div>
           )}

@@ -4,6 +4,7 @@ import "./globals.css";
 import NavbarWrapper from "@/components/NavbarWrapper";
 import InstallModal from "@/components/InstallModal";
 import AuthProvider from "@/components/AuthProvider"; // <-- Importamos o Guardião
+import Script from "next/script"; // <-- Import do Script nativo do Next.js
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,17 @@ export default function RootLayout({
           <InstallModal />
           <NavbarWrapper />
         </AuthProvider>
+
+        {/* MICROSOFT CLARITY - GRAVAÇÃO DE TELA (BIG BROTHER) */}
+        <Script id="clarity-script" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "vq4feug1ro");
+          `}
+        </Script>
       </body>
     </html>
   );

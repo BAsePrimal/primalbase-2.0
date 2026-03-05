@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
 export async function POST(request: NextRequest) {
+  let userEmail = 'Email não identificado';
+
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      userEmail = user.email;
+    }
+
     const body = await request.json();
     console.log('CORPO RECEBIDO:', body);
     const ingredients = body.ingredients || body.description || body.prompt || body.text || Object.values(body)[0];
@@ -22,7 +31,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- O NOVO CÉREBRO: DIRETO, PRÁTICO E RESTRITO ---
     const prompt = `Você é um especialista em dieta Animal-Based focado em praticidade. 
 Sua missão é criar uma refeição rápida e realista usando EXATAMENTE os ingredientes fornecidos pelo usuário: ${ingredients}
 
@@ -75,7 +83,10 @@ ESTRUTURA DA RESPOSTA:
     }
 
     return NextResponse.json({ recipe: recipeText });
+
   } catch (error: any) {
+    await logError('IA Chef (Receitas)', error, userEmail);
+
     console.error('Erro ao gerar receita:', error);
     return NextResponse.json(
       { 

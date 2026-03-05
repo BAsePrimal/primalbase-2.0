@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logError } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
 
@@ -18,7 +20,14 @@ Retorne a resposta EXCLUSIVAMENTE em JSON:
 }`;
 
 export async function POST(req: NextRequest) {
+  let userEmail = 'Email não identificado';
+
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      userEmail = user.email;
+    }
+
     const { image } = await req.json();
 
     if (!image) {
@@ -35,17 +44,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Remove o prefixo data:image/...;base64, se existir
     const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
 
-    // Prepara o payload para o Gemini 2.5 Flash
     const payload = {
       contents: [
         {
           parts: [
-            {
-              text: 'Analise esta imagem e retorne o JSON conforme instruído.',
-            },
+            { text: 'Analise esta imagem e retorne o JSON conforme instruído.' },
             {
               inline_data: {
                 mime_type: 'image/jpeg',
@@ -64,7 +69,6 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    // Chama a API do Gemini 2.5 Flash diretamente
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
       {
@@ -84,7 +88,6 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     const text = data.candidates[0].content.parts[0].text;
 
-    // Extrai o JSON da resposta (remove markdown se houver)
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Resposta inválida da IA');
@@ -93,7 +96,9 @@ export async function POST(req: NextRequest) {
     const analysisResult = JSON.parse(jsonMatch[0]);
 
     return NextResponse.json(analysisResult);
-  } catch (error) {
+  } catch (error: any) {
+    await logError('IA Scanner (Visão)', error, userEmail);
+
     console.error('Erro na API de scanner:', error);
     return NextResponse.json(
       { error: 'Erro ao analisar a imagem' },

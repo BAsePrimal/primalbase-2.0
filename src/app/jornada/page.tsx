@@ -205,7 +205,7 @@ export default function JornadaPage() {
     setShowIntro(false);
   };
 
-  // Toggle de tarefa e inserção no banco - CORRIGIDO COM RECÁLCULO ESTRITO
+  // Toggle de tarefa e inserção no banco - CORRIGIDO COM RECÁLCULO ESTRITO E NUVEM
   async function toggleTask(dayNum: number, taskId: string) {
     if (dayNum > currentDay || !userId) return;
 
@@ -218,11 +218,11 @@ export default function JornadaPage() {
     const protocolData = protocol ? JOURNEY_DATA[protocol] : null;
     if (!protocolData) return;
 
-    const currentDayData = protocolData.days.find(d => d.day === dayNum);
+    const currentDayData = protocolData.days.find((d: any) => d.day === dayNum);
     if (!currentDayData) return;
 
     // RECÁLCULO ESTRITO: Verificar se TODAS as tarefas estão marcadas
-    const allTasksCompleted = currentDayData.tasks.every(task => {
+    const allTasksCompleted = currentDayData.tasks.every((task: any) => {
       const key = `day${dayNum}_${task.id}`;
       return newCompleted[key] === true;
     });
@@ -231,21 +231,19 @@ export default function JornadaPage() {
     if (allTasksCompleted && !completedDays.includes(dayNum)) {
       // TODAS as tarefas completadas E dia ainda não estava marcado como concluído
       try {
-        // Inserir na tabela jornada_logs
+        // Inserir na tabela jornada_logs com o status concluido
         await supabase
           .from('jornada_logs')
           .insert({
             user_id: userId,
             day_number: dayNum,
+            status: 'concluido',
             completed_at: new Date().toISOString(),
           });
 
         // Atualizar estado local
         const newCompletedDays = [...completedDays, dayNum];
         setCompletedDays(newCompletedDays);
-
-        // Atualizar localStorage para a Home
-        localStorage.setItem('primal_progress_days', newCompletedDays.length.toString());
 
         // Se completou o Dia 21, mostrar botão de reivindicar
         if (dayNum === 21) {
@@ -276,9 +274,6 @@ export default function JornadaPage() {
         // Atualizar estado local - remover dia da lista de completados
         const newCompletedDays = completedDays.filter(d => d !== dayNum);
         setCompletedDays(newCompletedDays);
-
-        // Atualizar localStorage para a Home
-        localStorage.setItem('primal_progress_days', newCompletedDays.length.toString());
 
         // Se era o dia 21, esconder botão de reivindicar
         if (dayNum === 21) {
