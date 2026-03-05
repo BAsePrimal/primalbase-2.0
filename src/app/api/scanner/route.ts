@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logError } from '@/lib/logger';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +23,16 @@ export async function POST(req: NextRequest) {
   let userEmail = 'Email não identificado';
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email) {
-      userEmail = user.email;
+    // IMPORTAÇÃO DINÂMICA DO SUPABASE (Blindagem contra erro de build da Vercel)
+    const { supabase } = await import('@/lib/supabase');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        userEmail = user.email;
+      }
+    } catch (authError) {
+      console.log('Sem sessão ativa no build');
     }
 
     const { image } = await req.json();
@@ -99,7 +104,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(analysisResult);
   } catch (error: any) {
-    await logError('IA Scanner (Visão)', error, userEmail);
+    // IMPORTAÇÃO DINÂMICA DO LOGGER
+    try {
+      const { logError } = await import('@/lib/logger');
+      await logError('IA Scanner (Visão)', error, userEmail);
+    } catch (logErr) {
+      console.log('Erro ao salvar log do scanner');
+    }
 
     console.error('Erro na API de scanner:', error);
     return NextResponse.json(

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { logError } from '@/lib/logger';
-import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +8,16 @@ export async function POST(request: NextRequest) {
   let userEmail = 'Email não identificado';
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.email) {
-      userEmail = user.email;
+    // IMPORTAÇÃO DINÂMICA DO SUPABASE (Esconde a conexão da Vercel durante o build)
+    const { supabase } = await import('@/lib/supabase');
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        userEmail = user.email;
+      }
+    } catch (authError) {
+      console.log('Sem sessão ativa no build');
     }
 
     const body = await request.json();
@@ -87,7 +92,13 @@ ESTRUTURA DA RESPOSTA:
     return NextResponse.json({ recipe: recipeText });
 
   } catch (error: any) {
-    await logError('IA Chef (Receitas)', error, userEmail);
+    // IMPORTAÇÃO DINÂMICA DO LOGGER (Impede o mesmo erro de build)
+    try {
+      const { logError } = await import('@/lib/logger');
+      await logError('IA Chef (Receitas)', error, userEmail);
+    } catch (logErr) {
+      console.log('Erro ao salvar log de receita');
+    }
 
     console.error('Erro ao gerar receita:', error);
     return NextResponse.json(
