@@ -6,6 +6,7 @@ import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCirc
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
+import BotaoAlerta from '@/components/BotaoAlerta';
 
 interface Profile {
   full_name: string;
@@ -260,6 +261,11 @@ export default function PerfilPage() {
             )}
           </div>
 
+          {/* 🔥 NOSSO RADAR PREMIUM AQUI EM CIMA 🔥 */}
+          <div className="w-full max-w-sm mx-auto">
+            <BotaoAlerta />
+          </div>
+
           {/* Botão de Edição e Gerenciar Assinatura */}
           <div className="flex flex-col items-center gap-3">
             <button
@@ -345,6 +351,21 @@ export default function PerfilPage() {
                 <span className="text-[10px] bg-amber-500 text-black px-2 py-1 rounded-md font-black tracking-widest">ADMIN</span>
               </button>
             )}
+
+            {/* 📱 BOTÃO DE INSTALAR APP RESTAURADO COM VISUAL PADRONIZADO 📱 */}
+            <button
+              onClick={() => window.dispatchEvent(new Event('show-install-prompt'))}
+              className="w-full flex items-center gap-4 p-4 mt-3 bg-zinc-900/40 hover:bg-amber-500/10 border border-zinc-800 hover:border-amber-500/40 rounded-xl text-left transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.98] shadow-sm cursor-pointer"
+            >
+              <div className="bg-amber-500/10 p-2.5 rounded-lg flex-shrink-0">
+                <Smartphone className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-zinc-200 font-semibold text-base">Instalar Aplicativo</h3>
+                <p className="text-zinc-500 text-sm">Adicione o PrimalBase à sua tela inicial</p>
+              </div>
+            </button>
+
             {/* BOTÃO DE SUPORTE WHATSAPP */}
             <a 
               href="https://wa.me/5531997374012?text=Ol%C3%A1%2C+sou+guerreiro+da+PrimalBase+e+preciso+de+suporte!" 
