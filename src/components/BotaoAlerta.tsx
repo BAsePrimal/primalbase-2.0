@@ -3,16 +3,44 @@
 import { useState, useEffect } from 'react';
 import OneSignal from 'react-onesignal';
 import { Bell, CheckCircle, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase'; // 👇 Importamos o banco de dados aqui
+import { supabase } from '@/lib/supabase';
 
 export default function BotaoAlerta() {
   const [inscrito, setInscrito] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
+  // 🔥 O CAÇADOR: Função inteligente que pega o ID e joga no banco 🔥
+  const sincronizarComBanco = async () => {
+    try {
+      const onesignalId = OneSignal.User.PushSubscription.id;
+      if (!onesignalId) return; // Se a internet estiver lenta e não gerou, aborta
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ onesignal_id: onesignalId })
+          .eq('id', user.id);
+        
+        if (!error) {
+          console.log('🐺 ID do radar cravado no Supabase com sucesso!');
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao sincronizar com Supabase', err);
+    }
+  };
+
   useEffect(() => {
-    const verificarStatus = setTimeout(async () => {
+    const verificarStatus = setTimeout(() => {
       if (typeof window !== 'undefined' && OneSignal.Notifications) {
-        setInscrito(OneSignal.Notifications.permission);
+        const temPermissao = OneSignal.Notifications.permission;
+        setInscrito(temPermissao);
+        
+        // Se o guerreiro JÁ DEU permissão antes (seu caso), sincroniza agora!
+        if (temPermissao) {
+          sincronizarComBanco();
+        }
       }
     }, 2000);
 
@@ -22,37 +50,26 @@ export default function BotaoAlerta() {
   const pedirPermissao = async () => {
     setCarregando(true);
     try {
-      // 1. Pede a permissão ao utilizador
       await OneSignal.Slidedown.promptPush();
       
-      // 2. Dá um tempo para os servidores do OneSignal gerarem o ID
-      setTimeout(async () => {
+      // O VIGIA: Checa a cada 1 segundo se o cara clicou em "Permitir" (até 15 seg)
+      let tentativas = 0;
+      const vigia = setInterval(() => {
+        tentativas++;
         const temPermissao = OneSignal.Notifications.permission;
-        setInscrito(temPermissao);
-        setCarregando(false);
+        const temId = !!OneSignal.User.PushSubscription.id;
 
-        // 3. 🔥 O ELO PERDIDO: Se ele aceitou, guardamos o ID no Supabase 🔥
-        if (temPermissao && OneSignal.User.PushSubscription.id) {
-          const onesignalId = OneSignal.User.PushSubscription.id;
-          
-          // Busca quem é o guerreiro que está logado agora
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (user) {
-            // Guarda o ID do radar no perfil dele
-            const { error } = await supabase
-              .from('profiles')
-              .update({ onesignal_id: onesignalId })
-              .eq('id', user.id);
-              
-            if (error) {
-              console.error('Erro ao guardar o ID do OneSignal no Supabase:', error);
-            } else {
-              console.log('🐺 Radar vinculado com sucesso ao guerreiro!');
-            }
-          }
+        if (temPermissao && temId) {
+          setInscrito(true);
+          setCarregando(false);
+          sincronizarComBanco(); // Pega o ID e salva!
+          clearInterval(vigia);
+        } else if (tentativas > 15 || temPermissao === false) {
+          // Desiste se demorar muito ou se ele clicar em "Agora Não"
+          setCarregando(false);
+          clearInterval(vigia);
         }
-      }, 3000); // 3 segundos garantem que a permissão foi processada
+      }, 1000);
 
     } catch (error) {
       console.error("Erro ao solicitar permissão:", error);
