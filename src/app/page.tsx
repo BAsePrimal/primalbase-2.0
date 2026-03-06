@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Sun, Moon, ChefHat, Brain, User, Flame, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompleteProfileGate from '@/components/CompleteProfileGate';
+// 👇 1. IMPORTAMOS O NOSSO BANNER AQUI 👇
+import BannerRadar from '@/components/BannerRadar';
 
 interface Profile {
   full_name: string;
@@ -127,6 +129,11 @@ export default function HomePage() {
       </header>
 
       <main className="flex-1 px-6 py-6 space-y-6">
+        
+        {/* 👇 2. POSICIONAMOS O BANNER ESTRATÉGICO AQUI, BEM NO TOPO DA TELA 👇 */}
+        {/* Lembre-se: Ele só vai aparecer se o usuário ainda não ativou a notificação */}
+        <BannerRadar />
+
         <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 rounded-2xl p-6 shadow-lg">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
