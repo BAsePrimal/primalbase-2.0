@@ -10,11 +10,16 @@ export default function BannerRadar() {
   const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
-    // Só mostra o banner se ele AINDA NÃO tiver dado permissão
     const checkStatus = setTimeout(() => {
-      if (typeof window !== 'undefined' && OneSignal.Notifications) {
-        if (!OneSignal.Notifications.permission) {
-          setVisivel(true);
+      if (typeof window !== 'undefined') {
+        // 🔥 A BLINDAGEM: Verifica se o usuário instalou na tela inicial (PWA) 🔥
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+
+        // Só mostra se for PWA e se ainda não tiver permissão
+        if (isStandalone && OneSignal.Notifications) {
+          if (!OneSignal.Notifications.permission) {
+            setVisivel(true);
+          }
         }
       }
     }, 1500);
@@ -25,32 +30,46 @@ export default function BannerRadar() {
   const handleAtivar = async () => {
     setCarregando(true);
     try {
-      // 🔥 O Pulo do Gato: Chama a permissão NATIVA direto, ignorando a caixa branca
       await OneSignal.Notifications.requestPermission();
       
-      setTimeout(async () => {
+      // Fica verificando se ele clicou em "Permitir" na janela da Apple
+      const verificaId = setInterval(async () => {
         const temPermissao = OneSignal.Notifications.permission;
-        if (temPermissao && OneSignal.User.PushSubscription.id) {
-          const onesignalId = OneSignal.User.PushSubscription.id;
-          const { data: { user } } = await supabase.auth.getUser();
+        const onesignalId = OneSignal.User.PushSubscription.id;
 
+        if (temPermissao && onesignalId) {
+          clearInterval(verificaId);
+          
+          const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             await supabase
               .from('profiles')
               .update({ onesignal_id: onesignalId })
               .eq('id', user.id);
           }
-          setVisivel(false); // O botão se autodestrói (some da tela)
+          
+          setVisivel(false); // O botão se autodestrói
+        } else if (temPermissao === false) {
+          // Se ele clicou em "Não Permitir", para de carregar e esconde
+          clearInterval(verificaId);
+          setCarregando(false);
+          setVisivel(false); 
         }
+      }, 1000);
+
+      // Desiste de procurar após 15 segundos para não ficar girando infinito
+      setTimeout(() => {
+        clearInterval(verificaId);
         setCarregando(false);
-      }, 2500);
+      }, 15000);
+
     } catch (error) {
       console.error('Erro no radar:', error);
       setCarregando(false);
     }
   };
 
-  if (!visivel) return null; // Invisibilidade ativada
+  if (!visivel) return null;
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-r from-zinc-900 to-zinc-950 border border-amber-500/30 rounded-2xl p-5 mb-6 shadow-lg">
