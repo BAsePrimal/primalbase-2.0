@@ -12,9 +12,30 @@ export default function OneSignalInit() {
       try {
         await OneSignal.init({
           appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
-          // 👇 A CHAVE DE OURO DA APPLE QUE VOCÊ ACABOU DE DESCOBRIR 👇
           safari_web_id: "web.onesignal.auto.64337d6b-67cd-4296-b41c-d41bc6b4a874",
-          allowLocalhostAsSecureOrigin: true, // Permite rodar liso no seu PC
+          allowLocalhostAsSecureOrigin: true,
+          
+          // 👇 TRADUÇÃO COM O DELAY ADICIONADO PARA O TYPESCRIPT NÃO RECLAMAR 👇
+          promptOptions: {
+            slidedown: {
+              prompts: [
+                {
+                  type: "push",
+                  autoPrompt: false,
+                  text: {
+                    actionMessage: "Queremos te enviar alertas sobre o seu jejum e a sua evolução na alcateia.",
+                    acceptButton: "Permitir",
+                    cancelButton: "Agora Não"
+                  },
+                  delay: {
+                    pageViews: 1,
+                    timeDelay: 0
+                  }
+                }
+              ]
+            }
+          }
+
         });
         console.log('🐺 Radar OneSignal ativado na matilha!');
       } catch (error) {
@@ -25,5 +46,5 @@ export default function OneSignalInit() {
     initOneSignal();
   }, []);
 
-  return null; // É invisível, roda apenas nos bastidores
+  return null;
 }
