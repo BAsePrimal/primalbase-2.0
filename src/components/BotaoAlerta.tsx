@@ -9,25 +9,20 @@ export default function BotaoAlerta() {
   const [inscrito, setInscrito] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  // 🔥 O CAÇADOR: Função inteligente que pega o ID e joga no banco 🔥
   const sincronizarComBanco = async () => {
     try {
       const onesignalId = OneSignal.User.PushSubscription.id;
-      if (!onesignalId) return; // Se a internet estiver lenta e não gerou, aborta
+      if (!onesignalId) return;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { error } = await supabase
+        await supabase
           .from('profiles')
           .update({ onesignal_id: onesignalId })
           .eq('id', user.id);
-        
-        if (!error) {
-          console.log('🐺 ID do radar cravado no Supabase com sucesso!');
-        }
       }
     } catch (err) {
-      console.error('Erro ao sincronizar com Supabase', err);
+      console.error('Erro ao sincronizar', err);
     }
   };
 
@@ -36,43 +31,45 @@ export default function BotaoAlerta() {
       if (typeof window !== 'undefined' && OneSignal.Notifications) {
         const temPermissao = OneSignal.Notifications.permission;
         setInscrito(temPermissao);
-        
-        // Se o guerreiro JÁ DEU permissão antes (seu caso), sincroniza agora!
         if (temPermissao) {
           sincronizarComBanco();
         }
       }
-    }, 2000);
-
+    }, 1500);
     return () => clearTimeout(verificarStatus);
   }, []);
 
   const pedirPermissao = async () => {
+    // 🔥 REGRA DA APPLE: O pedido nativo tem que ser a PRIMEIRA coisa ao clicar
+    // Sem delay, sem setCarregando antes, senão o Safari bloqueia e joga a tela branca!
+    const promisePermissao = OneSignal.Notifications.requestPermission();
     setCarregando(true);
+
     try {
-      await OneSignal.Slidedown.promptPush();
-      
-      // O VIGIA: Checa a cada 1 segundo se o cara clicou em "Permitir" (até 15 seg)
-      let tentativas = 0;
+      await promisePermissao;
+
       const vigia = setInterval(() => {
-        tentativas++;
         const temPermissao = OneSignal.Notifications.permission;
         const temId = !!OneSignal.User.PushSubscription.id;
 
         if (temPermissao && temId) {
           setInscrito(true);
           setCarregando(false);
-          sincronizarComBanco(); // Pega o ID e salva!
+          sincronizarComBanco();
           clearInterval(vigia);
-        } else if (tentativas > 15 || temPermissao === false) {
-          // Desiste se demorar muito ou se ele clicar em "Agora Não"
+        } else if (temPermissao === false) {
           setCarregando(false);
           clearInterval(vigia);
         }
       }, 1000);
 
+      setTimeout(() => {
+        clearInterval(vigia);
+        setCarregando(false);
+      }, 15000);
+
     } catch (error) {
-      console.error("Erro ao solicitar permissão:", error);
+      console.error("Erro ao solicitar:", error);
       setCarregando(false);
     }
   };
@@ -100,7 +97,7 @@ export default function BotaoAlerta() {
             <Bell className="w-5 h-5 text-amber-500" />
           )}
         </div>
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start text-left">
           <span className="text-zinc-100 font-bold text-sm">
             {carregando ? 'Conectando Radar...' : 'Ativar Alertas da Matilha'}
           </span>
