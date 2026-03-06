@@ -399,133 +399,140 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* TABELA DE USUÁRIOS VIRTUALIZADA COM ALTURA FIXA PARA NÃO SUMIR */}
+      {/* 🔥 TABELA COM SCROLL HORIZONTAL BLINDADO PARA MOBILE 🔥 */}
       <div className="bg-zinc-900/40 border border-zinc-800 rounded-3xl overflow-hidden backdrop-blur-xl shadow-2xl flex flex-col h-[600px]">
         
-        {/* CABEÇALHO FIXO DA TABELA */}
-        <div className="overflow-x-auto overflow-y-hidden shrink-0">
-          <table className="w-full text-left table-fixed">
-            <thead>
-              <tr className="bg-zinc-950/80 text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-zinc-800">
-                <th className="p-5 w-[25%]">Membro</th>
-                <th className="p-5 w-[20%]">Fisiologia</th>
-                <th className="p-5 w-[15%] text-center">Progresso</th>
-                <th className="p-5 w-[20%] text-center">
-                  IA (Total) {sortBy !== 'alfabetica' && <span className="text-amber-500 ml-1">▼ RANKING</span>}
-                </th>
-                <th className="p-5 w-[20%] text-center">Ações Rápidas</th>
-              </tr>
-            </thead>
-          </table>
-        </div>
+        {/* ENVOLTÓRIO GLOBAL: Garante que Cabeçalho e Linhas rolam juntos no celular */}
+        <div className="overflow-x-auto custom-scrollbar-horizontal flex-1 flex flex-col">
+          {/* LARGURA MÍNIMA: Se a tela for menor que 800px, cria o scroll */}
+          <div className="min-w-[800px] flex flex-col h-full">
 
-        {/* CORPO DA TABELA COM SCROLL INFINITO (VIRTUALIZADO) */}
-        <div 
-          ref={parentRef} 
-          className="flex-1 overflow-y-auto custom-scrollbar"
-          style={{ contain: 'strict' }}
-        >
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const user = filteredAndSortedUsers[virtualRow.index];
-              return (
-                <div
-                  key={virtualRow.key}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: `${virtualRow.size}px`,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                  className="flex items-center border-b border-zinc-800/30 hover:bg-white/[0.02] transition-colors"
-                >
-                  
-                  {/* COLUNA 1: Membro */}
-                  <div className="p-5 w-[25%]">
-                    <div className="font-bold text-zinc-100 capitalize text-sm truncate">{user.full_name || 'Guerreiro Sem Nome'}</div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <Calendar className="w-3 h-3 text-zinc-500" />
-                      <span className="text-[10px] text-zinc-500 font-mono">{formatDate(user.created_at || user.updated_at)}</span>
-                    </div>
-                  </div>
-                  
-                  {/* COLUNA 2: Fisiologia */}
-                  <div className="p-5 w-[20%]">
-                    <div className="text-xs font-semibold text-zinc-300 truncate">{user.goal || 'Meta Indefinida'}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase mt-1 truncate">
-                      {user.gender || '—'} • {user.current_weight ? `${user.current_weight}kg` : ''}
-                    </div>
-                  </div>
-                  
-                  {/* COLUNA 3: Progresso */}
-                  <div className="p-5 w-[15%]">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="flex items-center gap-2">
-                         <span className={`text-xs font-black ${user.progress === 21 ? 'text-yellow-500' : 'text-zinc-400'}`}>
-                           {user.progress}/21
-                         </span>
-                         {user.progress === 21 && <Trophy className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" />}
-                      </div>
-                      <div className="w-16 h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50">
-                        <div 
-                          className={`h-full transition-all duration-1000 ${user.progress === 21 ? 'bg-gradient-to-r from-yellow-500 to-amber-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-amber-600'}`}
-                          style={{ width: `${(Number(user.progress) / 21) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* COLUNA 4: IA (Total) */}
-                  <div className="p-5 w-[20%] text-center">
-                    <div className="flex items-center justify-center gap-3 text-xs font-mono font-bold">
-                      <div title="Scans Totais" className={`flex items-center gap-1 ${sortBy === 'scans' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
-                        <ScanSearch className={`w-4 h-4 ${sortBy === 'scans' ? 'text-amber-500' : 'text-emerald-500/50'}`}/> 
-                        {user.total_scans || 0}
-                      </div>
-                      <div title="Receitas Totais" className={`flex items-center gap-1 ${sortBy === 'recipes' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
-                        <Utensils className={`w-4 h-4 ${sortBy === 'recipes' ? 'text-amber-500' : 'text-orange-500/50'}`}/> 
-                        {user.total_recipes || 0}
-                      </div>
-                      <div title="Dúvidas Totais" className={`flex items-center gap-1 ${sortBy === 'chats' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
-                        <MessageSquare className={`w-4 h-4 ${sortBy === 'chats' ? 'text-amber-500' : 'text-purple-500/50'}`}/> 
-                        {user.total_chats || 0}
-                      </div>
-                    </div>
-                  </div>
+            {/* CABEÇALHO FIXO DA TABELA */}
+            <div className="shrink-0 border-b border-zinc-800 bg-zinc-950/80">
+              <table className="w-full text-left table-fixed">
+                <thead>
+                  <tr className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <th className="p-5 w-[25%]">Membro</th>
+                    <th className="p-5 w-[20%]">Fisiologia</th>
+                    <th className="p-5 w-[15%] text-center">Progresso</th>
+                    <th className="p-5 w-[20%] text-center">
+                      IA (Total) {sortBy !== 'alfabetica' && <span className="text-amber-500 ml-1">▼ RANKING</span>}
+                    </th>
+                    <th className="p-5 w-[20%] text-center">Ações Rápidas</th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
 
-                  {/* COLUNA 5: Ações Rápidas */}
-                  <div className="p-5 w-[20%] text-center flex items-center justify-center gap-3">
-                    <button
-                      onClick={() => setSelectedUser(user)}
-                      className="p-2 bg-zinc-900 border border-zinc-700 text-amber-500 rounded-xl hover:bg-zinc-800 hover:text-amber-400 transition-all shadow-md group"
-                      title="Ver Dossiê e IA"
+            {/* CORPO DA TABELA COM SCROLL INFINITO (VIRTUALIZADO) */}
+            <div 
+              ref={parentRef} 
+              className="flex-1 overflow-y-auto custom-scrollbar"
+              style={{ contain: 'strict' }}
+            >
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const user = filteredAndSortedUsers[virtualRow.index];
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className="flex items-center border-b border-zinc-800/30 hover:bg-white/[0.02] transition-colors"
                     >
-                      <Eye className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    </button>
+                      {/* COLUNA 1: Membro */}
+                      <div className="p-5 w-[25%]">
+                        <div className="font-bold text-zinc-100 capitalize text-sm truncate">{user.full_name || 'Guerreiro Sem Nome'}</div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Calendar className="w-3 h-3 text-zinc-500" />
+                          <span className="text-[10px] text-zinc-500 font-mono">{formatDate(user.created_at || user.updated_at)}</span>
+                        </div>
+                      </div>
+                      
+                      {/* COLUNA 2: Fisiologia */}
+                      <div className="p-5 w-[20%]">
+                        <div className="text-xs font-semibold text-zinc-300 truncate">{user.goal || 'Meta Indefinida'}</div>
+                        <div className="text-[10px] text-zinc-500 uppercase mt-1 truncate">
+                          {user.gender || '—'} • {user.current_weight ? `${user.current_weight}kg` : ''}
+                        </div>
+                      </div>
+                      
+                      {/* COLUNA 3: Progresso */}
+                      <div className="p-5 w-[15%]">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center gap-2">
+                             <span className={`text-xs font-black ${user.progress === 21 ? 'text-yellow-500' : 'text-zinc-400'}`}>
+                               {user.progress}/21
+                             </span>
+                             {user.progress === 21 && <Trophy className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" />}
+                          </div>
+                          <div className="w-16 h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800/50">
+                            <div 
+                              className={`h-full transition-all duration-1000 ${user.progress === 21 ? 'bg-gradient-to-r from-yellow-500 to-amber-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-amber-600'}`}
+                              style={{ width: `${(Number(user.progress) / 21) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* COLUNA 4: IA (Total) */}
+                      <div className="p-5 w-[20%] text-center">
+                        <div className="flex items-center justify-center gap-3 text-xs font-mono font-bold">
+                          <div title="Scans Totais" className={`flex items-center gap-1 ${sortBy === 'scans' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
+                            <ScanSearch className={`w-4 h-4 ${sortBy === 'scans' ? 'text-amber-500' : 'text-emerald-500/50'}`}/> 
+                            {user.total_scans || 0}
+                          </div>
+                          <div title="Receitas Totais" className={`flex items-center gap-1 ${sortBy === 'recipes' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
+                            <Utensils className={`w-4 h-4 ${sortBy === 'recipes' ? 'text-amber-500' : 'text-orange-500/50'}`}/> 
+                            {user.total_recipes || 0}
+                          </div>
+                          <div title="Dúvidas Totais" className={`flex items-center gap-1 ${sortBy === 'chats' ? 'text-amber-500 scale-110' : 'text-zinc-500'}`}>
+                            <MessageSquare className={`w-4 h-4 ${sortBy === 'chats' ? 'text-amber-500' : 'text-purple-500/50'}`}/> 
+                            {user.total_chats || 0}
+                          </div>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={() => toggleVip(user.id, user.is_subscriber)}
-                      className={`text-[10px] font-black px-4 py-2.5 rounded-xl transition-all uppercase tracking-tighter border whitespace-nowrap ${
-                        user.is_subscriber 
-                        ? 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10' 
-                        : 'bg-amber-500 border-amber-400 text-black hover:bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)] hover:scale-105'
-                      }`}
-                    >
-                      {user.is_subscriber ? 'Revogar VIP' : 'Ativar VIP'}
-                    </button>
-                  </div>
+                      {/* COLUNA 5: Ações Rápidas */}
+                      <div className="p-5 w-[20%] text-center flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="p-2 bg-zinc-900 border border-zinc-700 text-amber-500 rounded-xl hover:bg-zinc-800 hover:text-amber-400 transition-all shadow-md group"
+                          title="Ver Dossiê e IA"
+                        >
+                          <Eye className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        </button>
 
-                </div>
-              );
-            })}
+                        <button
+                          onClick={() => toggleVip(user.id, user.is_subscriber)}
+                          className={`text-[10px] font-black px-4 py-2.5 rounded-xl transition-all uppercase tracking-tighter border whitespace-nowrap ${
+                            user.is_subscriber 
+                            ? 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/10' 
+                            : 'bg-amber-500 border-amber-400 text-black hover:bg-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.2)] hover:scale-105'
+                          }`}
+                        >
+                          {user.is_subscriber ? 'Revogar VIP' : 'Ativar VIP'}
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
