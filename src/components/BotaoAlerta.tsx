@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import OneSignal from 'react-onesignal';
-// 👇 Adicionamos o Loader2 aqui
 import { Bell, CheckCircle, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase'; // 👇 Importamos o banco de dados aqui
 
 export default function BotaoAlerta() {
   const [inscrito, setInscrito] = useState(false);
-  const [carregando, setCarregando] = useState(false); // Estado para a animação do clique
+  const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
-    const verificarStatus = setTimeout(() => {
+    const verificarStatus = setTimeout(async () => {
       if (typeof window !== 'undefined' && OneSignal.Notifications) {
         setInscrito(OneSignal.Notifications.permission);
       }
@@ -20,14 +20,40 @@ export default function BotaoAlerta() {
   }, []);
 
   const pedirPermissao = async () => {
-    setCarregando(true); // O botão reage instantaneamente ao clique
+    setCarregando(true);
     try {
+      // 1. Pede a permissão ao utilizador
       await OneSignal.Slidedown.promptPush();
       
-      setTimeout(() => {
-        setInscrito(OneSignal.Notifications.permission);
-        setCarregando(false); // Para a animação
-      }, 1000);
+      // 2. Dá um tempo para os servidores do OneSignal gerarem o ID
+      setTimeout(async () => {
+        const temPermissao = OneSignal.Notifications.permission;
+        setInscrito(temPermissao);
+        setCarregando(false);
+
+        // 3. 🔥 O ELO PERDIDO: Se ele aceitou, guardamos o ID no Supabase 🔥
+        if (temPermissao && OneSignal.User.PushSubscription.id) {
+          const onesignalId = OneSignal.User.PushSubscription.id;
+          
+          // Busca quem é o guerreiro que está logado agora
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            // Guarda o ID do radar no perfil dele
+            const { error } = await supabase
+              .from('profiles')
+              .update({ onesignal_id: onesignalId })
+              .eq('id', user.id);
+              
+            if (error) {
+              console.error('Erro ao guardar o ID do OneSignal no Supabase:', error);
+            } else {
+              console.log('🐺 Radar vinculado com sucesso ao guerreiro!');
+            }
+          }
+        }
+      }, 3000); // 3 segundos garantem que a permissão foi processada
+
     } catch (error) {
       console.error("Erro ao solicitar permissão:", error);
       setCarregando(false);
@@ -51,7 +77,6 @@ export default function BotaoAlerta() {
     >
       <div className="flex items-center gap-3">
         <div className="p-2 bg-amber-500/10 rounded-lg group-hover:bg-amber-500/20 transition-colors">
-          {/* Se estiver carregando, mostra a rodinha girando. Se não, mostra o sino */}
           {carregando ? (
             <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
           ) : (
@@ -65,7 +90,6 @@ export default function BotaoAlerta() {
           <span className="text-zinc-500 text-xs">Avisos e progressos da sua jornada</span>
         </div>
       </div>
-      {/* Esconde o ponto pulsante se estiver carregando */}
       {!carregando && <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.8)]"></div>}
     </button>
   );
