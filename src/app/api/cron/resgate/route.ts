@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
 
-// 1. Inicia a Artilharia de E-mail
-const resend = new Resend(process.env.RESEND_API_KEY);
-const REMETENTE_OFICIAL = 'PrimalBase <comandante@primalbase.com.br>'; 
+// Deixe apenas o texto do remetente aqui fora
+const REMETENTE_OFICIAL = 'PrimalBase <suporte@primalbase.com.br>'; 
 
 export async function GET(request: Request) {
+  // 👇 MUDANÇA AQUI: O Resend agora fica DENTRO da função GET
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
   const ONESIGNAL_REST_KEY = process.env.ONESIGNAL_REST_API_KEY;
 

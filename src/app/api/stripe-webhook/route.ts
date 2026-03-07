@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
 
             // 3. Dispara o tiro de resgate financeiro
             await resend.emails.send({
-              from: 'PrimalBase <comandante@primalbase.com.br>',
+              from: 'PrimalBase <suporte@primalbase.com.br>',
               to: profileData.email,
               subject: '⚠️ Pagamento Recusado - Acesso à Matilha Pausado',
               html: `
