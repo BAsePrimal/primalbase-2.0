@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { Sun, Moon, ChefHat, Brain, User, Flame, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompleteProfileGate from '@/components/CompleteProfileGate';
+import Rastreador from '@/components/Rastreador';
 // 👇 1. IMPORTAMOS O NOSSO BANNER AQUI 👇
 import BannerRadar from '@/components/BannerRadar';
+
 
 interface Profile {
   full_name: string;
@@ -113,6 +115,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col pb-20">
       
       <CompleteProfileGate />
+      <Rastreador />
 
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
         <img 

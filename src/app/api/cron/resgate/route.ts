@@ -2,50 +2,52 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
 export async function GET(request: Request) {
-  // 1. Segurança: Garante que temos as chaves para atirar
   const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
   const ONESIGNAL_REST_KEY = process.env.ONESIGNAL_REST_API_KEY;
 
   if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_KEY) {
-    return NextResponse.json({ error: 'Faltam as chaves do arsenal.' }, { status: 500 });
+    return NextResponse.json({ error: 'Faltam as chaves.' }, { status: 500 });
   }
 
   try {
-    // 2. O Cão Farejador: Busca os guerreiros inativos (Exemplo: Filtra quem tem ID do OneSignal salvo)
-    // Na vida real, você pode filtrar pela data do last_checkin aqui
+    // ⏱️ O CÁLCULO DE TEMPO: Pega a data de exatos 3 dias atrás
+    const limiteDias = new Date();
+    limiteDias.setDate(limiteDias.getDate() - 3);
+    const dataCorteISO = limiteDias.toISOString();
+
+    // 🕵️ O Cão Farejador Inteligente:
+    // Pega quem TEM ID de notificação (não é null)
+    // E que a ÚLTIMA VEZ que entrou (updated_at) foi ANTES de 3 dias atrás (lt = less than)
     const { data: guerreirosPerdidos, error } = await supabase
       .from('profiles')
-      .select('onesignal_id, full_name')
-      .not('onesignal_id', 'is', null);
+      .select('onesignal_id, full_name, updated_at')
+      .not('onesignal_id', 'is', null)
+      .lt('updated_at', dataCorteISO);
 
     if (error || !guerreirosPerdidos || guerreirosPerdidos.length === 0) {
-      return NextResponse.json({ message: 'Nenhum alvo encontrado hoje.' });
+      return NextResponse.json({ message: 'Nenhum alvo sumido hoje. Todos estão caçando.' });
     }
 
-    // Pega só os IDs dos celulares
     const alvos = guerreirosPerdidos.map((g: any) => g.onesignal_id);
 
-    // 3. Montagem da Ogiva (Notificação Rica com Deep Link e Botões)
+    // 🦁 A Ogiva do Leão
     const payload = {
       app_id: ONESIGNAL_APP_ID,
-      include_player_ids: alvos, // Dispara só para os IDs específicos que o banco achou!
+      include_player_ids: alvos,
       headings: { 
-        en: "A selva sente sua falta. 🐺", 
-        pt: "A selva sente sua falta. 🐺" 
+        en: "A selva sente sua falta. 🦁", 
+        pt: "A selva sente sua falta. 🦁" 
       },
       contents: { 
-        en: "O lobo que não caça, passa fome. Volte para o plano e registre seu progresso!", 
-        pt: "O lobo que não caça, passa fome. Volte para o plano e registre seu progresso!" 
+        en: "Um verdadeiro leão não abandona a caça. Volte para o plano e registre seu progresso!", 
+        pt: "Um verdadeiro leão não abandona a caça. Volte para o plano e registre seu progresso!" 
       },
-      // 👇 MELHORIA 1: Deep Link - Abre o app DIRETO na tela da Jornada
-      url: "https://seusite.com.br/jornada", 
-      // 👇 MELHORIA 2: Botões de Ação na própria notificação
+      url: "https://primalbase.com.br/jornada", 
       buttons: [
         { id: "checkin_btn", text: "Fazer Check-in Agora", icon: "ic_menu_send" }
       ]
     };
 
-    // 4. O Disparo
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
     });
 
   } catch (err) {
-    console.error('Erro no robô de resgate:', err);
+    console.error('Erro no robô:', err);
     return NextResponse.json({ error: 'Falha na missão.' }, { status: 500 });
   }
 }
