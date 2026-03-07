@@ -16,6 +16,19 @@ const supabaseAdmin =
     ? createClient(supabaseUrl, supabaseServiceRoleKey)
     : (null as any);
 
+// 🚨 ACIONA A SUA CAIXA PRETA OFICIAL (Aparece no Admin + Manda E-mail)
+async function acionarCaixaPreta(userId: string, erroDetalhado: any) {
+  try {
+    const { logError } = await import('@/lib/logger');
+    const mensagemErro = `Falha Crítica no Pagamento. Erro no banco de dados ao tentar atualizar o status VIP do usuário. Erro: ${erroDetalhado?.message || JSON.stringify(erroDetalhado)}`;
+    // Envia para o seu logger oficial: (Serviço, Erro, "Identificador")
+    await logError('Stripe Webhook (Pagamento)', mensagemErro, `Guerreiro ID: ${userId}`);
+    console.log("🚨 Pane registrada na Caixa Preta com sucesso!");
+  } catch (err) {
+    console.error("Falha dupla: O logger oficial não conseguiu registrar o erro.", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get('stripe-signature');
@@ -70,10 +83,14 @@ export async function POST(req: NextRequest) {
             );
 
             // Atualizar perfil do usuário para assinante
-            await supabaseAdmin
+            const { error: profileError } = await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: isActive })
               .eq('id', userId);
+
+            if (profileError) {
+              await acionarCaixaPreta(userId, profileError);
+            }
 
             // Salvar/atualizar dados da assinatura
             const currentPeriodEnd = (subscription as any).current_period_end;
@@ -81,7 +98,7 @@ export async function POST(req: NextRequest) {
               ? new Date(currentPeriodEnd * 1000).toISOString()
               : new Date().toISOString();
 
-            await supabaseAdmin
+            const { error: subError } = await supabaseAdmin
               .from('stripe_subscriptions')
               .upsert(
                 {
@@ -95,15 +112,23 @@ export async function POST(req: NextRequest) {
                 { onConflict: 'user_id' }
               );
 
+            if (subError) {
+              await acionarCaixaPreta(userId, subError);
+            }
+
             console.log(
               `✅ checkout.session.completed processed for user ${userId}`
             );
           } else {
             // Caso extremo: não há subscription ainda, mas já marcamos o usuário como assinante
-            await supabaseAdmin
+            const { error: noSubProfileError } = await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: true })
               .eq('id', userId);
+
+            if (noSubProfileError) {
+              await acionarCaixaPreta(userId, noSubProfileError);
+            }
 
             console.log(
               `✅ checkout.session.completed without subscriptionId for user ${userId}`
@@ -133,10 +158,14 @@ export async function POST(req: NextRequest) {
         const isActive = ['active', 'trialing'].includes(subscription.status);
 
         // Atualizar is_subscriber no perfil
-        await supabaseAdmin
+        const { error: updateProfileError } = await supabaseAdmin
           .from('profiles')
           .update({ is_subscriber: isActive })
           .eq('id', userId);
+
+        if (updateProfileError) {
+          await acionarCaixaPreta(userId, updateProfileError);
+        }
 
         // Salvar/atualizar dados da assinatura
         const currentPeriodEnd = subscription.current_period_end;
@@ -144,7 +173,7 @@ export async function POST(req: NextRequest) {
           ? new Date(currentPeriodEnd * 1000).toISOString()
           : new Date().toISOString();
 
-        await supabaseAdmin
+        const { error: updateSubError } = await supabaseAdmin
           .from('stripe_subscriptions')
           .upsert({
             user_id: userId,
@@ -154,6 +183,10 @@ export async function POST(req: NextRequest) {
             current_period_end: safeCurrentPeriodEnd,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'user_id' });
+
+        if (updateSubError) {
+          await acionarCaixaPreta(userId, updateSubError);
+        }
 
         console.log(`✅ Subscription ${subscription.status} for user ${userId}`);
         break;
@@ -242,6 +275,41 @@ export async function POST(req: NextRequest) {
           .eq('stripe_customer_id', stripeCustomerId);
 
         console.log(`⚠️ Payment failed for user ${userId}`);
+        // --- 🚨 INÍCIO DO AVISO DE FALHA DE PAGAMENTO ---
+        try {
+          // 1. Busca o e-mail do guerreiro no banco
+          const { data: profileData } = await supabaseAdmin
+            .from('profiles')
+            .select('email')
+            .eq('id', userId)
+            .maybeSingle();
+
+          if (profileData?.email) {
+            // 2. Importa o Resend direto aqui para não quebrar o topo do seu arquivo
+            const { Resend } = await import('resend');
+            const resend = new Resend(process.env.RESEND_API_KEY);
+
+            // 3. Dispara o tiro de resgate financeiro
+            await resend.emails.send({
+              from: 'PrimalBase <comandante@primalbase.com.br>',
+              to: profileData.email,
+              subject: '⚠️ Pagamento Recusado - Acesso à Matilha Pausado',
+              html: `
+                <div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center; border-radius: 8px;">
+                  <h2 style="color: #ef4444;">Acesso VIP Pausado</h2>
+                  <p>Guerreiro, seu cartão foi recusado no último ciclo.</p>
+                  <p>Seu acesso às jornadas e receitas exclusivas foi bloqueado temporariamente.</p>
+                  <p>Atualize sua forma de pagamento para voltar a caçar com a matilha.</p>
+                  <a href="https://primalbase.com.br/perfil" style="display: inline-block; padding: 12px 24px; background-color: #ef4444; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold;">Atualizar Pagamento</a>
+                </div>
+              `
+            });
+            console.log(`📧 Aviso de falha enviado com sucesso para: ${profileData.email}`);
+          }
+        } catch (emailErr) {
+          console.error('Falha ao tentar enviar e-mail de cobrança. O sistema segue normal:', emailErr);
+        }
+        // --- FIM DO AVISO DE FALHA DE PAGAMENTO ---
         break;
       }
 

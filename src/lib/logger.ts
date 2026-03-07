@@ -21,7 +21,7 @@ export async function logError(serviceName: string, error: any, userEmail: strin
 
     // 2. Dispara a Sirene pro seu E-mail
     await resend.emails.send({
-      from: 'PrimalBase Admin <onboarding@resend.dev>', // Remetente padrão do Resend (não mude isso no plano grátis)
+      from: 'PrimalBase Admin <suporte@primalbase.com.br>', // Remetente padrão do Resend (não mude isso no plano grátis)
       to: ADMIN_EMAIL,
       subject: `🚨 ALERTA PRIMALBASE: Falha no ${serviceName}`,
       html: `

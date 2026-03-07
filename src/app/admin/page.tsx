@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { supabase } from '@/lib/supabase';
-import { Users, Crown, Activity, Utensils, ScanSearch, MessageSquare, ShieldAlert, ArrowLeft, Trophy, Loader2, Search, Filter, Calendar, Eye, Bot, AlertTriangle, X, Download, Phone } from 'lucide-react';
+import { Users, Crown, Activity, Utensils, ScanSearch, MessageSquare, ShieldAlert, ArrowLeft, Trophy, Loader2, Search, Filter, Calendar, Eye, Bot, AlertTriangle, X, Download, Phone, MessageCircle } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -583,13 +583,15 @@ export default function AdminPage() {
               </div>
 
               {selectedUser.whatsapp && (
-                <button
-                  onClick={() => openWhatsApp(selectedUser.whatsapp as string)}
+                <a
+                  href={`https://wa.me/55${(selectedUser.whatsapp as string).replace(/\D/g, '')}?text=Fala ${encodeURIComponent(selectedUser.full_name?.split(' ')[0] || 'Guerreiro')}, aqui é o Comandante da PrimalBase. A matilha sente sua falta! 🐺`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 p-4 bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] rounded-2xl transition-all font-bold tracking-wide group shadow-sm shadow-[#25D366]/5"
                 >
                   <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   Chamar Guerreiro no WhatsApp
-                </button>
+                </a>
               )}
 
               <div className="bg-zinc-950/50 border border-zinc-800 p-4 rounded-2xl flex items-center gap-4">
@@ -598,7 +600,7 @@ export default function AdminPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Última Atividade</p>
-                  <p className="text-xs text-zinc-200 font-medium truncate">{formatDate(selectedUser.last_checkin || '')}</p>
+                  <p className="text-xs text-zinc-200 font-medium truncate">{formatDate(selectedUser.updated_at || '')}</p>
                 </div>
               </div>
 
