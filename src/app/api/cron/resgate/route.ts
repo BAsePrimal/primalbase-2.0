@@ -108,30 +108,41 @@ export async function GET(request: Request) {
         "A selva sente a sua falta. 🐺", 
         "3 dias sem check-in. O lobo que não caça, passa fome.",
         "A selva sente a sua falta... 🐺",
-        `<div style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #0A0A0A; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
-          <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
-            <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
-          </div>
-          
-          <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-            <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Onde está você, guerreiro?</h2>
+        `<!DOCTYPE html>
+        <html lang="pt-BR" style="color-scheme: dark;">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="color-scheme" content="dark">
+          <meta name="supported-color-schemes" content="dark">
+        </head>
+        <body style="background-color: #0A0A0A; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #0A0A0A; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
+              <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
+            </div>
             
-            <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Já fazem 3 dias que não dá as caras na matilha.
-            </p>
-            <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
-              O lobo que não caça, passa fome. Volte para o plano e registe o seu progresso.
-            </p>
+            <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Onde está você, guerreiro?</h2>
+              
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                Já fazem 3 dias que não dá as caras na matilha.
+              </p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
+                O lobo que não caça, passa fome. Volte para o plano e registre o seu progresso.
+              </p>
+              
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Retornar à Base
+              </a>
+            </div>
             
-            <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-              Retornar à Base
-            </a>
+            <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+            </div>
           </div>
-          
-          <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
-            <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
-          </div>
-        </div>`
+        </body>
+        </html>`
       );
     
     // DIA 7
