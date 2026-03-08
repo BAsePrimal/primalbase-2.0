@@ -3,6 +3,10 @@
       {
         "path": "/api/cron/resgate",
         "schedule": "0 6 * * *"
+      },
+      {
+        "path": "/api/cron/anti-cheat",
+        "schedule": "0 21 * * 5"
       }
     ]
   }

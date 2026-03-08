@@ -169,11 +169,11 @@ export async function GET(request: Request) {
       );
       
       // DIA 15
-      await dispararAtaqueDuplo(
+    await dispararAtaqueDuplo(
         alvosDia15, 
-        "Seu lugar na matilha está em risco. ⚠️", 
-        "Vai continuar comendo lixo industrializado? Novas receitas liberadas.",
-        "Seu lugar na matilha em risco ⚠️",
+        "Protocolo de Choque Liberado ⚠️", 
+        "Destrua o lixo que você comeu nas últimas duas semanas. Acesso expira em 24h.",
+        "Protocolo de Choque Liberado ⚠️",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -186,10 +186,11 @@ export async function GET(request: Request) {
               <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Alerta Vermelho</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Enquanto você esteve fora, o Chef Primal criou novas receitas brutais.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Você vai voltar para a comida real ou vai continuar se envenenando com lixo industrial?</p>
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Ver Novas Receitas</a>
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">O Estrago Pode Ser Revertido.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Duas semanas fora do plano. Sabemos que o mundo moderno te envenenou.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">O Chef Primal acabou de liberar um <strong>Protocolo de Choque de 3 Dias</strong> para limpar o seu corpo e te colocar de volta no modo alfa.</p>
+              <p style="color: #EF4444; font-size: 14px; font-weight: bold; line-height: 1.6; margin-bottom: 35px;">⚠️ Este protocolo confidencial vai sumir do seu radar em 24 horas.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Acessar Protocolo de Choque</a>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
               <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
