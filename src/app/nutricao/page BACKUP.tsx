@@ -6,19 +6,8 @@ import PaywallModal from '@/components/PaywallModal';
 import { 
   ShoppingCart, Utensils, Check, Flame, 
   Coffee, Droplets, Beef, Carrot, 
-  Milk, Package, Trash2, Sparkles, Circle, Lock, AlertTriangle 
+  Milk, Package, Trash2, Sparkles, Circle, Lock 
 } from 'lucide-react';
-
-// --- ARSENAL DE CHOQUE (BOTÃO SOS) ---
-const sosMessages = [
-  "A gratificação instantânea é a inimiga do seu resultado. O que você come hoje em 5 minutos, você veste a semana inteira.",
-  "O lixo industrializado foi feito por corporações para te manter fraco, viciado e doente. Escolha ser o predador, não a presa.",
-  "Você não está com fome, está entediado. Beba um copo de água gelada e vá fazer algo útil.",
-  "Lobo alfa não come ração. Volte para a comida real.",
-  "O pico de dopamina vai durar 5 minutos. O arrependimento vai te assombrar o dia todo. Vale a pena ceder agora?",
-  "A dor da disciplina pesa gramas. A dor do arrependimento pesa toneladas. Mantenha a guarda alta.",
-  "A mediocridade do mundo moderno está testando você agora mesmo. Mostre que sua mente controla o seu corpo, e não o contrário."
-];
 
 // --- TIPAGENS MANUAIS (Para evitar erro de banco desatualizado) ---
 interface Food {
@@ -63,10 +52,6 @@ export default function NutritionPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   
-  // Estados do SOS
-  const [showSosModal, setShowSosModal] = useState(false);
-  const [currentSosMessage, setCurrentSosMessage] = useState('');
-
   // Estados de Dados
   const [user, setUser] = useState<any>(null);
   const [isSubscriber, setIsSubscriber] = useState(false);
@@ -460,13 +445,6 @@ const primalFoods = allFoods.filter(f => {
   }
 };
 
-  // --- LÓGICA DO BOTÃO SOS ---
-  const handleSosClick = () => {
-    const randomIndex = Math.floor(Math.random() * sosMessages.length);
-    setCurrentSosMessage(sosMessages[randomIndex]);
-    setShowSosModal(true);
-  };
-
   // --- 4. CHECKLIST E UI ---
   const toggleCheck = async (index: number) => {
     if (!user) return;
@@ -738,36 +716,6 @@ const primalFoods = allFoods.filter(f => {
           onClose={() => setShowPaywall(false)} 
           userId={user?.id || ''} 
         />
-
-        {/* --- MODAL DO BOTÃO SOS (TELA PRETA) --- */}
-        {showSosModal && (
-          <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-6 z-[60] animate-in fade-in duration-300">
-            <div className="text-center max-w-sm w-full">
-              <div className="bg-red-600/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.3)]">
-                <AlertTriangle size={48} className="text-red-500" />
-              </div>
-              <h2 className="text-3xl font-black text-white uppercase tracking-wider mb-8">Fraqueza?</h2>
-              <p className="text-xl text-zinc-300 font-medium leading-relaxed mb-12 italic">
-                "{currentSosMessage}"
-              </p>
-              <button
-                onClick={() => setShowSosModal(false)}
-                className="w-full bg-red-600 text-white font-black uppercase tracking-widest py-4 px-6 rounded-xl hover:bg-red-500 transition-all active:scale-95 border-b-4 border-red-800 shadow-xl"
-              >
-                Entendido. Sigo Limpo.
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {/* --- O BOTÃO FLUTUANTE (GATILHO SOS) --- */}
-        <button
-          onClick={handleSosClick}
-          className="fixed bottom-28 right-6 z-40 bg-red-700 hover:bg-red-600 text-white rounded-full p-4 shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-transform hover:scale-110 flex items-center justify-center animate-pulse"
-        >
-          <AlertTriangle size={28} className="text-white" />
-        </button>
-
       </div> 
     </div>
   );
