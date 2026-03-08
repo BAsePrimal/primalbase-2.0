@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         };
 
         // Atira Push (Não trava o código se der erro)
-        fetch('https://onesignal.com/api/v1/notifications', {
+        await fetch('https://onesignal.com/api/v1/notifications', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -104,17 +104,35 @@ export async function GET(request: Request) {
     
     // DIA 3
     await dispararAtaqueDuplo(
-      alvosDia3, 
-      "A selva sente sua falta. 🐺", 
-      "3 dias sem check-in. O lobo que não caça, passa fome.",
-      "A selva sente sua falta... 🐺",
-      `<div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center;">
-        <h2 style="color: #ef4444;">Onde você está, guerreiro?</h2>
-        <p>Já fazem 3 dias que você não dá as caras na matilha.</p>
-        <p>O lobo que não caça, passa fome. Volte para o plano e registre seu progresso!</p>
-        <a href="https://primalbase.com.br/jornada" style="display: inline-block; padding: 12px 24px; background-color: #ef4444; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold;">Retornar à Base</a>
-      </div>`
-    );
+        alvosDia3, 
+        "A selva sente sua falta. 🐺", 
+        "3 dias sem check-in. O lobo que não caça, passa fome.",
+        "A selva sente sua falta... 🐺",
+        `<div style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #09090b; border: 1px solid #27272a; border-radius: 12px; overflow: hidden;">
+          <div style="background-color: #18181b; padding: 25px; text-align: center; border-bottom: 1px solid #27272a;">
+            <h1 style="color: #ef4444; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
+          </div>
+          
+          <div style="padding: 40px 30px; text-align: center;">
+            <h2 style="color: #f4f4f5; margin-top: 0; font-size: 22px; font-weight: 600;">Onde você está, guerreiro?</h2>
+            
+            <p style="color: #a1a1aa; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Já fazem 3 dias que você não dá as caras na matilha.
+            </p>
+            <p style="color: #a1a1aa; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
+              O lobo que não caça, passa fome. Volte para o plano e registre seu progresso.
+            </p>
+            
+            <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+              Retornar à Base
+            </a>
+          </div>
+          
+          <div style="padding: 20px; text-align: center; background-color: #18181b; border-top: 1px solid #27272a;">
+            <p style="color: #52525b; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+          </div>
+        </div>`
+      );
     
     // DIA 7
     await dispararAtaqueDuplo(
