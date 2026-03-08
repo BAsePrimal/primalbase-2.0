@@ -102,6 +102,8 @@ export async function GET(request: Request) {
 
     // 5. O Massacre (Cópia de Guerra Brutal)
     
+    // 5. O Massacre (Design Padronizado PrimalBase)
+    
     // DIA 3
     await dispararAtaqueDuplo(
         alvosDia3, 
@@ -121,22 +123,12 @@ export async function GET(request: Request) {
             <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
               <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
-            
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
               <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Onde está você, guerreiro?</h2>
-              
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-                Já fazem 3 dias que não dá as caras na matilha.
-              </p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">
-                O lobo que não caça, passa fome. Volte para o plano e registre o seu progresso.
-              </p>
-              
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
-                Retornar à Base
-              </a>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Já fazem 3 dias que não dá as caras na matilha.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">O lobo que não caça, passa fome. Volte para o plano e registre o seu progresso.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Retornar à Base</a>
             </div>
-            
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
               <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
             </div>
@@ -144,48 +136,99 @@ export async function GET(request: Request) {
         </body>
         </html>`
       );
-    
-    // DIA 7
-    await dispararAtaqueDuplo(
-      alvosDia7, 
-      "Você desistiu da jornada? 🩸", 
-      "Uma semana fora. A mediocridade do mundo moderno está te puxando.",
-      "Você desistiu da jornada? 🩸",
-      `<div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center;">
-        <h2 style="color: #ef4444;">Uma semana fora do radar.</h2>
-        <p>A mediocridade do mundo moderno está te puxando de volta.</p>
-        <p>Você vai ceder aos velhos hábitos ou vai provar o contrário agora?</p>
-        <a href="https://primalbase.com.br/jornada" style="display: inline-block; padding: 12px 24px; background-color: #ef4444; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold;">Provar o Contrário</a>
-      </div>`
-    );
-    
-    // DIA 15
-    await dispararAtaqueDuplo(
-      alvosDia15, 
-      "Seu lugar na matilha está em risco. ⚠️", 
-      "Vai continuar comendo lixo industrializado? Novas receitas liberadas.",
-      "Seu lugar na matilha em risco ⚠️",
-      `<div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center;">
-        <h2 style="color: #fbbf24;">Alerta Vermelho</h2>
-        <p>Enquanto você esteve fora, o Chef Primal criou novas receitas brutais.</p>
-        <p>Você vai voltar para a comida real ou vai continuar se envenenando com lixo industrial?</p>
-        <a href="https://primalbase.com.br/jornada" style="display: inline-block; padding: 12px 24px; background-color: #fbbf24; color: #18181b; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold;">Ver Novas Receitas</a>
-      </div>`
-    );
-    
-    // DIA 30
-    await dispararAtaqueDuplo(
-      alvosDia30, 
-      "Baixa na Alcateia. Descanse. 🪦", 
-      "Notificações pausadas. Volte quando quiser ser um alfa novamente.",
-      "Baixa na Alcateia. Descanse. 🪦",
-      `<div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center;">
-        <h2 style="color: #71717a;">Descanse em paz.</h2>
-        <p>Entendemos que você escolheu outro caminho.</p>
-        <p>Suas notificações automáticas foram pausadas permanentemente.</p>
-        <p>Volte apenas quando estiver pronto para ser um alfa novamente.</p>
-      </div>`
-    );
+      
+      // DIA 7
+      await dispararAtaqueDuplo(
+        alvosDia7, 
+        "Você desistiu da jornada? 🩸", 
+        "Uma semana fora. A mediocridade do mundo moderno está te puxando.",
+        "Você desistiu da jornada? 🩸",
+        `<!DOCTYPE html>
+        <html lang="pt-BR" style="color-scheme: dark;">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="background-color: #0A0A0A; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #0A0A0A; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
+              <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
+            </div>
+            <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Uma semana fora do radar.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">A mediocridade do mundo moderno está te puxando de volta.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Você vai ceder aos velhos hábitos ou vai provar o contrário agora?</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Provar o Contrário</a>
+            </div>
+            <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+            </div>
+          </div>
+        </body>
+        </html>`
+      );
+      
+      // DIA 15
+      await dispararAtaqueDuplo(
+        alvosDia15, 
+        "Seu lugar na matilha está em risco. ⚠️", 
+        "Vai continuar comendo lixo industrializado? Novas receitas liberadas.",
+        "Seu lugar na matilha em risco ⚠️",
+        `<!DOCTYPE html>
+        <html lang="pt-BR" style="color-scheme: dark;">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="background-color: #0A0A0A; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #0A0A0A; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
+              <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
+            </div>
+            <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Alerta Vermelho</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Enquanto você esteve fora, o Chef Primal criou novas receitas brutais.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Você vai voltar para a comida real ou vai continuar se envenenando com lixo industrial?</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Ver Novas Receitas</a>
+            </div>
+            <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+            </div>
+          </div>
+        </body>
+        </html>`
+      );
+      
+      // DIA 30
+      await dispararAtaqueDuplo(
+        alvosDia30, 
+        "Baixa na Alcateia. Descanse. 🪦", 
+        "Notificações pausadas. Volte quando quiser ser um alfa novamente.",
+        "Baixa na Alcateia. Descanse. 🪦",
+        `<!DOCTYPE html>
+        <html lang="pt-BR" style="color-scheme: dark;">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="background-color: #0A0A0A; margin: 0; padding: 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #0A0A0A; border: 1px solid #27272A; border-radius: 12px; overflow: hidden;">
+            <div style="background-color: #111111; padding: 25px; text-align: center; border-bottom: 1px solid #27272A;">
+              <h1 style="color: #52525B; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
+            </div>
+            <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Descanse em paz.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Entendemos que você escolheu outro caminho.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Suas notificações automáticas foram pausadas permanentemente.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 0;">Volte apenas quando estiver pronto para ser um alfa novamente.</p>
+            </div>
+            <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+            </div>
+          </div>
+        </body>
+        </html>`
+      );
 
     // 6. O Coveiro (Inativa os usuários de 30 dias para poupar o banco de dados)
     if (idsParaDescartar.length > 0) {
