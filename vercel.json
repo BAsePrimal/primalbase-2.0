@@ -1,12 +1,16 @@
 {
-    "crons": [
-      {
-        "path": "/api/cron/resgate",
-        "schedule": "0 6 * * *"
-      },
-      {
-        "path": "/api/cron/anti-cheat",
-        "schedule": "0 21 * * 5"
-      }
-    ]
-  }
+  "crons": [
+    {
+      "path": "/api/cron/resgate",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/anti-cheat",
+      "schedule": "0 21 * * 5"
+    },
+    {
+      "path": "/api/cron/alerta-tatico",
+      "schedule": "0 18 * * 2,4"
+    }
+  ]
+}
