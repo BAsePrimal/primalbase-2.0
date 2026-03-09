@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     // 1. Busca todos os guerreiros com celular registrado e seus objetivos
     const { data: guerreiros, error } = await supabase
       .from('profiles')
-      .select('onesignal_id, goal, goal_type')
+      .select('onesignal_id, goal')
       .not('onesignal_id', 'is', null);
 
     if (error || !guerreiros || guerreiros.length === 0) {
