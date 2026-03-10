@@ -32,18 +32,42 @@ export async function POST(request: Request) {
     } 
     // 💣 MODO METRALHADORA: Busca a base em massa
     else {
-      const { data: guerreiros, error } = await supabase
+      // 1. Busca todos os perfis que têm celular registrado (agora pegando o 'id' também)
+      const { data: guerreiros, error: erroPerfis } = await supabase
         .from('profiles')
-        .select('onesignal_id, goal')
+        .select('id, onesignal_id, goal')
         .not('onesignal_id', 'is', null);
 
-      if (error || !guerreiros || guerreiros.length === 0) {
+      if (erroPerfis || !guerreiros || guerreiros.length === 0) {
         return NextResponse.json({ error: 'Nenhum alvo encontrado na base.' }, { status: 404 });
       }
 
+      // 2. Se o tiro for focado na Jornada, busca a inteligência de progresso
+      let mapaJornada: Record<string, number> = {};
+      
+      if (segmento.startsWith('jornada_')) {
+        const { data: logs, error: erroLogs } = await supabase
+          .from('jornada_logs')
+          .select('user_id, day_number');
+          
+        if (!erroLogs && logs) {
+          // Descobre qual foi o dia máximo que cada usuário concluiu
+          logs.forEach((log: any) => {
+            if (!mapaJornada[log.user_id]) mapaJornada[log.user_id] = 0;
+            if (log.day_number > mapaJornada[log.user_id]) {
+               mapaJornada[log.user_id] = log.day_number;
+            }
+          });
+        }
+      }
+
+      // 3. Filtra os alvos e carrega a arma
       guerreiros.forEach((g: any) => {
         const objetivoRaw = (g.goal || '').toLowerCase();
         const querGanhar = objetivoRaw.includes('ganho') || objetivoRaw.includes('massa') || objetivoRaw.includes('hipertrofia') || objetivoRaw.includes('crescer');
+        
+        // Pega o dia máximo do cara (se ele não existir no mapa, é 0)
+        const diaMaximo = mapaJornada[g.id] || 0;
 
         if (segmento === 'todos') {
           playerIds.push(g.onesignal_id);
@@ -51,12 +75,18 @@ export async function POST(request: Request) {
           playerIds.push(g.onesignal_id);
         } else if (segmento === 'secar' && !querGanhar) {
           playerIds.push(g.onesignal_id);
+        } else if (segmento === 'jornada_veterano' && diaMaximo >= 21) {
+          playerIds.push(g.onesignal_id);
+        } else if (segmento === 'jornada_combate' && diaMaximo > 0 && diaMaximo < 21) {
+          playerIds.push(g.onesignal_id);
+        } else if (segmento === 'jornada_reserva' && diaMaximo === 0) {
+          playerIds.push(g.onesignal_id);
         }
       });
     }
 
     if (playerIds.length === 0) {
-      return NextResponse.json({ error: 'O segmento escolhido está vazio.' }, { status: 404 });
+      return NextResponse.json({ error: 'O segmento escolhido está vazio. Ninguém se encaixa nesse perfil.' }, { status: 404 });
     }
 
     // Fogo!

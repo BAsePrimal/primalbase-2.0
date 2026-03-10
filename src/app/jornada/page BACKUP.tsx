@@ -7,8 +7,6 @@ import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Trophy, Sp
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 import Confetti from 'react-confetti';
-// 👇 1. IMPORTAMOS O NOSSO MODAL DE IMPACTO AQUI 👇
-import RadarModal from '@/components/RadarModal';
 
 type Protocol = 'male' | 'female' | null;
 
@@ -970,9 +968,6 @@ if (showIntro) {
           </div>
         </div>
       )}
-
-      {/* 👇 2. O NOSSO MODAL DO RADAR FICA AQUI 👇 */}
-      <RadarModal />
 
       {/* --- ADICIONE O PAYWALL AQUI --- */}
       <PaywallModal 

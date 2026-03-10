@@ -155,11 +155,11 @@ export async function GET(request: Request) {
       );
       
       // DIA 15
-    await dispararAtaqueDuplo(
+      await dispararAtaqueDuplo(
         alvosDia15, 
-        "Protocolo de Choque Liberado ⚠️", 
-        "Destrua o lixo que você comeu nas últimas duas semanas. Acesso expira em 24h.",
-        "Protocolo de Choque Liberado ⚠️",
+        "Sua armadura está enferrujando. ⚠️", 
+        "Duas semanas fora da base. Entre agora, atualize seu peso e vamos recalcular a rota.",
+        "Sua armadura está enferrujando. ⚠️",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -173,10 +173,9 @@ export async function GET(request: Request) {
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
               <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">O Estrago Pode Ser Revertido.</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Duas semanas fora do plano. Sabemos que o mundo moderno te envenenou.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">O Chef Primal acabou de liberar um <strong>Protocolo de Choque de 3 Dias</strong> para limpar o seu corpo e te colocar de volta no modo alfa.</p>
-              <p style="color: #EF4444; font-size: 14px; font-weight: bold; line-height: 1.6; margin-bottom: 35px;">⚠️ Este protocolo confidencial vai sumir do seu radar em 24 horas.</p>
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Acessar Protocolo de Choque</a>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Duas semanas fora do plano. Sabemos que a mediocridade do mundo te puxou para trás.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Ainda dá tempo de salvar os seus resultados. Retorne à base, registre o seu peso atual e volte a seguir o plano com disciplina.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Atualizar Minha Rota</a>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
               <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
@@ -184,7 +183,7 @@ export async function GET(request: Request) {
           </div>
         </body>
         </html>`,
-        'RESGATE (DIA 15)' // 👈 O Nome do Robô para o seu Admin
+        'RESGATE (DIA 15)' // 👈 Nome do Robô para o Admin
       );
       
       // DIA 30

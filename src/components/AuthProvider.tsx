@@ -10,14 +10,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
 
+  // 🔥 LISTA VIP: Rotas que qualquer civil pode acessar sem precisar de login
+  const publicRoutes = ['/login', '/auth/forgot-password', '/quiz'];
+
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (!session && pathname !== '/login' && pathname !== '/auth/forgot-password') {
+        // Se NÃO tem crachá (sessão) e a página atual NÃO ESTÁ na Lista VIP, manda pro login
+        if (!session && !publicRoutes.includes(pathname)) {
           router.replace('/login');
-        } else if (session && pathname === '/login') {
+        } 
+        // Se o cara já tem crachá e tenta ir pro login, manda pro QG (Home)
+        else if (session && pathname === '/login') {
           router.replace('/');
         }
       } catch (error) {
@@ -29,9 +35,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     checkSession();
 
-    // 🔥 CORREÇÃO AQUI: Adicionamos ": any" para o TypeScript parar de reclamar
+    // 🔥 O mesmo vale para mudanças em tempo real no crachá
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      if (!session && pathname !== '/login' && pathname !== '/auth/forgot-password') {
+      if (!session && !publicRoutes.includes(pathname)) {
         router.replace('/login');
       }
     });
