@@ -19,14 +19,14 @@ export default function InstallModal() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isStandalone) return; // Se o soldado já instalou, o modal nunca mais aparece. Fim da caçada.
 
-    // 🔥 3. O NOVO CÉREBRO DE MEMÓRIA (COOLDOWN DE 24 HORAS)
+    // 🔥 3. O NOVO CÉREBRO DE MEMÓRIA (COOLDOWN DE 2 HORAS)
     const lastDismissed = localStorage.getItem('primalbase_install_cooldown');
     if (lastDismissed) {
       const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
-      const vinteQuatroHoras = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+      const duasHoras = 2 * 60 * 60 * 1000; // 2 horas de folga
       
-      if (tempoPassado < vinteQuatroHoras) {
-        return; // ⏳ O soldado ainda está na folga de 24h. O modal não aparece hoje.
+      if (tempoPassado < duasHoras) {
+        return; 
       }
     }
 
