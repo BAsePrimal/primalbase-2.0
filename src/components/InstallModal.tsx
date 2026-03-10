@@ -17,13 +17,20 @@ export default function InstallModal() {
 
     // 2. Verifica se o app já está instalado (PWA Standalone)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
+    if (isStandalone) return; // Se o soldado já instalou, o modal nunca mais aparece. Fim da caçada.
 
-    // 🔥 AQUI ESTÁ A MEMÓRIA: Verifica se o usuário já fechou o modal antes
-    const hasDismissed = localStorage.getItem('primalbase_install_dismissed');
-    if (hasDismissed) return;
+    // 🔥 3. O NOVO CÉREBRO DE MEMÓRIA (COOLDOWN DE 24 HORAS)
+    const lastDismissed = localStorage.getItem('primalbase_install_cooldown');
+    if (lastDismissed) {
+      const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
+      const vinteQuatroHoras = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+      
+      if (tempoPassado < vinteQuatroHoras) {
+        return; // ⏳ O soldado ainda está na folga de 24h. O modal não aparece hoje.
+      }
+    }
 
-    // 3. O Cérebro que lê o celular
+    // 4. O Cérebro que lê o celular (Se chegou aqui, é hora de mostrar o modal)
     const ua = window.navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(ua);
     const isAndroid = /android/.test(ua);
@@ -41,10 +48,9 @@ export default function InstallModal() {
     }
   }, [pathname]);
 
-  // 🔥 O NOVO "OUVIDO": Escuta o clique do botão no Perfil
+  // O "OUVIDO": Escuta o clique do botão no Perfil (Caso o cara queira forçar a abertura)
   useEffect(() => {
     const handleForceShow = () => {
-      // Ignora a memória e força o modal a aparecer novamente
       const ua = window.navigator.userAgent.toLowerCase();
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isAndroid = /android/.test(ua);
@@ -66,18 +72,16 @@ export default function InstallModal() {
   }, []);
 
   const handleDismiss = () => {
-    // 🔥 AQUI SALVAMOS A MEMÓRIA: Grava que o usuário clicou em "Entendi"
-    localStorage.setItem('primalbase_install_dismissed', 'true');
+    // 🔥 AQUI NÓS LIGAMOS O CRONÔMETRO: Grava o milissegundo exato que ele clicou em fechar
+    localStorage.setItem('primalbase_install_cooldown', Date.now().toString());
     setShowModal(false);
   };
 
   if (pathname === '/login' || pathname === '/quiz' || !showModal) return null;
 
   return (
-    // Coloquei overflow-hidden aqui para impedir o "scroll" frouxo
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/90 backdrop-blur-md p-4 overflow-hidden">
       
-      {/* Travei o tamanho máximo em 90% da tela do celular para não empurrar os lados */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] w-full max-w-[90vw] sm:max-w-sm p-6 relative shadow-[0_10px_40px_rgba(0,0,0,0.5)] overflow-hidden">
         
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50"></div>
