@@ -40,17 +40,16 @@ export default function BotaoAlerta() {
   }, []);
 
   const pedirPermissao = async () => {
-    // 🔥 REGRA DA APPLE: O pedido nativo tem que ser a PRIMEIRA coisa ao clicar
-    // Sem delay, sem setCarregando antes, senão o Safari bloqueia e joga a tela branca!
-    const promisePermissao = OneSignal.Notifications.requestPermission();
     setCarregando(true);
 
     try {
-      await promisePermissao;
+      // 🔥 A MÁGICA TÁTICA: Grita para o nosso Modal Preto aparecer!
+      window.dispatchEvent(new Event('forcePushModal'));
 
+      // Fica vigiando para ver se o recruta aceitou o radar no modal e na Apple
       const vigia = setInterval(() => {
         const temPermissao = OneSignal.Notifications.permission;
-        const temId = !!OneSignal.User.PushSubscription.id;
+        const temId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
 
         if (temPermissao && temId) {
           setInscrito(true);
@@ -63,10 +62,11 @@ export default function BotaoAlerta() {
         }
       }, 1000);
 
+      // Aumentamos o tempo limite para 45s porque o usuário vai ler o nosso Modal primeiro
       setTimeout(() => {
         clearInterval(vigia);
         setCarregando(false);
-      }, 15000);
+      }, 45000);
 
     } catch (error) {
       console.error("Erro ao solicitar:", error);
