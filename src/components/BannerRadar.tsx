@@ -15,7 +15,6 @@ export default function BannerRadar() {
         // 🔥 A BLINDAGEM: Verifica se o usuário instalou na tela inicial (PWA) 🔥
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
 
-        // Só mostra se for PWA e se ainda não tiver permissão
         if (isStandalone && OneSignal.Notifications) {
           if (!OneSignal.Notifications.permission) {
             setVisivel(true);
@@ -30,12 +29,13 @@ export default function BannerRadar() {
   const handleAtivar = async () => {
     setCarregando(true);
     try {
-      await OneSignal.Notifications.requestPermission();
+      // 🔥 A MÁGICA TÁTICA: Em vez de chamar a Apple direto, chama o nosso Modal!
+      window.dispatchEvent(new Event('forcePushModal'));
       
-      // Fica verificando se ele clicou em "Permitir" na janela da Apple
       const verificaId = setInterval(async () => {
         const temPermissao = OneSignal.Notifications.permission;
-        const onesignalId = OneSignal.User.PushSubscription.id;
+        // Evita erro se o OneSignal demorar 1 segundo a mais para gerar o ID
+        const onesignalId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
 
         if (temPermissao && onesignalId) {
           clearInterval(verificaId);
@@ -48,20 +48,19 @@ export default function BannerRadar() {
               .eq('id', user.id);
           }
           
-          setVisivel(false); // O botão se autodestrói
+          setVisivel(false); 
         } else if (temPermissao === false) {
-          // Se ele clicou em "Não Permitir", para de carregar e esconde
           clearInterval(verificaId);
           setCarregando(false);
           setVisivel(false); 
         }
       }, 1000);
 
-      // Desiste de procurar após 15 segundos para não ficar girando infinito
+      // Aumentei o tempo de desistência para 45s porque agora ele vai ler o Modal primeiro
       setTimeout(() => {
         clearInterval(verificaId);
         setCarregando(false);
-      }, 15000);
+      }, 45000);
 
     } catch (error) {
       console.error('Erro no radar:', error);

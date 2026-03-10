@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import OneSignal from 'react-onesignal';
-import { usePathname } from 'next/navigation';
 import { BellRing, X, Activity } from 'lucide-react';
 
 export default function OneSignalInit() {
   const [showPushModal, setShowPushModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const pathname = usePathname();
 
   // 1. LIGA O MOTOR SILENCIOSO DO ONESIGNAL
   useEffect(() => {
@@ -33,39 +31,19 @@ export default function OneSignalInit() {
     initOneSignal();
   }, [isInitialized]);
 
-  // 2. A INTELIGÊNCIA DO "SOCO 2" (COBRA A PERMISSÃO)
+  // 🔥 2. O OUVIDO TÁTICO: Fica esperando o recruta clicar no Banner da Home
   useEffect(() => {
-    if (!isInitialized || pathname === '/login' || pathname === '/quiz') return;
-
-    const checkPushStatus = async () => {
-      // Regra 1: O recruta instalou o app? (Se não instalou, deixa o InstallModal agir primeiro)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-      if (!isStandalone) return;
-
-      // Regra 2: Ele já liberou as notificações nativas do celular?
-      const hasPermission = OneSignal.Notifications.permission;
-      if (hasPermission) return; // Se já tem, o radar está verde. Fim da caçada.
-
-      // Regra 3: Checa o Timer de Folga de 24 horas
-      const lastDismissed = localStorage.getItem('primalbase_push_cooldown');
-      if (lastDismissed) {
-        const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
-        const vinteQuatroHoras = 24 * 60 * 60 * 1000;
-        if (tempoPassado < vinteQuatroHoras) return; // O soldado está na folga
-      }
-
-      // Caiu na malha fina! Mostra o modal de cobrança.
-      setShowPushModal(true);
+    const handleForceShow = () => {
+      setShowPushModal(true); // O Banner gritou, o Modal aparece!
     };
 
-    // Delay tático de 1.5s para não assustar o usuário assim que a tela abre
-    setTimeout(checkPushStatus, 1500);
-    
-  }, [isInitialized, pathname]);
+    window.addEventListener('forcePushModal', handleForceShow);
+    return () => window.removeEventListener('forcePushModal', handleForceShow);
+  }, []);
 
   const handleAllowPush = async () => {
     try {
-      // Isso aqui é o que CHAMA a tela preta nativa da Apple/Android perguntando "Deseja Permitir?"
+      // É AQUI QUE CHAMAMOS A JANELA BRANCA DA APPLE!
       await OneSignal.Notifications.requestPermission();
       setShowPushModal(false);
     } catch (error) {
@@ -74,11 +52,10 @@ export default function OneSignalInit() {
   };
 
   const handleDismiss = () => {
-    // Liga o cronômetro de 24 horas caso ele negue
-    localStorage.setItem('primalbase_push_cooldown', Date.now().toString());
     setShowPushModal(false);
   };
 
+  // Se o modal não foi chamado pelo Banner, ele fica invisível
   if (!showPushModal) return null;
 
   return (
