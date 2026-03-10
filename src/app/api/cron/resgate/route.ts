@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Resend } from 'resend';
+import { dispararPush } from '@/lib/push-commander'; // 👈 NOSSA FÁBRICA DE LOGS E PUSH
 
 // Deixe apenas o texto do remetente aqui fora
 const REMETENTE_OFICIAL = 'PrimalBase <suporte@primalbase.com.br>'; 
 
 export async function GET(request: Request) {
-  // 👇 MUDANÇA AQUI: O Resend agora fica DENTRO da função GET
+  // 👇 O Resend fica DENTRO da função GET
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
@@ -20,10 +21,10 @@ export async function GET(request: Request) {
     const tresDiasAtras = new Date();
     tresDiasAtras.setDate(tresDiasAtras.getDate() - 3);
 
-    // 2. O Radar agora puxa o e-mail também
+    // 2. O Radar puxa o e-mail também
     const { data: guerreiros, error } = await supabase
       .from('profiles')
-      .select('id, onesignal_id, updated_at, email') // 🚨 ADICIONADO 'email' AQUI
+      .select('id, onesignal_id, updated_at, email') 
       .not('onesignal_id', 'is', null)
       .lt('updated_at', tresDiasAtras.toISOString());
 
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Nenhum alvo no funil hoje. A matilha está ativa.' });
     }
 
-    // 3. Os Baldes agora guardam o objeto completo (Push + E-mail)
+    // 3. Os Baldes guardam o objeto completo (Push + E-mail)
     const alvosDia3: any[] = [];
     const alvosDia7: any[] = [];
     const alvosDia15: any[] = [];
@@ -58,30 +59,15 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. A Metralhadora Dupla (Atira Push e E-mail ao mesmo tempo)
-    const dispararAtaqueDuplo = async (alvos: any[], tituloPush: string, msgPush: string, assuntoEmail: string, corpoEmail: string) => {
+    // 4. A Metralhadora Dupla (Atira Push e E-mail) - AGORA COM A FÁBRICA
+    const dispararAtaqueDuplo = async (alvos: any[], tituloPush: string, msgPush: string, assuntoEmail: string, corpoEmail: string, nomeRobo: string) => {
       if (alvos.length === 0) return; 
       
       // PREPARA OS ALVOS DE PUSH
       const onesignalIds = alvos.map(a => a.onesignal).filter(id => id);
       if (onesignalIds.length > 0) {
-        const payloadPush = {
-          app_id: ONESIGNAL_APP_ID,
-          include_player_ids: onesignalIds,
-          headings: { en: tituloPush, pt: tituloPush },
-          contents: { en: msgPush, pt: msgPush },
-          url: "https://primalbase.com.br/jornada"
-        };
-
-        // Atira Push (Não trava o código se der erro)
-        await fetch('https://onesignal.com/api/v1/notifications', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${ONESIGNAL_REST_KEY}`,
-          },
-          body: JSON.stringify(payloadPush)
-        }).catch(err => console.error('Erro no Push:', err));
+        // 👇 Usa a fábrica de tiro centralizada
+        await dispararPush(onesignalIds, tituloPush, msgPush, nomeRobo);
       }
 
       // PREPARA OS ALVOS DE E-MAIL (Dispara individualmente para proteger a privacidade)
@@ -101,8 +87,6 @@ export async function GET(request: Request) {
     };
 
     // 5. O Massacre (Cópia de Guerra Brutal)
-    
-    // 5. O Massacre (Design Padronizado PrimalBase)
     
     // DIA 3
     await dispararAtaqueDuplo(
@@ -134,7 +118,8 @@ export async function GET(request: Request) {
             </div>
           </div>
         </body>
-        </html>`
+        </html>`,
+        'RESGATE (DIA 3)' // 👈 O Nome do Robô para o seu Admin
       );
       
       // DIA 7
@@ -165,7 +150,8 @@ export async function GET(request: Request) {
             </div>
           </div>
         </body>
-        </html>`
+        </html>`,
+        'RESGATE (DIA 7)' // 👈 O Nome do Robô para o seu Admin
       );
       
       // DIA 15
@@ -197,7 +183,8 @@ export async function GET(request: Request) {
             </div>
           </div>
         </body>
-        </html>`
+        </html>`,
+        'RESGATE (DIA 15)' // 👈 O Nome do Robô para o seu Admin
       );
       
       // DIA 30
@@ -228,7 +215,8 @@ export async function GET(request: Request) {
             </div>
           </div>
         </body>
-        </html>`
+        </html>`,
+        'RESGATE (DIA 30)' // 👈 O Nome do Robô para o seu Admin
       );
 
     // 6. O Coveiro (Inativa os usuários de 30 dias para poupar o banco de dados)

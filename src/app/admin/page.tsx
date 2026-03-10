@@ -288,8 +288,8 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 p-4 md:p-8">
-      {/* HEADER ATUALIZADO COM O BOTÃO DO PAINEL DE ERROS */}
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 pb-6 border-b border-zinc-800">
+     {/* HEADER ATUALIZADO COM OS BOTÕES DE ADMINISTRAÇÃO */}
+     <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 pb-6 border-b border-zinc-800">
         <div className="flex items-center gap-4">
           <button onClick={() => router.push('/')} className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-colors shadow-lg">
             <ArrowLeft className="w-5 h-5 text-zinc-400" />
@@ -303,8 +303,19 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* 👇 BOTÃO DO ALARME 👇 */}
-        <div className="flex items-center">
+        {/* 👇 BOTÕES DO PAINEL DE CONTROLE 👇 */}
+        <div className="flex items-center gap-3">
+          
+          {/* NOVO BOTÃO: COMANDO PUSH */}
+          <Link 
+            href="/admin/notificacoes" 
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl hover:bg-amber-500/20 hover:scale-105 transition-all font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+          >
+            <ShieldAlert className="w-4 h-4" /> {/* Usando um ícone que você já tem importado */}
+            Comando Push
+          </Link>
+
+          {/* BOTÃO ATUAL: PAINEL DE ERROS */}
           <Link 
             href="/admin/erros" 
             className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500/20 hover:scale-105 transition-all font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(239,68,68,0.1)]"
@@ -312,6 +323,7 @@ export default function AdminPage() {
             <AlertTriangle className="w-4 h-4 animate-pulse" />
             Painel de Erros
           </Link>
+
         </div>
       </header>
 

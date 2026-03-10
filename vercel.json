@@ -5,12 +5,16 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/alerta-tatico",
+      "schedule": "0 18 * * 2,4"
+    },
+    {
       "path": "/api/cron/anti-cheat",
       "schedule": "0 21 * * 5"
     },
     {
-      "path": "/api/cron/alerta-tatico",
-      "schedule": "0 18 * * 2,4"
+      "path": "/api/cron/domingo",
+      "schedule": "0 22 * * 0"
     }
   ]
 }
