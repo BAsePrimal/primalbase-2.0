@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}` 
       },
       body: JSON.stringify({
-        from: 'PrimalBase <contato@primalbase.com.br>', // ⚠️ Substitua pelo email que você validou no Resend
+        from: 'PrimalBase <suporte@primalbase.com.br>', // ⚠️ Substitua pelo email que você validou no Resend
         to: email,
         subject: 'Bem-vindo ao QG PrimalBase - Salve seu acesso!',
         html: `
