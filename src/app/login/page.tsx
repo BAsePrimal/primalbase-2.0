@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [whatsapp, setWhatsapp] = useState(''); // <-- Adicionamos a variável do WhatsApp aqui
+  const [whatsapp, setWhatsapp] = useState('');
   const [gender, setGender] = useState<'Masculino' | 'Feminino' | ''>('');
   const [currentWeight, setCurrentWeight] = useState('');
   const [height, setHeight] = useState('');
@@ -51,7 +51,6 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        // Usando replace em vez de push para não acumular histórico e quebrar a tela cheia no iOS
         router.replace('/');
       }
     } catch (err: any) {
@@ -66,7 +65,6 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Validações (Agora inclui o WhatsApp)
     if (!fullName || !email || !password || !whatsapp || !gender || !currentWeight || !height || !goal) {
       setError('Por favor, preencha todos os campos');
       setLoading(false);
@@ -91,13 +89,12 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
-        // Atualizar perfil na tabela profiles (Agora salva o WhatsApp junto!)
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
             full_name: fullName,
-            whatsapp: whatsapp, // <-- Enviando o zap pro banco de dados
+            whatsapp: whatsapp, 
             gender: gender,
             current_weight: Number(currentWeight),
             height: Number(height),
@@ -107,7 +104,15 @@ export default function LoginPage() {
 
         if (profileError) throw profileError;
 
-        // Login automático após cadastro
+        // 🔥 O GATILHO DA NOSSA API DO RESEND (E-MAIL DE BOAS-VINDAS) 🔥
+        fetch('/api/send-welcome', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: email, name: fullName }),
+        }).catch(err => console.error("Falha no disparo em segundo plano:", err));
+
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -115,7 +120,6 @@ export default function LoginPage() {
 
         if (signInError) throw signInError;
 
-        // Usando replace para não acumular histórico no iOS
         router.replace('/');
       }
     } catch (err: any) {
@@ -202,7 +206,6 @@ export default function LoginPage() {
                   Continuar com Google
                 </button>
 
-                {/* Separador "ou" */}
                 <div className="relative flex items-center justify-center my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-zinc-700"></div>
@@ -261,7 +264,6 @@ export default function LoginPage() {
               </form>
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
-                {/* Nome Completo */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Nome Completo
@@ -276,7 +278,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Email
@@ -291,7 +292,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* 👇 O NOVO CAMPO DO WHATSAPP 👇 */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     WhatsApp (com DDD)
@@ -306,7 +306,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Senha */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Senha
@@ -322,7 +321,6 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Gênero */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Gênero
@@ -353,7 +351,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Dados Físicos */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -388,7 +385,6 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Meta */}
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Sua Meta

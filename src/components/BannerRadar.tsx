@@ -21,7 +21,7 @@ export default function BannerRadar() {
           }
         }
       }
-    }, 1500);
+    }, 750);
 
     return () => clearTimeout(checkStatus);
   }, []);
