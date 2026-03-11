@@ -7,7 +7,13 @@ import { dispararPush } from '@/lib/push-commander'; // 👈 NOSSA FÁBRICA DE L
 const REMETENTE_OFICIAL = 'PrimalBase <suporte@primalbase.com.br>'; 
 
 export async function GET(request: Request) {
-  // 👇 O Resend fica DENTRO da função GET
+  // 👇 1. A BARREIRA DE SEGURANÇA DA VERCEL (Tira o "Unrestricted") 👇
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new Response('Acesso Negado: Área Restrita do QG', { status: 401 });
+  }
+
+  // 👇 2. O Resend fica DENTRO da função GET
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
@@ -20,6 +26,8 @@ export async function GET(request: Request) {
   try {
     const tresDiasAtras = new Date();
     tresDiasAtras.setDate(tresDiasAtras.getDate() - 3);
+
+    // ... (O RESTO DO SEU CÓDIGO CONTINUA IGUALZINHO DAQUI PRA BAIXO) ...
 
     // 2. O Radar puxa o e-mail também
     const { data: guerreiros, error } = await supabase

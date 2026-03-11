@@ -5,6 +5,10 @@
       "schedule": "0 6 * * *"
     },
     {
+      "path": "/api/cron/conversao",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/alerta-tatico",
       "schedule": "0 18 * * 2,4"
     },
