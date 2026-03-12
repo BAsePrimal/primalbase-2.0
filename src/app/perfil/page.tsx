@@ -520,7 +520,7 @@ export default function PerfilPage() {
                   className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-zinc-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 >
                   <option value="">Selecione</option>
-                  <option value="Perca de Gordura">Perca de Gordura</option>
+                  <option value="Perda de Gordura">Perda de Gordura</option>
                   <option value="Ganho de Massa">Ganho de Massa</option>
                 </select>
               </div>
