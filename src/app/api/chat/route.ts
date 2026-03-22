@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+// Pegamos a chave aqui
 const API_KEY = process.env.GOOGLE_GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 const SYSTEM_INSTRUCTION = `Você é um Mentor Especialista em Nutrição Animal-Based (Estilo Paul Saladino) e Saúde Ancestral.
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   let userEmail = 'Email não identificado';
 
   try {
-    // IMPORTAÇÃO DINÂMICA DO SUPABASE (Esconde a conexão da Vercel durante o build)
+    // IMPORTAÇÃO DINÂMICA DO SUPABASE
     const { supabase } = await import('@/lib/supabase');
 
     try {
@@ -41,20 +41,16 @@ export async function POST(req: NextRequest) {
     const { message, history } = await req.json();
 
     if (!message) {
-      return NextResponse.json(
-        { error: 'Mensagem é obrigatória' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Mensagem é obrigatória' }, { status: 400 });
     }
 
     if (!API_KEY) {
-      return NextResponse.json(
-        { error: 'GEMINI_API_KEY não configurada' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'GEMINI_API_KEY não configurada' }, { status: 500 });
     }
 
-    // Formata o histórico para o formato do Gemini
+    // CORREÇÃO: Montando a URL com a chave incluída diretamente nela (Isso mata o Erro 404)
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
     const contents = [
       {
         role: 'user',
@@ -78,7 +74,6 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': API_KEY,
       },
       body: JSON.stringify({
         contents,
@@ -89,7 +84,10 @@ export async function POST(req: NextRequest) {
       }),
     });
 
+    // CORREÇÃO: Se der erro, agora o terminal vai gritar o motivo exato do Google
     if (!response.ok) {
+      const errorDetalhado = await response.text();
+      console.error(`Falha no Google Gemini. Status: ${response.status} - Detalhe:`, errorDetalhado);
       throw new Error(`API Error: ${response.status}`);
     }
 
@@ -98,7 +96,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response: text });
   } catch (error: any) {
-    // IMPORTAÇÃO DINÂMICA DO LOGGER (Impede o mesmo erro de build)
     try {
       const { logError } = await import('@/lib/logger');
       await logError('IA Mentor (Chat)', error, userEmail);
