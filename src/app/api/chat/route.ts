@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     // CORREÇÃO: Montando a URL com a chave incluída diretamente nela (Isso mata o Erro 404)
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest;generateContent?key=${API_KEY}`;
 
     const contents = [
       {
