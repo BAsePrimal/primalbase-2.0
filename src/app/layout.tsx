@@ -6,6 +6,8 @@ import InstallModal from "@/components/InstallModal";
 import AuthProvider from "@/components/AuthProvider";
 import Script from "next/script";
 import OneSignalInit from '@/components/OneSignalInit';
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,6 +54,8 @@ export default function RootLayout({
             })(window, document, "clarity", "script", "vq4feug1ro");
           `}
         </Script>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
