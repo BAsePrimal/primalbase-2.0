@@ -179,7 +179,7 @@ export default function GuidePage() {
                                     {translateStatus(item.status)}
                                 </span>
                             </div>
-                            {item.description && <p className="text-xs opacity-70 leading-relaxed line-clamp-2">{item.description}</p>}
+                            {item.description && <p className="text-xs opacity-70 leading-relaxed">{item.description}</p>}
                         </div>
                         <div className={`shrink-0 p-2 rounded-full border ${getStatusColor(item.status)}`}>
                             {getStatusIcon(item.status)}
