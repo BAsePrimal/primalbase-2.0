@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
+import SuplementacaoTab from '@/components/SuplementacaoTab';
+import RoletaItem from '@/components/RoletaItem';
 import { 
   ShoppingCart, Utensils, Check, Flame, 
   Coffee, Droplets, Beef, Carrot, 
@@ -20,7 +22,7 @@ const sosMessages = [
   "A mediocridade do mundo moderno está testando você agora mesmo. Mostre que sua mente controla o seu corpo, e não o contrário."
 ];
 
-// --- TIPAGENS MANUAIS (Para evitar erro de banco desatualizado) ---
+// --- TIPAGENS MANUAIS ---
 interface Food {
   id: number;
   name: string;
@@ -28,7 +30,7 @@ interface Food {
   goal_tag: string;
   meal_type?: string;
   status?: string;
-  tier?: 'daily' | 'rotation' | 'luxury'; // O código agora sabe que isso existe
+  tier?: 'daily' | 'rotation' | 'luxury';
 }
 
 interface Meal {
@@ -62,6 +64,7 @@ export default function NutritionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [abaAtual, setAbaAtual] = useState<'cardapio' | 'suplementos'>('cardapio');
   
   // Estados do SOS
   const [showSosModal, setShowSosModal] = useState(false);
@@ -126,7 +129,6 @@ export default function NutritionPage() {
         if (existingPlan) {
           const parsedWeek = typeof existingPlan.week_plan === 'string' ? JSON.parse(existingPlan.week_plan) : existingPlan.week_plan;
           const parsedList = typeof existingPlan.shopping_list === 'string' ? JSON.parse(existingPlan.shopping_list) : existingPlan.shopping_list;
-          // Compatibilidade: planos antigos podem não ter breakfast.sides
           const week = (parsedWeek || []).map((day: DayPlan) => ({
             ...day,
             breakfast: { ...day.breakfast, sides: day.breakfast?.sides ?? [] }
@@ -146,13 +148,12 @@ export default function NutritionPage() {
     loadData();
   }, [user]);
 
-// --- 3. GERAÇÃO INTELIGENTE (CÉREBRO 23.0 - OTIMIZAÇÃO DE COMPRAS) ---
+// --- 3. GERAÇÃO INTELIGENTE (VERSÃO EQUILÍBRIO DE OVOS - 5 DIAS) ---
 const generateAndSaveMenu = async (goal: string) => {
   if (!user) return;
   setLoading(true);
 
   try {
-    // 1. BUSCAR ALIMENTOS
     const { data: rawFoods, error } = await supabase
       .from('foods')
       .select('*')
@@ -162,43 +163,27 @@ const generateAndSaveMenu = async (goal: string) => {
     
     const allFoods = (rawFoods as unknown as Food[]);
 
-// --- FILTROS & LISTA NEGRA GERAL ---
-const globalBlacklist = [
-  'limão', 'água', 'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 'chá',
-  'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
-];
+    const globalBlacklist = [
+      'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 
+      'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
+    ];
 
-// --- TRAVA CALÓRICA (PERDA DE GORDURA) ---
-// Identifica se a meta é emagrecimento
-const isFatLoss = goal.toLowerCase().includes('perda') || goal.toLowerCase().includes('emagrecimento');
+    const isFatLoss = goal.toLowerCase().includes('perda') || goal.toLowerCase().includes('emagrecimento');
 
-// Bombas calóricas (Gordura + Carbo Denso) que serão banidas apenas no cutting
-const fatLossBlacklist = [
-  // Carnes Gordas e Embutidos
-  'bacon', 'torresmo', 'barriga', 'panceta', 'costela', 'cupim', 
-  // Queijos Pesados
-  'parmesão', 'mussarela', 'prato', 'amarelo', 'curado', 'provolone',
-  // Frutas Ultra-Densas e Doces (Açúcar/Caloria Alta)
-  'tâmara', 'coco seco', 'banana da terra', 'manga', 'caqui', 'uva'
-];
+    const fatLossBlacklist = [
+      'bacon', 'torresmo', 'barriga', 'panceta', 'costela', 'cupim', 
+      'parmesão', 'mussarela', 'prato', 'amarelo', 'curado', 'provolone',
+      'tâmara', 'coco seco', 'banana da terra', 'manga', 'caqui', 'uva'
+    ];
 
-const primalFoods = allFoods.filter(f => {
- const n = f.name.toLowerCase();
- // 1. Remove Grãos e Processados (Sempre)
- if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
- 
- // 2. Remove Lista Negra Geral (Temperos e Vegetais fracos)
- if (globalBlacklist.some(b => n.includes(b))) return false;
- 
- // 3. SE FOR PERDA DE GORDURA: Remove as bombas calóricas
- if (isFatLoss && fatLossBlacklist.some(b => n.includes(b))) return false;
+    const primalFoods = allFoods.filter(f => {
+      const n = f.name.toLowerCase();
+      if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
+      if (globalBlacklist.some(b => n.includes(b))) return false;
+      if (isFatLoss && fatLossBlacklist.some(b => n.includes(b))) return false;
+      return true;
+    });
 
- return true;
-});
-
-    // --- BUCKETS (CESTAS DE ALIMENTOS) ---
-
-    // 1. CARNES PRINCIPAIS
     const bucketMainMeats = primalFoods.filter(f => {
         const n = f.name.toLowerCase();
         const isMeat = f.category === 'Proteína' || f.category === 'Órgãos';
@@ -206,30 +191,35 @@ const primalFoods = allFoods.filter(f => {
         return isMeat && !isSideOrSnack;
     });
 
-    // 2. CAFÉ DA MANHÃ (Principal)
-    const bucketBreakfastMain = primalFoods.filter(f => {
+    const bucketEggs = primalFoods.filter(f => {
         const n = f.name.toLowerCase();
-        const validCategories = (f.category === 'Proteína' || f.category === 'Laticínio');
-        const isBreakfastItem = n.includes('ovo') || n.includes('queijo') || n.includes('iogurte') || n.includes('coalho') || n.includes('ricota') || n.includes('cottage') || n.includes('presunto') || n.includes('bacon');
-        const isLunchMeat = bucketMainMeats.some(m => m.name === f.name);
-        return validCategories && isBreakfastItem && !isLunchMeat && !n.includes('torresmo');
+        return (f.category === 'Proteína' || f.category === 'Laticínio') && (n.includes('ovo') || n.includes('omelete'));
     });
 
-    // 3. ACOMPANHAMENTOS
-    const bucketCoffee = primalFoods.filter(f => f.name.toLowerCase().includes('café') || f.name.toLowerCase().includes('turbo'));
+    const bucketDairyBreakfast = primalFoods.filter(f => {
+        const n = f.name.toLowerCase();
+        return (f.category === 'Laticínio' || f.category === 'Proteína') && 
+               (n.includes('iogurte') || n.includes('kefir') || n.includes('coalhada') || n.includes('queijo') || n.includes('ricota') || n.includes('cottage')) && 
+               !n.includes('ovo');
+    });
+
+    const bucketMorningDrinks = primalFoods.filter(f => {
+        const n = f.name.toLowerCase();
+        return n.includes('café') || n.includes('chá') || n.includes('limão') || n.includes('turbo');
+    });
     
     const bucketBreakfastFruits = primalFoods.filter(f => {
         const n = f.name.toLowerCase();
         const isFruit = f.category === 'Fruta';
         const isCarbo = n.includes('panqueca') || n.includes('tapioca') || n.includes('banana');
         const isLunchVeg = f.category === 'Vegetais' || f.category === 'Carboidrato'; 
-        return (isFruit || isCarbo) && !isLunchVeg;
+        return (isFruit || isCarbo) && !isLunchVeg && !n.includes('limão');
     });
 
     const bucketSideProtein = primalFoods.filter(f => {
         const n = f.name.toLowerCase();
         return (f.category === 'Proteína' || f.category === 'Laticínio') && 
-               (n.includes('ovo') || n.includes('queijo') || n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça'));
+               (n.includes('queijo') || n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça')) && !n.includes('ovo');
     });
 
     const bucketSideRoots = primalFoods.filter(f => {
@@ -239,7 +229,7 @@ const primalFoods = allFoods.filter(f => {
         return isRootOrVeg && allowedRoots && f.category !== 'Fruta';
     });
 
-    const bucketSideFruits = primalFoods.filter(f => f.category === 'Fruta' && !f.name.toLowerCase().includes('abacate') && !f.name.toLowerCase().includes('coco'));
+    const bucketSideFruits = primalFoods.filter(f => f.category === 'Fruta' && !f.name.toLowerCase().includes('abacate') && !f.name.toLowerCase().includes('coco') && !f.name.toLowerCase().includes('limão'));
     const bucketSideFats = primalFoods.filter(f => f.name.toLowerCase().includes('abacate') || f.name.toLowerCase().includes('coco'));
 
     const bucketHoney = primalFoods.filter(f => {
@@ -252,32 +242,31 @@ const primalFoods = allFoods.filter(f => {
         return f.category === 'Gordura' && (n.includes('manteiga') || n.includes('banha') || n.includes('sebo') || n.includes('azeite') || n.includes('coco') || n.includes('ghee'));
     });
 
-    // --- LÓGICA DE BARALHO ---
-    const createDeck = (bucket: Food[], minSize: number) => {
+    const createDeck = (bucket: Food[], exactSize: number) => {
+        if (!bucket || bucket.length === 0) return [];
         let deck = [...bucket].sort(() => Math.random() - 0.5);
-        while (deck.length < minSize) {
+        while (deck.length < exactSize) {
             deck = [...deck, ...bucket.sort(() => Math.random() - 0.5)];
         }
-        return deck;
+        return deck.slice(0, exactSize);
     };
 
-    // --- OTIMIZAÇÃO DE COMPRAS (REGRA DE 4 CARNES) ---
-    // Seleciona 4 carnes aleatórias para serem as ÚNICAS da semana
     const weeklyMeatPool = [...bucketMainMeats].sort(() => Math.random() - 0.5).slice(0, 4);
-    
-    // Cria um deck de 14 refeições usando APENAS essas 4 carnes
-    let meatDeck: Food[] = [];
-    while (meatDeck.length < 14) {
-        meatDeck = [...meatDeck, ...weeklyMeatPool];
-    }
-    meatDeck = meatDeck.sort(() => Math.random() - 0.5).slice(0, 14);
+    let meatDeck = createDeck(weeklyMeatPool, 7);
 
-    // Baralhos de Acompanhamentos
-    const deckBreakfastMains = createDeck(bucketBreakfastMain, 7);
+    // CAFÉ DA MANHÃ: Mistura exata de 5 Ovos e 2 Laticínios
+    const deckEggs = createDeck(bucketEggs, 5);
+    const deckDairy = createDeck(bucketDairyBreakfast, 2);
+    const weekBreakfastMains = [...deckEggs, ...deckDairy].sort(() => Math.random() - 0.5);
+    
+    const deckMorningDrinks = createDeck(bucketMorningDrinks, 7);
     const deckSideProteins = createDeck(bucketSideProtein, 14);
     const deckRoots = createDeck(bucketSideRoots, 14);
     const deckFruits = createDeck(bucketSideFruits, 20);
     
+    // REGRA DE FERRO DO ALMOÇO/JANTAR: 5 dias com ovo extra garantido e 2 dias de "folga".
+    const extraEggDays = [true, true, true, true, true, false, false].sort(() => Math.random() - 0.5);
+
     const newWeekPlan: DayPlan[] = [];
     const shoppingMap = new Map<string, string>();
 
@@ -286,12 +275,12 @@ const primalFoods = allFoods.filter(f => {
       let cleanName = food.name;
       const n = cleanName.toLowerCase();
 
-      if (n.includes('ovo') || n.includes('omelete')) cleanName = 'Ovos (Cartela/Dúzia)';
+      if (n.includes('limão')) cleanName = 'Limão';
+      else if (n.includes('ovo') || n.includes('omelete')) cleanName = 'Ovos (Cartela/Dúzia)';
       else if (n.includes('queijo') || n.includes('requeijão') || n.includes('coalho')) cleanName = 'Queijos Variados';
       else if (n.includes('bacon') || n.includes('torresmo') || n.includes('barriga')) cleanName = 'Bacon & Torresmo';
       else if (n.includes('manteiga')) cleanName = 'Manteiga';
       else if (n.includes('sebo') || n.includes('banha')) cleanName = 'Gordura (Banha/Sebo)';
-      // CORREÇÃO AQUI: Exigir a palavra exata para não confundir com Melão/Melancia
       else if (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) cleanName = 'Mel de Abelha';
 
       let cat = food.category;
@@ -300,10 +289,14 @@ const primalFoods = allFoods.filter(f => {
       else if (cat === 'Gordura') cat = 'Gorduras & Óleos';
       else cat = 'Hortifruti (Frutas & Raízes)';
 
+      if (n.includes('chá')) cat = 'Despensa & Outros';
+      if (n.includes('limão')) cat = 'Hortifruti (Frutas & Raízes)';
+
       shoppingMap.set(cleanName, cat);
     };
 
     const drawCard = (deck: Food[], exclude: (Food|undefined)[] = []) => {
+       if (!deck || deck.length === 0) return undefined;
        const validExcludes = exclude.filter(e => e !== undefined);
        const index = deck.findIndex(item => !validExcludes.some(e => e?.name === item.name));
        if (index !== -1) return deck.splice(index, 1)[0];
@@ -311,63 +304,52 @@ const primalFoods = allFoods.filter(f => {
     };
 
     for (let i = 1; i <= 7; i++) {
-      const cookingFat = bucketCookingFats[i % bucketCookingFats.length] || { id:0, name:'Manteiga', category:'Gordura', goal_tag:'ambos' };
+      const cookingFat = bucketCookingFats.length > 0 ? bucketCookingFats[i % bucketCookingFats.length] : { id:0, name:'Manteiga', category:'Gordura', goal_tag:'ambos' };
       
-      // 1. CAFÉ DA MANHÃ
-      const breakfastMain = deckBreakfastMains.shift() || { id:0, name:'Ovos Mexidos', category:'Proteína', goal_tag:'ambos' };
+      const breakfastMain = weekBreakfastMains.shift() || { id:0, name:'Ovos Mexidos', category:'Proteína', goal_tag:'ambos' };
       
-      let breakfastSide;
-      if (Math.random() > 0.5 && bucketCoffee.length > 0) {
-           breakfastSide = bucketCoffee[Math.floor(Math.random() * bucketCoffee.length)];
-      } else {
-           breakfastSide = bucketBreakfastFruits[Math.floor(Math.random() * bucketBreakfastFruits.length)];
-      }
+      let rawDrink = deckMorningDrinks.shift();
+      let drinkDisplayName = rawDrink ? rawDrink.name : 'Café Preto (Sem Açúcar)';
+      if (drinkDisplayName.toLowerCase().includes('limão')) drinkDisplayName = 'Água com Limão';
+      const morningDrink = { id: rawDrink?.id || 0, name: drinkDisplayName, category: 'Bebida', goal_tag: 'ambos' };
 
-      // Seleção de Carnes
-      let dailyMeatLunch = meatDeck.pop();
-      let dailyMeatDinner = meatDeck.pop();
-      
-      if (dailyMeatLunch?.name === dailyMeatDinner?.name && meatDeck.length > 0) {
-          meatDeck.unshift(dailyMeatDinner!);
-          dailyMeatDinner = meatDeck.pop();
-      }
+      const breakfastSideFood = bucketBreakfastFruits.length > 0 
+        ? bucketBreakfastFruits[Math.floor(Math.random() * bucketBreakfastFruits.length)] 
+        : null;
 
-      // === 2. ALMOÇO (Lógica Adaptável: Ganho vs Perda) ===
+      const finalBreakfastSides = [morningDrink];
+      if (breakfastSideFood) finalBreakfastSides.push(breakfastSideFood);
+
+      let dailyMeat = meatDeck.pop() || {id:0, name:'Carne Bovina', category:'Proteína', goal_tag:'ambos'};
+
       const lunchSides: Food[] = [];
       const lunchDesserts: Food[] = [];
       
-      // Side 1: Proteína (Sempre)
       const lSide1 = drawCard(deckSideProteins, [breakfastMain]);
       if(lSide1) lunchSides.push(lSide1);
 
-      // Side 2: Raiz (Sempre - Energia Base)
       const lSide2 = drawCard(deckRoots, lunchSides);
       if(lSide2) lunchSides.push(lSide2);
 
-      // Side 3: Fruta 1 (Sempre)
       const lSide3 = drawCard(deckFruits, lunchSides);
       if(lSide3) lunchSides.push(lSide3);
 
-      // Side 4: Fruta 2 (SÓ NO GANHO)
       if (goal === 'ganho') {
            const lSide4 = drawCard(deckFruits, lunchSides);
            if(lSide4) lunchSides.push(lSide4);
-      }
-      
-      // Mel (SÓ NO GANHO)
-      if (goal === 'ganho' && Math.random() > 0.4) {
-           const honey = bucketHoney.length > 0 ? bucketHoney[0] : null;
-           if(honey) lunchDesserts.push(honey);
+           
+           if (Math.random() < 0.3) {
+               const honey = bucketHoney.length > 0 ? bucketHoney[0] : null;
+               if(honey) lunchDesserts.push(honey);
+           }
       }
 
-      // === 3. JANTAR (Lógica Adaptável) ===
       const dinnerSides: Food[] = [];
       const dinnerDesserts: Food[] = [];
       const dayExcludes = [...lunchSides, breakfastMain];
 
       const lunchHadCheese = lunchSides.some(f => f.name.toLowerCase().includes('queijo') || f.name.toLowerCase().includes('coalho'));
       
-      // Side 1: Proteína (Anti-repetição)
       let dSide1;
       if (lunchHadCheese) {
           const idx = deckSideProteins.findIndex(f => !f.name.toLowerCase().includes('queijo'));
@@ -378,32 +360,27 @@ const primalFoods = allFoods.filter(f => {
       }
       if(dSide1) dinnerSides.push(dSide1);
 
-      // Side 2: Energia (Raiz ou Fruta)
-      const randType = Math.random();
       let dSide2;
-      if (randType < 0.4) dSide2 = drawCard(deckRoots, [...dayExcludes, ...dinnerSides]);
-      else if (randType < 0.8) dSide2 = drawCard(deckFruits, [...dayExcludes, ...dinnerSides]);
-      else dSide2 = bucketSideFats[Math.floor(Math.random() * bucketSideFats.length)];
+      if (Math.random() > 0.5) dSide2 = drawCard(deckFruits, [...dayExcludes, ...dinnerSides]);
+      else if (bucketSideFats.length > 0) dSide2 = bucketSideFats[Math.floor(Math.random() * bucketSideFats.length)];
       
       if(dSide2) dinnerSides.push(dSide2);
 
-      // Side 3: Fruta Extra (SÓ NO GANHO)
-      // Na perda, o jantar fica com apenas 3 itens (Carne + Prot + Energia)
-      if (goal === 'ganho') {
-           const dSide3 = drawCard(deckFruits, [...dayExcludes, ...dinnerSides]);
-           if(dSide3) dinnerSides.push(dSide3);
-      }
-
-      // Mel (SÓ NO GANHO)
-      if (goal === 'ganho' && Math.random() > 0.5) {
-           const honey = bucketHoney.length > 0 ? bucketHoney[0] : null;
-           if(honey) dinnerDesserts.push(honey);
+      // Injeção de ovos com base na dosagem de 5 dias
+      if (extraEggDays[i - 1]) {
+          const extraEggs = { id: 0, name: 'Ovos (Quantidade a gosto)', category: 'Laticínios & Ovos', goal_tag: 'ambos' };
+          if (Math.random() > 0.5) {
+              lunchSides.push(extraEggs);
+          } else {
+              dinnerSides.push(extraEggs);
+          }
+          addToShop(extraEggs);
       }
 
       addToShop(breakfastMain);
-      addToShop(breakfastSide);
-      addToShop(dailyMeatLunch);
-      addToShop(dailyMeatDinner);
+      if (rawDrink) addToShop(rawDrink); 
+      if (breakfastSideFood) addToShop(breakfastSideFood);
+      addToShop(dailyMeat);
       addToShop(cookingFat);
       lunchSides.forEach(addToShop);
       lunchDesserts.forEach(addToShop);
@@ -415,17 +392,17 @@ const primalFoods = allFoods.filter(f => {
         breakfast: {
           name: breakfastMain.name,
           category: breakfastMain.category,
-          desc: 'Desjejum Primal',
-          sides: breakfastSide ? [breakfastSide] : []
+          desc: '',
+          sides: finalBreakfastSides
         },
         lunch: {
-          main: dailyMeatLunch || {id:0, name:'Carne Bovina', category:'Proteína', goal_tag:'ambos'},
+          main: dailyMeat,
           fat: cookingFat,
           sides: lunchSides,
           desserts: lunchDesserts
         },
         dinner: {
-          main: dailyMeatDinner || {id:0, name:'Peixe/Frango', category:'Proteína', goal_tag:'ambos'},
+          main: dailyMeat,
           fat: cookingFat,
           sides: dinnerSides,
           desserts: dinnerDesserts
@@ -434,7 +411,7 @@ const primalFoods = allFoods.filter(f => {
     }
 
     if (!shoppingMap.has('Sal')) shoppingMap.set('Sal', 'Despensa & Outros');
-    if (!shoppingMap.has('Café')) shoppingMap.set('Café', 'Despensa & Outros');
+    if (!shoppingMap.has('Café (Sem Açúcar)')) shoppingMap.set('Café', 'Despensa & Outros');
 
     const newShoppingList = Array.from(shoppingMap.entries())
       .map(([name, category]) => ({ name, category, checked: false }))
@@ -450,7 +427,7 @@ const primalFoods = allFoods.filter(f => {
 
     setMenu(newWeekPlan);
     setShoppingList(newShoppingList);
-    console.log('✅ Cardápio 23.0 (Compras Otimizadas) Gerado!');
+    console.log('✅ Cardápio 26.1 (Equilíbrio de Ovos: 5 Dias) Gerado!');
 
   } catch (err) {
     console.error('Erro na geração:', err);
@@ -466,6 +443,43 @@ const primalFoods = allFoods.filter(f => {
     setCurrentSosMessage(sosMessages[randomIndex]);
     setShowSosModal(true);
   };
+
+ // --- LÓGICA DA ROLETA ANCESTRAL Corrigida ---
+ const handleTrocaAlimento = async (dayIdx: number, mealType: 'breakfast' | 'lunch' | 'dinner', section: 'main' | 'sides' | 'desserts', itemIdx: number, novoAlimento: any) => {
+  if (!user) return;
+  
+  const newMenu = JSON.parse(JSON.stringify(menu));
+
+  const objAlimento = typeof novoAlimento === 'string' 
+    ? { name: novoAlimento, category: section === 'main' ? 'Proteína' : 'Carboidrato' } 
+    : novoAlimento;
+
+  if (mealType === 'breakfast') {
+    if (section === 'main') {
+      newMenu[dayIdx].breakfast.name = objAlimento.name;
+      newMenu[dayIdx].breakfast.category = objAlimento.category || '';
+    } else if (section === 'sides') {
+      newMenu[dayIdx].breakfast.sides[itemIdx] = objAlimento;
+    }
+  } else {
+    const targetMeal = newMenu[dayIdx][mealType] as Meal;
+    if (section === 'main') {
+      targetMeal.main = objAlimento;
+    } else if (section === 'sides') {
+      targetMeal.sides[itemIdx] = objAlimento;
+    } else if (section === 'desserts') {
+      targetMeal.desserts[itemIdx] = objAlimento;
+    }
+  }
+
+  setMenu(newMenu);
+
+  try {
+    await supabase.from('meal_plans').update({ week_plan: newMenu }).eq('user_id', user.id);
+  } catch (err) {
+    console.error("Erro ao atualizar troca na roleta:", err);
+  }
+};
 
   // --- 4. CHECKLIST E UI ---
   const toggleCheck = async (index: number) => {
@@ -521,14 +535,42 @@ const primalFoods = allFoods.filter(f => {
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-white font-sans overflow-x-hidden">
       <div className="flex-1 p-4 pb-44">
-        <header className="mb-6 pt-4">
-          <h1 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><Utensils /> Nutricionista</h1>
-          <p className="text-zinc-500 text-sm mt-1">
-            Plano Inteligente: {userGoal.includes('ganho') ? 'Ganho de Massa 💪' : 'Queima de Gordura 🔥'}
-          </p>
+{/* INTERFACE DO CABEÇALHO INTEGRADA COM SWITCH TOGGLE iOS DISCRETO */}
+<header className="mb-6 pt-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-zinc-800/50 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><Utensils /> Nutricionista</h1>
+            <p className="text-zinc-500 text-sm mt-1">
+              Plano Inteligente: {userGoal.includes('ganho') ? 'Ganho de Massa 💪' : 'Queima de Gordura 🔥'}
+            </p>
+          </div>
+
+          <div className="flex p-0.5 bg-zinc-900 border border-zinc-800 rounded-lg shrink-0">
+            <button
+              type="button"
+              onClick={() => setAbaAtual('cardapio')}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-300 ${
+                abaAtual === 'cardapio' ? 'bg-amber-500 text-black shadow-md' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              🍽️ Cardápio
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaAtual('suplementos')}
+              className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-300 ${
+                abaAtual === 'suplementos' ? 'bg-zinc-800 text-amber-500 shadow-md border border-zinc-700' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              ⚡ Suplementos
+            </button>
+          </div>
         </header>
 
-        {menu.length > 0 && (
+        {/* --- TELA DE SUPLEMENTOS --- */}
+        {abaAtual === 'suplementos' && <SuplementacaoTab />}
+
+        {/* --- TELA DE CARDÁPIO --- */}
+        {abaAtual === 'cardapio' && menu.length > 0 && (
           <>
             <button 
               onClick={handleGenerateClick}
@@ -580,7 +622,7 @@ const primalFoods = allFoods.filter(f => {
                 })}
               </div>
               
-              {/* CARDS DE REFEIÇÃO */}
+              {/* CARDS DE REFEIÇÃO COM ROLETA ANCESTRAL */}
               <div className={`bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-8 shadow-xl relative ${!isSubscriber && activeDay > 2 ? 'blur-sm pointer-events-none' : ''}`}>
                 
                 {/* Café da Manhã */}
@@ -588,18 +630,36 @@ const primalFoods = allFoods.filter(f => {
                   <h3 className="text-amber-500 font-bold mb-3 flex items-center gap-2 text-lg"><Coffee size={18}/> Café da Manhã</h3>
                   <div className="space-y-3">
                     <div className="bg-zinc-950/50 p-4 rounded-xl border-l-4 border-l-amber-500 border border-zinc-800/50">
-                      <span className="text-xl font-bold block">{menu[activeDay].breakfast.name}</span>
-                      <span className="text-xs text-zinc-500">{menu[activeDay].breakfast.desc}</span>
+                      <div className="text-xl font-bold block mb-1">
+                        {menu[activeDay]?.breakfast?.name ? (
+                          <RoletaItem 
+                            nomeInicial={menu[activeDay].breakfast.name} 
+                            categoria={menu[activeDay].breakfast.category || "Proteína"}
+                            tipoRefeicao="breakfast" 
+                            onTroca={(novo) => handleTrocaAlimento(activeDay, 'breakfast', 'main', 0, novo)} 
+                          />
+                        ) : null}
+                      </div>
+                      <span className="text-xs text-zinc-500 pl-3 block mt-2">{menu[activeDay]?.breakfast?.desc || ''}</span>
                     </div>
-                    {(menu[activeDay].breakfast.sides?.length ?? 0) > 0 && (
+                    
+                    {(menu[activeDay]?.breakfast?.sides?.length ?? 0) > 0 && (
                       <div>
-                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold">Acompanhamentos</span>
-                        <div className="space-y-2">
-                          {(menu[activeDay].breakfast.sides || []).map((item, i) => (
-                            <div key={`b-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
-                              <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0" />
-                              <span>{item.name}</span>
-                            </div>
+                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold mt-4">Acompanhamentos</span>
+                        <div className="space-y-2 mt-2">
+                          {(menu[activeDay]?.breakfast?.sides || []).map((item, i) => (
+                            item?.name ? (
+                              <div key={`b-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
+                                <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                  <RoletaItem 
+                                    nomeInicial={item.name} 
+                                    categoria={item.category || "Carboidrato"} 
+                                    onTroca={(novo) => handleTrocaAlimento(activeDay, 'breakfast', 'sides', i, novo)} 
+                                  />
+                                </div>
+                              </div>
+                            ) : null
                           ))}
                         </div>
                       </div>
@@ -614,20 +674,53 @@ const primalFoods = allFoods.filter(f => {
                   <h3 className="text-amber-500 font-bold mb-3 flex items-center gap-2 text-lg"><Utensils size={18}/> Almoço (Pré-Treino)</h3>
                   <div className="space-y-3">
                     <div className="bg-zinc-950 p-4 rounded-xl border-l-4 border-l-amber-500 border border-zinc-800">
-                        <span className="text-xl font-bold block">{menu[activeDay].lunch.main.name}</span> 
-                        <span className="text-xs text-zinc-500 italic flex items-center gap-1 mt-1">
-                          <Flame size={12} /> Preparado com {menu[activeDay].lunch.fat?.name}
+                        <div className="text-xl font-bold block mb-1">
+                          {menu[activeDay]?.lunch?.main?.name ? (
+                            <RoletaItem 
+                              nomeInicial={menu[activeDay].lunch.main.name} 
+                              categoria={menu[activeDay].lunch.main.category || "Proteína"}
+                              tipoRefeicao="main_meat" 
+                              onTroca={(novo) => handleTrocaAlimento(activeDay, 'lunch', 'main', 0, novo)} 
+                            />
+                          ) : null}
+                        </div>
+                        <span className="text-xs text-zinc-500 italic flex items-center gap-1 mt-2 pl-3">
+                          <Flame size={12} /> Preparado com {menu[activeDay]?.lunch?.fat?.name || 'Gordura Animal'}
                         </span>
                     </div>
                     <div>
-                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold">Acompanhamentos & Energia</span>
-                        <div className="space-y-2">
-                            {[...menu[activeDay].lunch.sides, ...menu[activeDay].lunch.desserts].map((item, i) => (
-                                <div key={`l-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
-                                    <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0" />
-                                    <span>{item.name}</span>
+                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold mt-4">Acompanhamentos & Energia</span>
+                        <div className="space-y-2 mt-2">
+                          {/* Mapeia os Acompanhamentos */}
+                          {(menu[activeDay]?.lunch?.sides || []).map((item, i) => (
+                            item?.name ? (
+                              <div key={`l-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
+                                <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                  <RoletaItem 
+                                    nomeInicial={item.name} 
+                                    categoria={item.category || "Carboidrato"} 
+                                    onTroca={(novo) => handleTrocaAlimento(activeDay, 'lunch', 'sides', i, novo)} 
+                                  />
                                 </div>
-                            ))}
+                              </div>
+                            ) : null
+                          ))}
+                          {/* Mapeia as Sobremesas */}
+                          {(menu[activeDay]?.lunch?.desserts || []).map((item, i) => (
+                            item?.name ? (
+                              <div key={`l-dessert-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
+                                <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                  <RoletaItem 
+                                    nomeInicial={item.name} 
+                                    categoria={item.category || "Carboidrato"} 
+                                    onTroca={(novo) => handleTrocaAlimento(activeDay, 'lunch', 'desserts', i, novo)} 
+                                  />
+                                </div>
+                              </div>
+                            ) : null
+                          ))}
                         </div>
                     </div>
                   </div>
@@ -640,20 +733,53 @@ const primalFoods = allFoods.filter(f => {
                   <h3 className="text-amber-500 font-bold mb-3 flex items-center gap-2 text-lg"><Utensils size={18}/> Jantar (Recuperação)</h3>
                   <div className="space-y-3">
                     <div className="bg-zinc-950 p-4 rounded-xl border-l-4 border-l-amber-500 border border-zinc-800">
-                        <span className="text-xl font-bold block">{menu[activeDay].dinner.main.name}</span> 
-                        <span className="text-xs text-zinc-500 italic flex items-center gap-1 mt-1">
-                          <Flame size={12} /> Preparado com {menu[activeDay].dinner.fat?.name}
+                        <div className="text-xl font-bold block mb-1">
+                          {menu[activeDay]?.dinner?.main?.name ? (
+                            <RoletaItem 
+                              nomeInicial={menu[activeDay].dinner.main.name} 
+                              categoria={menu[activeDay].dinner.main.category || "Proteína"}
+                              tipoRefeicao="main_meat" 
+                              onTroca={(novo) => handleTrocaAlimento(activeDay, 'dinner', 'main', 0, novo)} 
+                            />
+                          ) : null}
+                        </div>
+                        <span className="text-xs text-zinc-500 italic flex items-center gap-1 mt-2 pl-3">
+                          <Flame size={12} /> Preparado com {menu[activeDay]?.dinner?.fat?.name || 'Gordura Animal'}
                         </span>
                     </div>
                     <div>
-                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold">Acompanhamentos & Energia</span>
-                        <div className="space-y-2">
-                            {[...menu[activeDay].dinner.sides, ...menu[activeDay].dinner.desserts].map((item, i) => (
-                                <div key={`d-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
-                                    <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0" />
-                                    <span>{item.name}</span>
+                        <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold mt-4">Acompanhamentos & Energia</span>
+                        <div className="space-y-2 mt-2">
+                          {/* Mapeia os Acompanhamentos */}
+                          {(menu[activeDay]?.dinner?.sides || []).map((item, i) => (
+                            item?.name ? (
+                              <div key={`d-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
+                                <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                  <RoletaItem 
+                                    nomeInicial={item.name} 
+                                    categoria={item.category || "Carboidrato"} 
+                                    onTroca={(novo) => handleTrocaAlimento(activeDay, 'dinner', 'sides', i, novo)} 
+                                  />
                                 </div>
-                            ))}
+                              </div>
+                            ) : null
+                          ))}
+                          {/* Mapeia as Sobremesas */}
+                          {(menu[activeDay]?.dinner?.desserts || []).map((item, i) => (
+                            item?.name ? (
+                              <div key={`d-dessert-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
+                                <Circle size={8} className="text-amber-500 fill-amber-500 flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                  <RoletaItem 
+                                    nomeInicial={item.name} 
+                                    categoria={item.category || "Carboidrato"} 
+                                    onTroca={(novo) => handleTrocaAlimento(activeDay, 'dinner', 'desserts', i, novo)} 
+                                  />
+                                </div>
+                              </div>
+                            ) : null
+                          ))}
                         </div>
                     </div>
                   </div>
