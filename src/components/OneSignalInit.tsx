@@ -3,12 +3,37 @@
 import { useEffect, useState } from 'react';
 import OneSignal from 'react-onesignal';
 import { BellRing, X, Activity } from 'lucide-react';
+import { supabase } from '@/lib/supabase'; // 👈 INJEÇÃO DA CONEXÃO COM O BANCO
 
 export default function OneSignalInit() {
   const [showPushModal, setShowPushModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 1. LIGA O MOTOR SILENCIOSO DO ONESIGNAL
+  // 🔥 1. A FUNÇÃO QUE FALTAVA: Captura o ID do celular e guarda no Supabase
+  const salvarRadarNoBanco = async () => {
+    try {
+      // Pega o ID gerado pelo OneSignal para este aparelho
+      const subId = OneSignal.User.PushSubscription.id;
+      if (!subId) return; // Se ainda não tem ID, aborta
+
+      // Descobre quem é o guerreiro logado no momento
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user?.id) {
+        // Grava o ID do celular na coluna onesignal_id
+        await supabase
+          .from('profiles')
+          .update({ onesignal_id: subId })
+          .eq('id', session.user.id);
+          
+        console.log('📡 Radar conectado! Celular registrado no Supabase:', subId);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar o ID do OneSignal no banco:', err);
+    }
+  };
+
+  // 2. LIGA O MOTOR SILENCIOSO DO ONESIGNAL
   useEffect(() => {
     const initOneSignal = async () => {
       if (typeof window === 'undefined' || !process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID) return;
@@ -22,6 +47,12 @@ export default function OneSignalInit() {
           });
           setIsInitialized(true);
           console.log('🐺 Radar OneSignal ativado na matilha!');
+
+          // Tenta salvar o ID logo na abertura (caso o utilizador já tenha dado permissão antes)
+          await salvarRadarNoBanco();
+
+          // Fica à escuta: se o estado da assinatura mudar, ele guarda no banco
+          OneSignal.User.PushSubscription.addEventListener('change', salvarRadarNoBanco);
         }
       } catch (error) {
         console.error('Falha ao ligar o OneSignal:', error);
@@ -29,9 +60,15 @@ export default function OneSignalInit() {
     };
 
     initOneSignal();
+    
+    return () => {
+      if (isInitialized) {
+        OneSignal.User.PushSubscription.removeEventListener('change', salvarRadarNoBanco);
+      }
+    };
   }, [isInitialized]);
 
-  // 🔥 2. O OUVIDO TÁTICO: Fica esperando o recruta clicar no Banner da Home
+  // 🔥 3. O OUVIDO TÁTICO: Fica esperando o recruta clicar no Banner da Home
   useEffect(() => {
     const handleForceShow = () => {
       setShowPushModal(true); // O Banner gritou, o Modal aparece!
@@ -43,9 +80,15 @@ export default function OneSignalInit() {
 
   const handleAllowPush = async () => {
     try {
-      // É AQUI QUE CHAMAMOS A JANELA BRANCA DA APPLE!
+      // Chama a janela branca nativa (Apple/Android)
       await OneSignal.Notifications.requestPermission();
       setShowPushModal(false);
+      
+      // Dá 2 segundos para o OneSignal processar e força a gravação no banco
+      setTimeout(() => {
+        salvarRadarNoBanco();
+      }, 2000);
+      
     } catch (error) {
       console.error("Erro ao pedir permissão de Push", error);
     }
@@ -55,7 +98,6 @@ export default function OneSignalInit() {
     setShowPushModal(false);
   };
 
-  // Se o modal não foi chamado pelo Banner, ele fica invisível
   if (!showPushModal) return null;
 
   return (
