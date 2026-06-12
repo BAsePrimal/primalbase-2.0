@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { dispararPush } from '@/lib/push-commander';
+
+// 1. INJEÇÃO DA CHAVE MESTRA: Cria um cliente que ignora o RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+);
 
 export async function POST(request: Request) {
   try {
@@ -18,13 +24,15 @@ export async function POST(request: Request) {
     if (segmento === 'especifico') {
       if (!emailAlvo) return NextResponse.json({ error: 'Informe o e-mail do alvo.' }, { status: 400 });
       
-      const { data: alvoUnico } = await supabase
+      // Usa o supabaseAdmin em vez do supabase normal
+      const { data: alvoUnico, error } = await supabaseAdmin
         .from('profiles')
         .select('onesignal_id')
         .eq('email', emailAlvo)
         .single();
 
-      if (!alvoUnico || !alvoUnico.onesignal_id) {
+      if (error || !alvoUnico || !alvoUnico.onesignal_id) {
+        console.error("Erro na busca do Sniper:", error);
         return NextResponse.json({ error: 'Guerreiro não encontrado ou sem celular registrado.' }, { status: 404 });
       }
       playerIds.push(alvoUnico.onesignal_id);
@@ -32,8 +40,7 @@ export async function POST(request: Request) {
     } 
     // 💣 MODO METRALHADORA: Busca a base em massa
     else {
-      // 1. Busca todos os perfis que têm celular registrado (agora pegando o 'id' também)
-      const { data: guerreiros, error: erroPerfis } = await supabase
+      const { data: guerreiros, error: erroPerfis } = await supabaseAdmin
         .from('profiles')
         .select('id, onesignal_id, goal')
         .not('onesignal_id', 'is', null);
@@ -42,16 +49,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Nenhum alvo encontrado na base.' }, { status: 404 });
       }
 
-      // 2. Se o tiro for focado na Jornada, busca a inteligência de progresso
       let mapaJornada: Record<string, number> = {};
       
       if (segmento.startsWith('jornada_')) {
-        const { data: logs, error: erroLogs } = await supabase
+        const { data: logs, error: erroLogs } = await supabaseAdmin
           .from('jornada_logs')
           .select('user_id, day_number');
           
         if (!erroLogs && logs) {
-          // Descobre qual foi o dia máximo que cada usuário concluiu
           logs.forEach((log: any) => {
             if (!mapaJornada[log.user_id]) mapaJornada[log.user_id] = 0;
             if (log.day_number > mapaJornada[log.user_id]) {
@@ -61,12 +66,10 @@ export async function POST(request: Request) {
         }
       }
 
-      // 3. Filtra os alvos e carrega a arma
       guerreiros.forEach((g: any) => {
         const objetivoRaw = (g.goal || '').toLowerCase();
         const querGanhar = objetivoRaw.includes('ganho') || objetivoRaw.includes('massa') || objetivoRaw.includes('hipertrofia') || objetivoRaw.includes('crescer');
         
-        // Pega o dia máximo do cara (se ele não existir no mapa, é 0)
         const diaMaximo = mapaJornada[g.id] || 0;
 
         if (segmento === 'todos') {
