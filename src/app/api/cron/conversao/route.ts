@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-// Usamos a chave Admin para ler todos os perfis
+// 👇 CHAVE MESTRA: Usamos a chave Admin para furar o escudo e ler os perfis
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 const REMETENTE_OFICIAL = 'PrimalBase <suporte@primalbase.com.br>';
 
 export async function GET(request: Request) {
-  // 👇 1. A BARREIRA DE SEGURANÇA DA VERCEL 👇
+  // 1. A BARREIRA DE SEGURANÇA DA VERCEL
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response('Acesso Negado: Área Restrita do QG', { status: 401 });
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    // 2. Puxa recrutas que NÃO pagaram e que têm data de criação
+    // 2. Puxa os recrutas FREE usando o supabaseAdmin
     const { data: recrutas, error } = await supabaseAdmin
       .from('profiles')
       .select('full_name, email, created_at, is_subscriber')
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
         cta = 'Destravar QG Premium Agora';
       }
 
-      // 4. Atira o E-mail se for o dia exato
+      // 4. Atira APENAS O E-MAIL se for o dia exato
       if (assunto !== '') {
         await resend.emails.send({
           from: REMETENTE_OFICIAL,

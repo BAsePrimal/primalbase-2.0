@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { dispararPush } from '@/lib/push-commander'; // 👈 IMPORTAÇÃO DA FÁBRICA
+import { createClient } from '@supabase/supabase-js'; // 👈 INJEÇÃO DA CHAVE MESTRA
+import { dispararPush } from '@/lib/push-commander';
+
+// 👇 CHAVE MESTRA: Usamos a chave Admin para ler todos os perfis ignorando o RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(request: Request) {
   try {
-    // 1. Busca todos os guerreiros com celular registrado e seus objetivos
-    const { data: guerreiros, error } = await supabase
+    // 1. Busca todos os guerreiros com celular registrado e seus objetivos usando o Admin
+    const { data: guerreiros, error } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_id, goal')
       .not('onesignal_id', 'is', null);
@@ -62,11 +68,14 @@ export async function GET(request: Request) {
     const tiroSecar = arsenalSecar[Math.floor(Math.random() * arsenalSecar.length)];
     const tiroGanho = arsenalGanho[Math.floor(Math.random() * arsenalGanho.length)];
 
-    // 4. Puxa os gatilhos simultaneamente USANDO A FÁBRICA DE LOGS
-    await Promise.all([
-      dispararPush(idsSecar, tiroSecar.titulo, tiroSecar.corpo, 'ROBÔ TÁTICO (SECAR)'),
-      dispararPush(idsGanho, tiroGanho.titulo, tiroGanho.corpo, 'ROBÔ TÁTICO (GANHO)')
-    ]);
+    // 4. Puxa os gatilhos simultaneamente USANDO A FÁBRICA DE LOGS E IGNORANDO ALVOS VAZIOS
+    const promessasAtaque = [];
+    if (idsSecar.length > 0) promessasAtaque.push(dispararPush(idsSecar, tiroSecar.titulo, tiroSecar.corpo, 'ROBÔ TÁTICO (SECAR)'));
+    if (idsGanho.length > 0) promessasAtaque.push(dispararPush(idsGanho, tiroGanho.titulo, tiroGanho.corpo, 'ROBÔ TÁTICO (GANHO)'));
+
+    if (promessasAtaque.length > 0) {
+      await Promise.all(promessasAtaque);
+    }
 
     return NextResponse.json({ 
       success: true, 

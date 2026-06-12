@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; 
-import { dispararPush } from '@/lib/push-commander'; // 👈 IMPORTAÇÃO DA NOSSA FÁBRICA
+import { createClient } from '@supabase/supabase-js'; // 👈 IMPORTAÇÃO DA CHAVE MESTRA
+import { dispararPush } from '@/lib/push-commander';
+
+// 👇 INJEÇÃO DA CHAVE MESTRA: Cria um cliente que ignora as restrições do RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function GET(request: Request) {
   try {
-    // 1. Busca os guerreiros
-    const { data: guerreiros, error } = await supabase
+    // 👇 USANDO O SUPABASE ADMIN PARA EXTRAIR TODOS OS IDs SEM BLOQUEIO
+    const { data: guerreiros, error } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_id')
       .not('onesignal_id', 'is', null);

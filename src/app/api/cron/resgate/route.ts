@@ -1,19 +1,25 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js'; // 👈 IMPORTAÇÃO NECESSÁRIA PARA A CHAVE MESTRA
 import { Resend } from 'resend';
-import { dispararPush } from '@/lib/push-commander'; // 👈 NOSSA FÁBRICA DE LOGS E PUSH
+import { dispararPush } from '@/lib/push-commander';
+
+// 👇 INJEÇÃO DA CHAVE MESTRA: Cria um cliente que ignora o RLS
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+  process.env.SUPABASE_SERVICE_ROLE_KEY as string
+);
 
 // Deixe apenas o texto do remetente aqui fora
 const REMETENTE_OFICIAL = 'PrimalBase <suporte@primalbase.com.br>'; 
 
 export async function GET(request: Request) {
-  // 👇 1. A BARREIRA DE SEGURANÇA DA VERCEL (Tira o "Unrestricted") 👇
+  // 1. A BARREIRA DE SEGURANÇA DA VERCEL
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response('Acesso Negado: Área Restrita do QG', { status: 401 });
   }
 
-  // 👇 2. O Resend fica DENTRO da função GET
+  // 2. O Resend fica DENTRO da função GET
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const ONESIGNAL_APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
@@ -27,10 +33,8 @@ export async function GET(request: Request) {
     const tresDiasAtras = new Date();
     tresDiasAtras.setDate(tresDiasAtras.getDate() - 3);
 
-    // ... (O RESTO DO SEU CÓDIGO CONTINUA IGUALZINHO DAQUI PRA BAIXO) ...
-
-    // 2. O Radar puxa o e-mail também
-    const { data: guerreiros, error } = await supabase
+    // 👇 USANDO O SUPABASE ADMIN AQUI PARA FURAR O ESCUDO
+    const { data: guerreiros, error } = await supabaseAdmin
       .from('profiles')
       .select('id, onesignal_id, updated_at, email') 
       .not('onesignal_id', 'is', null)
@@ -67,18 +71,17 @@ export async function GET(request: Request) {
       }
     });
 
-    // 4. A Metralhadora Dupla (Atira Push e E-mail) - AGORA COM A FÁBRICA
+    // 4. A Metralhadora Dupla (Atira Push e E-mail) 
     const dispararAtaqueDuplo = async (alvos: any[], tituloPush: string, msgPush: string, assuntoEmail: string, corpoEmail: string, nomeRobo: string) => {
       if (alvos.length === 0) return; 
       
       // PREPARA OS ALVOS DE PUSH
       const onesignalIds = alvos.map(a => a.onesignal).filter(id => id);
       if (onesignalIds.length > 0) {
-        // 👇 Usa a fábrica de tiro centralizada
         await dispararPush(onesignalIds, tituloPush, msgPush, nomeRobo);
       }
 
-      // PREPARA OS ALVOS DE E-MAIL (Dispara individualmente para proteger a privacidade)
+      // PREPARA OS ALVOS DE E-MAIL
       const emails = alvos.map(a => a.email).filter(e => e);
       if (emails.length > 0) {
         const disparosEmail = emails.map(emailAlvo => 
@@ -89,13 +92,11 @@ export async function GET(request: Request) {
             html: corpoEmail
           })
         );
-        // Atira os E-mails todos de uma vez
         await Promise.all(disparosEmail).catch(err => console.error('Erro no Resend:', err));
       }
     };
 
-    // 5. O Massacre (Cópia de Guerra Brutal)
-    
+    // 5. O Massacre
     // DIA 3
     await dispararAtaqueDuplo(
         alvosDia3, 
@@ -127,7 +128,7 @@ export async function GET(request: Request) {
           </div>
         </body>
         </html>`,
-        'RESGATE (DIA 3)' // 👈 O Nome do Robô para o seu Admin
+        'RESGATE (DIA 3)' 
       );
       
       // DIA 7
@@ -159,7 +160,7 @@ export async function GET(request: Request) {
           </div>
         </body>
         </html>`,
-        'RESGATE (DIA 7)' // 👈 O Nome do Robô para o seu Admin
+        'RESGATE (DIA 7)' 
       );
       
       // DIA 15
@@ -191,7 +192,7 @@ export async function GET(request: Request) {
           </div>
         </body>
         </html>`,
-        'RESGATE (DIA 15)' // 👈 Nome do Robô para o Admin
+        'RESGATE (DIA 15)' 
       );
       
       // DIA 30
@@ -223,12 +224,12 @@ export async function GET(request: Request) {
           </div>
         </body>
         </html>`,
-        'RESGATE (DIA 30)' // 👈 O Nome do Robô para o seu Admin
+        'RESGATE (DIA 30)' 
       );
 
-    // 6. O Coveiro (Inativa os usuários de 30 dias para poupar o banco de dados)
+    // 👇 USANDO O SUPABASE ADMIN NO COVEIRO TAMBÉM
     if (idsParaDescartar.length > 0) {
-      await supabase
+      await supabaseAdmin
         .from('profiles')
         .update({ onesignal_id: null }) 
         .in('id', idsParaDescartar);
