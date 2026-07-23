@@ -157,7 +157,7 @@ export default function ChatIAPage() {
                 {message.role === 'user' ? (
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
                 ) : (
-                  <div className="prose prose-invert max-w-none text-gray-100 text-sm">
+                  <div className="prose prose-invert max-w-none text-gray-100 text-sm whitespace-pre-wrap">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                 )}
