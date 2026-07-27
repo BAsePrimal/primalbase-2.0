@@ -70,10 +70,14 @@ export default function GuidePage() {
     return <AlertCircle size={18} />; 
   };
 
-  const translateStatus = (status: string) => {
+  const translateStatus = (status: string | null | undefined) => {
+    // Se o status vier vazio do banco, ele não quebra a tela, apenas retorna um texto padrão
+    if (!status) return 'NÃO DEFINIDO'; 
+    
     if (status === 'allowed') return 'PERMITIDO';
     if (status === 'moderate') return 'MODERADO';
     if (status === 'banned') return 'PROIBIDO';
+    
     return status.toUpperCase();
   };
 
