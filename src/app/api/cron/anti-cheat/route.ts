@@ -24,16 +24,16 @@ export async function GET(request: Request) {
 
     // --- ARSENAL DE SEXTA-FEIRA (BLINDAGEM DE FIM DE SEMANA) ---
     const arsenalFimDeSemana = [
-      { titulo: "A Selva Não Tem Feriado. 🐺", corpo: "Sexta-feira é onde os fracos desistem. O álcool e o lixo de hoje destroem o treino da semana inteira. Escolha seu lado." },
-      { titulo: "O Teste Começou. ⚠️", corpo: "O fim de semana chegou. Seus amigos vão te oferecer mediocridade em forma de comida e bebida. Diga não. Mantenha a base." },
-      { titulo: "Sexta-feira Sangrenta. 🩸", corpo: "Dois dias comendo lixo não são um 'descanso', são um retrocesso. Mantenha a dieta limpa. O espelho vai te agradecer na segunda." },
-      { titulo: "Álcool ou Resultado? 🍻", corpo: "Cada copo de álcool zera a sua testosterona e trava a queima de gordura. Seja o Alfa da mesa e peça água." },
-      { titulo: "O Rebanho Festeja. 🐑", corpo: "A maioria vai usar o fim de semana para destruir o corpo. Você não é a maioria. Fique longe do açúcar e da farinha hoje." },
-      { titulo: "Sábado de Caça. 🏹", corpo: "Acorde amanhã melhor do que hoje. Não vá dormir com o estômago cheio de lixo industrializado. A disciplina continua." },
-      { titulo: "A Fraqueza é Contagiosa. 🦠", corpo: "Evite ambientes que te forçam a errar. Se for sair, coma antes. Não negocie com a fome no meio da rua." },
-      { titulo: "O Preço do Final de Semana. 💸", corpo: "Dois dias de erro custam cinco dias de conserto. Não jogue sua semana no lixo. Mantenha a guarda alta." },
-      { titulo: "Pizza Não Constrói Alfa. 🍕", corpo: "O pico de dopamina vai passar rápido, o inchaço vai ficar até quarta-feira. Engula a vontade e coma comida real." },
-      { titulo: "Tropa de Elite. 🎖️", corpo: "O soldado comum relaxa na sexta. O guerreiro de elite afia a espada. O que você vai jantar hoje define quem você é." }
+      { titulo: "O Fim de Semana Chegou. ⚠️", corpo: "A indústria fatura alto hoje. O álcool e o lixo vão destruir o treino da semana? Mantenha a base limpa." },
+      { titulo: "Álcool vs Testosterona. 🍻", corpo: "Cada copo trava a queima de gordura e bagunça a sua regulação hormonal. Escolha sua prioridade." },
+      { titulo: "O Preço de 2 Dias de Erro. 💸", corpo: "O pico de dopamina da pizza passa hoje, a inflamação e o inchaço ficam até quarta. Coma como um adulto." },
+      { titulo: "A Fraqueza é Contagiosa. 🦠", corpo: "Evite ambientes que te forçam a errar. Se for sair, coma proteína antes. Não negocie com a fome na rua." },
+      { titulo: "Sem Feriado Para o Corpo. 🥩", corpo: "O seu metabolismo não sabe que hoje é sexta. O que você vai jantar hoje define a disposição de amanhã." },
+      { titulo: "Cuidado com as Exceções. ⚠️", corpo: "Uma exceção na sexta vira três no sábado. O final de semana é onde a maioria joga o resultado no lixo." },
+      { titulo: "O Açúcar do Fim de Semana. 🍩", corpo: "Não troque resultados sólidos por 5 minutos de prazer palatável. Mantenha a rota limpa hoje à noite." },
+      { titulo: "Lado a Lado com o Foco. 🛡️", corpo: "O ambiente de hoje vai testar sua disciplina. Não terceirize suas escolhas para o cardápio do bar." },
+      { titulo: "A Fatura de Segunda-feira. 🧾", corpo: "Todo lixo industrializado que você comer hoje e amanhã será cobrado na balança segunda de manhã." },
+      { titulo: "Estratégia de Sobrevivência. 🗺️", corpo: "Vai sair hoje? Faça uma refeição densa em proteína antes. Não chegue com fome no território inimigo." }
     ];
 
     // Sorteia a munição

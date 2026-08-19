@@ -100,9 +100,9 @@ export async function GET(request: Request) {
     // DIA 3
     await dispararAtaqueDuplo(
         alvosDia3, 
-        "A selva sente a sua falta. 🐺", 
-        "3 dias sem check-in. O lobo que não caça, passa fome.",
-        "A selva sente a sua falta... 🐺",
+        "Sua consistência caiu. ⚠️", 
+        "3 dias sem abrir o app. Volte para a base e mantenha o ritmo.",
+        "Sua consistência caiu. ⚠️",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -117,13 +117,12 @@ export async function GET(request: Request) {
               <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Onde está você, guerreiro?</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Já fazem 3 dias que não dá as caras na matilha.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">O lobo que não caça, passa fome. Volte para o plano e registre o seu progresso.</p>
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Retornar à Base</a>
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">O ritmo quebrou.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Registramos 3 dias sem acesso ao aplicativo. Volte para a base e mantenha o ritmo antes que o hábito se perca.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Acessar a Base</a>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
-              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. Disciplina é rotina.</p>
             </div>
           </div>
         </body>
@@ -134,9 +133,9 @@ export async function GET(request: Request) {
       // DIA 7
       await dispararAtaqueDuplo(
         alvosDia7, 
-        "Você desistiu da jornada? 🩸", 
-        "Uma semana fora. A mediocridade do mundo moderno está te puxando.",
-        "Você desistiu da jornada? 🩸",
+        "Voltando aos velhos hábitos? 🛑", 
+        "Uma semana fora. Não deixe a comodidade e a indústria destruírem seu resultado.",
+        "Voltando aos velhos hábitos? 🛑",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -149,13 +148,12 @@ export async function GET(request: Request) {
               <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Uma semana fora do radar.</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">A mediocridade do mundo moderno está te puxando de volta.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Você vai ceder aos velhos hábitos ou vai provar o contrário agora?</p>
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Provar o Contrário</a>
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Uma semana fora do sistema.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Não deixe a comodidade e a indústria destruírem o resultado que você planejou. Retome o controle agora.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Retomar o Controle</a>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
-              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. Disciplina é rotina.</p>
             </div>
           </div>
         </body>
@@ -166,9 +164,9 @@ export async function GET(request: Request) {
       // DIA 15
       await dispararAtaqueDuplo(
         alvosDia15, 
-        "Sua armadura está enferrujando. ⚠️", 
-        "Duas semanas fora da base. Entre agora, atualize seu peso e vamos recalcular a rota.",
-        "Sua armadura está enferrujando. ⚠️",
+        "Sua rota precisa de ajuste. ⚙️", 
+        "Duas semanas off. Atualize seu peso no app e vamos recalcular o plano.",
+        "Sua rota precisa de ajuste. ⚙️",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -181,13 +179,12 @@ export async function GET(request: Request) {
               <h1 style="color: #F97316; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">O Estrago Pode Ser Revertido.</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Duas semanas fora do plano. Sabemos que a mediocridade do mundo te puxou para trás.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Ainda dá tempo de salvar os seus resultados. Retorne à base, registre o seu peso atual e volte a seguir o plano com disciplina.</p>
-              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Atualizar Minha Rota</a>
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Desvio de Rota Detectado.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 35px;">Você está há duas semanas sem registrar progresso. Acesse a plataforma, atualize o seu peso atual e deixe a inteligência recalcular o seu plano.</p>
+              <a href="https://primalbase.com.br/jornada" style="display: inline-block; background-color: #F97316; color: #FFFFFF; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: bold; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Atualizar Minhas Métricas</a>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
-              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. Disciplina é rotina.</p>
             </div>
           </div>
         </body>
@@ -198,9 +195,9 @@ export async function GET(request: Request) {
       // DIA 30
       await dispararAtaqueDuplo(
         alvosDia30, 
-        "Baixa na Alcateia. Descanse. 🪦", 
-        "Notificações pausadas. Volte quando quiser ser um alfa novamente.",
-        "Baixa na Alcateia. Descanse. 🪦",
+        "Notificações Pausadas. 🔕", 
+        "Como você não está acessando, desativamos seus lembretes diários para não incomodar. Abra o app quando quiser retomar o controle.",
+        "Notificações Pausadas. 🔕",
         `<!DOCTYPE html>
         <html lang="pt-BR" style="color-scheme: dark;">
         <head>
@@ -213,13 +210,12 @@ export async function GET(request: Request) {
               <h1 style="color: #52525B; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">PrimalBase</h1>
             </div>
             <div style="padding: 40px 30px; text-align: center; background-color: #0A0A0A;">
-              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Descanse em paz.</h2>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Entendemos que você escolheu outro caminho.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Suas notificações automáticas foram pausadas permanentemente.</p>
-              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 0;">Volte apenas quando estiver pronto para ser um alfa novamente.</p>
+              <h2 style="color: #F4F4F5; margin-top: 0; font-size: 22px; font-weight: 600;">Status: Inativo.</h2>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Como você não está acessando a plataforma, desativamos seus lembretes diários para não gerar ruído na sua rotina.</p>
+              <p style="color: #A1A1AA; font-size: 16px; line-height: 1.6; margin-bottom: 0;">Basta abrir o aplicativo quando estiver pronto para retomar o controle do plano.</p>
             </div>
             <div style="padding: 20px; text-align: center; background-color: #111111; border-top: 1px solid #27272A;">
-              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. A selva não perdoa.</p>
+              <p style="color: #52525B; font-size: 12px; margin: 0;">© 2026 PrimalBase. Disciplina é rotina.</p>
             </div>
           </div>
         </body>

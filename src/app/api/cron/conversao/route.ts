@@ -47,22 +47,22 @@ export async function GET(request: Request) {
       let cta = '';
 
       if (diasNaBase === 1) {
-        assunto = 'O seu QG está operando com 10% da capacidade.';
-        titulo = 'Destrave o seu arsenal';
-        mensagem = `Comandante <strong>${recruta.full_name}</strong>, vi que você entrou na matilha, mas o seu Chef Criativo e o Especialista IA continuam trancados. Tentar dominar a sua biologia no "achismo" é pedir para falhar. Você tem 3 dias de acesso Premium totalmente gratuitos te esperando.`;
-        cta = 'Ativar 3 Dias Grátis Agora';
+        assunto = 'Você está usando 10% do PrimalBase';
+        titulo = 'Tecnologia Bloqueada';
+        mensagem = `Fala <strong>${recruta.full_name}</strong>, vi que você criou sua conta, mas o Scanner e o Chef IA continuam bloqueados. Tentar limpar a alimentação no 'achismo' é pedir para falhar. Ative agora seus 3 dias de tecnologia Premium gratuita.`;
+        cta = 'Ativar 3 Dias Grátis';
       } 
       else if (diasNaBase === 3) {
-        assunto = 'Vai continuar jogando no modo difícil?';
+        assunto = 'Lendo rótulos ou usando tecnologia?';
         titulo = 'Pare de dificultar o processo';
-        mensagem = `<strong>${recruta.full_name}</strong>, você está há 3 dias na base. Enquanto você perde tempo tentando calcular macros ou adivinhar o que comer no fim do jejum, os Lobos Alfas estão usando o nosso Scanner e o Chef IA para derreter gordura no automático.`;
+        mensagem = `Fala <strong>${recruta.full_name}</strong>, você pode perder 2 horas no mercado lendo letrinhas minúsculas de rótulo para não ser enganado... ou pode usar nosso Scanner e descobrir em 1 segundo o que é veneno. Pare de dificultar o processo.`;
         cta = 'Deixar a IA trabalhar por mim';
       } 
       else if (diasNaBase === 15) {
-        assunto = 'O seu passe livre de 3 dias vai ser cancelado.';
+        assunto = 'Seus 3 dias Premium serão cancelados';
         titulo = 'Última Chamada';
-        mensagem = `Esta é a última chamada, <strong>${recruta.full_name}</strong>. O sistema vai revogar a sua oferta de 3 dias de acesso ilimitado em 24 horas. Se você quer continuar usando apenas a casca do aplicativo e tendo resultados medianos, ignore este e-mail. Se quiser plugar a sua rotina no motor da PrimalBase, o momento é agora.`;
-        cta = 'Destravar QG Premium Agora';
+        mensagem = `Última chamada, <strong>${recruta.full_name}</strong>. O sistema vai revogar o seu passe livre em 24 horas. Se você quer continuar tendo resultados medianos e caindo no falso 'fit', ignore. Se quer a IA trabalhando por você, ative agora.`;
+        cta = 'Destravar Tecnologia Premium';
       }
 
       // 4. Atira APENAS O E-MAIL se for o dia exato

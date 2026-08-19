@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     const sendAfterString = dataDisparo.toISOString();
 
     // 3. Preparar a Copy da Notificação
-    const titulo = "🔥 Fim do Jejum";
-    const mensagem = `A caçada terminou. Seu protocolo de ${horas}h foi concluído com sucesso. Vá se alimentar, Alfa.`;
+    const titulo = "🔥 Protocolo Concluído.";
+    const mensagem = `Seu jejum de ${horas}h terminou. Seu corpo já fez o trabalho duro. Agora quebre o jejum com comida de verdade, sem pico de insulina.`;
 
     // 4. Enviar ordem de agendamento para a API do OneSignal
     const response = await fetch('https://onesignal.com/api/v1/notifications', {

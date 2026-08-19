@@ -39,29 +39,29 @@ export async function GET(request: Request) {
 
     // --- O ARSENAL ROTATIVO (10 MUNIÇÕES CADA) ---
     const arsenalSecar = [
-      { titulo: "A dor é temporária. 🔥", corpo: "A fome que você sente agora é a gordura sendo destruída. Beba água e mantenha a guarda alta. A selva não perdoa." },
-      { titulo: "Fome ou Tédio? 🐺", corpo: "Lobo alfa não come por ansiedade. O que você quer comer agora dura 5 minutos na boca e meses na barriga. Foco." },
-      { titulo: "O Espelho Não Mente. 🪞", corpo: "Você está um dia mais perto do seu objetivo. Não jogue o progresso da semana no lixo por fraqueza momentânea." },
-      { titulo: "Modo Caçador. 🎯", corpo: "Seu corpo está usando suas próprias reservas de gordura como energia agora. Deixe o processo acontecer. Mantenha-se limpo." },
-      { titulo: "Disciplina Pesa Gramas. ⚖️", corpo: "O arrependimento pesa toneladas. O almoço já foi e o jantar está chegando. Não belisque nada até lá." },
-      { titulo: "O Controle é Seu. 🧠", corpo: "O açúcar e o lixo industrializado foram feitos para te viciar. Mostre quem manda na sua própria mente." },
-      { titulo: "Mente Blindada. 🛡️", corpo: "A vontade de errar vai passar, mas a frustração de ter errado fica. Segure a onda. Você é mais forte que isso." },
-      { titulo: "O Preço da Base. 🩸", corpo: "Ninguém forja um corpo de elite comendo o que a maioria come. Pague o preço hoje para vestir o resultado amanhã." },
-      { titulo: "Foco no Alvo. 🔭", corpo: "Se você fraquejar hoje, terá que compensar amanhã. Mantenha a rota limpa e o sacrifício será menor no final." },
-      { titulo: "A Regra do Alfa. 👑", corpo: "Predadores não se rendem ao primeiro sinal de desconforto. Beba água gelada, respire e volte para a missão." }
+      { titulo: "Fome ou Tédio? 🧠", corpo: "O que você quer comer agora dura 5 minutos na boca e atrapalha dias de progresso. Beba água." },
+      { titulo: "A Indústria Quer Você Viciado. 🛑", corpo: "O açúcar oculto no meio da tarde é feito para te controlar. Assuma o volante da sua própria mente." },
+      { titulo: "O Espelho Não Mente. 🪞", corpo: "Você está um dia mais perto do alvo. Não jogue o déficit calórico da semana no lixo por um impulso." },
+      { titulo: "Modo Queima Ativado. 🎯", corpo: "Seu corpo está usando as próprias reservas como energia agora. Mantenha a guarda alta contra o carboidrato vazio." },
+      { titulo: "Disciplina Pesa Gramas. ⚖️", corpo: "O arrependimento pesa na balança. O almoço já foi e o jantar está chegando. Não belisque nada." },
+      { titulo: "O Falso Saudável. 🥫", corpo: "Leia o rótulo antes de comer. Aquele \"snack fit\" pode estar lotado de maltodextrina para travar seu metabolismo." },
+      { titulo: "O Peso do Hábito. 🔄", corpo: "Se você ceder hoje, vai ser mais fácil ceder amanhã. Quebre o ciclo de dependência do açúcar agora." },
+      { titulo: "A Matemática da Queima. 📉", corpo: "Não existe milagre, existe déficit calórico e constância. Faça a próxima refeição dentro do plano." },
+      { titulo: "Cortando o Mal pela Raiz. ✂️", corpo: "A vontade de comer doce dura minutos. A inflamação dura dias. Beba um copo de água e espere o pico passar." },
+      { titulo: "Foco na Execução. ⚙️", corpo: "Deixe a motivação de lado, foque na disciplina. O plano já foi traçado no aplicativo, agora é só executar sem questionar." }
     ];
 
     const arsenalGanho = [
-      { titulo: "Combustível Primal. 💪", corpo: "O músculo não cresce com vento. Está na hora da sua cota de proteína real. Vá devorar algo agora." },
-      { titulo: "Construção Pesada. 🧱", corpo: "Você não vai crescer pulando refeições. Bata sua meta de calorias hoje. O treino foi só o estímulo, a comida é a obra." },
-      { titulo: "Força Bruta. 🦍", corpo: "Massa magra exige disciplina na mesa. Não deixe o corpo catabolizar. Faça a próxima refeição valer a pena." },
-      { titulo: "A Regra é Clara. 🥩", corpo: "Quer ficar maior que o rebanho? Tem que comer mais limpo e em mais quantidade que eles. Vá bater sua meta de proteína." },
-      { titulo: "Plano de Crescimento. 📈", corpo: "Seu corpo é uma fornalha. Jogue lenha de verdade nele. Pular refeição hoje é perder o treino de ontem." },
-      { titulo: "Engolindo a Meta. 🍽️", corpo: "Comer muito quando não se tem fome é o sacrifício de quem quer crescer. Vá fazer o que tem que ser feito." },
-      { titulo: "Zero Desculpas. 🛑", corpo: "Se faltar comida hoje, o treino foi em vão. Garanta sua ingestão calórica antes que o dia acabe. Aja como um alfa." },
-      { titulo: "O Tijolo de Hoje. 🏗️", corpo: "Cada grama de proteína que você ingere hoje é um tijolo a mais na carcaça de amanhã. Não economize na comida real." },
-      { titulo: "Mentalidade de Ogro. 🧌", corpo: "Você não é um passarinho. A sua máquina exige energia pesada para expandir. Vá comer." },
-      { titulo: "Forjando a Armadura. ⚔️", corpo: "Ganho de massa é consistência bruta. Não adianta treinar pesado e comer pouco. Destrua a sua próxima refeição." }
+      { titulo: "Combustível Real. 💪", corpo: "O músculo não cresce com vento e café. Garanta sua cota de proteína na próxima refeição." },
+      { titulo: "Construção Pesada. 🧱", corpo: "Bater caloria com comida limpa é o preço do resultado. O treino foi só o estímulo, a comida é a obra." },
+      { titulo: "Mentalidade de Crescimento. 📈", corpo: "Seu corpo é uma máquina que exige energia densa para expandir. Não pule refeições." },
+      { titulo: "Força Bruta. 🥩", corpo: "Ganho de massa exige disciplina na mesa. Não deixe o corpo catabolizar por preguiça de preparar a comida." },
+      { titulo: "Zero Desculpas. 🛑", corpo: "Se faltar combustível hoje, o treino foi em vão. Feche a meta de calorias antes do dia acabar." },
+      { titulo: "A Matemática do Músculo. 📊", corpo: "Você não cresce no treino, cresce na recuperação. E recuperação exige superávit calórico." },
+      { titulo: "Sinal Verde para Proteína. 🥩", corpo: "O corpo não estoca proteína para o futuro. Você precisa fornecer matéria-prima constante." },
+      { titulo: "O Custo da Preguiça. 📉", corpo: "Pular a refeição por falta de tempo é o caminho mais rápido para perder a massa que você suou para ganhar." },
+      { titulo: "Não Confie na Fome. 🧠", corpo: "O corpo vai pedir para você parar de comer. Aja com o racional, bata a meta de macros estipulada." },
+      { titulo: "Construção Contínua. 🏗️", corpo: "Seu corpo é um canteiro de obras 24 horas. Não deixe faltar material para a fundação." }
     ];
 
     // Sorteia uma mensagem aleatória para cada esquadrão
