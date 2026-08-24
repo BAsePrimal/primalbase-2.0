@@ -16,7 +16,8 @@ Retorne a resposta EXCLUSIVAMENTE no formato JSON abaixo:
 {
   "verdict": "ALLOWED" | "BANNED",
   "title": "Nome exato e curto do Produto",
-  "explanation": "Um texto curto, educativo e direto (máximo de 2 frases) explicando o PORQUÊ o alimento foi aprovado ou reprovado. Foque na ciência e na utilidade (ex: valor biológico, presença de químicos, impacto inflamatório)."
+  "explanation": "Um texto curto, educativo e direto (máximo de 2 frases) explicando o PORQUÊ o alimento foi aprovado ou reprovado. Foque na ciência e na utilidade (ex: valor biológico, presença de químicos, impacto inflamatório).",
+  "curiosity_fact": "Gere um fato curioso de 1 frase. Se reprovado, revele um segredo sombrio ou truque da indústria alimentícia sobre um dos ingredientes. Se aprovado, revele o impacto metabólico ou hormonal oculto desse alimento no corpo humano."
 }`;
 
 export async function POST(req: NextRequest) {

@@ -817,10 +817,10 @@ if (showIntro) {
                 "A selva não perdoa. Isso foi apenas o aquecimento."
               </p>
 
-              {/* Botão Nível 2 - "Cofre" Mais Imponente */}
+              {/* Botão Nível 2 - Copy de Antecipação e Exclusividade */}
               <button
-                className="w-full relative bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-zinc-500 font-black py-5 md:py-6 rounded-2xl text-lg flex items-center justify-center gap-3 mt-8 cursor-not-allowed uppercase tracking-widest shadow-inner transition-colors"
-                disabled
+                onClick={() => alert("ACESSO RESTRITO 🔒\n\nVocê dominou a base e provou o seu valor.\n\nO Nível 2 exigirá ainda mais do seu corpo e mente. As coordenadas desta nova fase estão sendo preparadas exclusivamente para os veteranos que chegaram até aqui.\n\nMantenha seus novos hábitos blindados e aguarde a convocação oficial.")}
+                className="w-full relative bg-zinc-950 border border-zinc-800 hover:border-amber-500/30 text-zinc-500 hover:text-amber-500/80 font-black py-5 md:py-6 rounded-2xl text-lg flex items-center justify-center gap-3 mt-8 active:scale-[0.98] uppercase tracking-widest shadow-inner transition-all"
               >
                 <Lock className="w-5 h-5" /> ACESSAR NÍVEL 2
               </button>
@@ -955,10 +955,25 @@ if (showIntro) {
 
             </div>
 
-            {/* Botão Inferior Fixo */}
-            <div className="p-4 bg-zinc-900 border-t border-zinc-800 shrink-0">
+           {/* Botão Inferior Fixo */}
+           <div className="p-4 bg-zinc-900 border-t border-zinc-800 shrink-0">
               <button
-                onClick={() => setShowBenefitsModal(false)}
+                onClick={() => {
+                  // 1. Ação Imediata: Fecha o modal na hora para o usuário não perceber nada
+                  setShowBenefitsModal(false);
+
+                  // 2. Tiro com Silenciador: Avisa o nosso Quartel-General para agendar o Push
+                  if (userId && currentTaskGoal) {
+                    fetch('/api/cron/agendar-jejum', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        userId: userId, 
+                        horas: currentTaskGoal 
+                      })
+                    }).catch(err => console.error('O radar falhou em silêncio:', err));
+                  }
+                }}
                 className="w-full relative group bg-zinc-950 hover:bg-zinc-800 text-amber-500 hover:text-amber-400 font-black py-4 rounded-xl transition-all duration-300 uppercase tracking-widest text-sm border border-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.1)]"
               >
                 Dominar a Fome

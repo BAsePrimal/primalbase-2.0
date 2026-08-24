@@ -7,17 +7,30 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
+// 👇 O arsenal de frases dinâmicas atualizado
+const loadingPhrases = [
+  "Analisando os ingredientes da base...",
+  "Cruzando macros e densidade nutricional...",
+  "Calculando a sua rota metabólica...",
+  "Salvando sua testosterona da pizza...",
+  "Preparando o seu Protocolo Ancestral...",
+  "Ajustando as proporções ideais...",
+  "Finalizando o plano tático..."
+];
+
 export default function ChefIAPage() {
   const [ingredientes, setIngredientes] = useState('');
   const [receita, setReceita] = useState('');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // 👇 Novo estado para controlar a frase de carregamento atual
+  const [phraseIndex, setPhraseIndex] = useState(0);
 
   // --- ESTADOS DO PAYWALL E MEMÓRIA ---
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
-  // 👇 Nova variável do Odômetro Total de Receitas
   const [totalRecipesCount, setTotalRecipesCount] = useState(0);
   const [user, setUser] = useState<any>(null);
 
@@ -28,7 +41,6 @@ export default function ChefIAPage() {
       if (authUser) {
         setUser(authUser);
         
-        // 👇 Puxa o perfil completo, incluindo o total_recipes
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_subscriber, daily_recipe_count, total_recipes')
@@ -38,17 +50,28 @@ export default function ChefIAPage() {
         if (profile) {
           setIsSubscriber(profile.is_subscriber || false);
           setUsageCount(profile.daily_recipe_count || 0);
-          setTotalRecipesCount(profile.total_recipes || 0); // Guarda o total histórico
+          setTotalRecipesCount(profile.total_recipes || 0); 
         }
       }
     }
     loadChefData();
   }, []);
 
+  // 👇 O MOTOR DE TEMPO: Roda as frases enquanto carrega
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      setPhraseIndex(0); // Zera o contador sempre que começa a carregar
+      interval = setInterval(() => {
+        setPhraseIndex((prev) => (prev + 1) % loadingPhrases.length);
+      }, 2000); // Troca de frase a cada 2 segundos (2000ms)
+    }
+    return () => clearInterval(interval); // Desliga o motor para não vazar memória
+  }, [loading]);
+
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
 
-    // --- TRAVA DE SEGURANÇA (Verifica limite de 3 para não VIPs) ---
     if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
       return;
@@ -77,12 +100,11 @@ export default function ChefIAPage() {
       // --- ATUALIZA CONTADOR NO SUPABASE ---
       if (user) {
         const nextCount = usageCount + 1;
-        const nextTotal = totalRecipesCount + 1; // Odômetro sobe 1
+        const nextTotal = totalRecipesCount + 1; 
 
-        setUsageCount(nextCount); // Atualiza na tela
-        setTotalRecipesCount(nextTotal); // Atualiza na tela
+        setUsageCount(nextCount); 
+        setTotalRecipesCount(nextTotal); 
         
-        // 👇 Salva NO BANCO os dois contadores de uma vez
         await supabase
           .from('profiles')
           .update({ 
@@ -173,7 +195,10 @@ export default function ChefIAPage() {
         {loading && (
           <div className="bg-gradient-to-br from-zinc-900 to-zinc-900/50 border border-zinc-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-            <p className="text-zinc-400 animate-pulse">O Chef está combinando os sabores...</p>
+            {/* 👇 Injeção da frase dinâmica aqui */}
+            <p className="text-zinc-400 font-medium animate-pulse transition-opacity duration-300">
+              {loadingPhrases[phraseIndex]}
+            </p>
           </div>
         )}
 

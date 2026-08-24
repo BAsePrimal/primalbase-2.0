@@ -35,6 +35,7 @@ export default function JornadaPage() {
   const [userGender, setUserGender] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showPunishmentModal, setShowPunishmentModal] = useState(false);
 
   // Carregar dados do usuário e jornada
   useEffect(() => {
@@ -61,8 +62,6 @@ export default function JornadaPage() {
         setIsSubscriber(profile?.is_subscriber || false);
       }
     
-      
-      // Verificar autenticação
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -72,7 +71,6 @@ export default function JornadaPage() {
 
       setUserId(user.id);
 
-      // Buscar perfil para determinar protocolo
       const { data: profileData } = await supabase
         .from('profiles')
         .select('gender')
@@ -80,7 +78,6 @@ export default function JornadaPage() {
         .single();
 
       if (profileData) {
-        // NORMALIZAÇÃO DE STRING - Detectar gênero com .toLowerCase() e .includes()
         const genderLower = profileData.gender?.toLowerCase() || '';
         const isMale = genderLower.includes('masculino') || genderLower.includes('leão');
         const userProtocol = isMale ? 'male' : 'female';
@@ -89,28 +86,38 @@ export default function JornadaPage() {
         setUserGender(profileData.gender);
         setIsLoadingProfile(false);
 
-        // Buscar dias completados na tabela jornada_logs
+        // 👇 MODO CARRASCO: Buscamos também a data do check-in (completed_at)
         const { data: logsData } = await supabase
           .from('jornada_logs')
-          .select('day_number')
+          .select('day_number, completed_at')
           .eq('user_id', user.id)
           .order('day_number', { ascending: true });
 
-        // Salva para a Home ler depois
         localStorage.setItem('primal_progress_days', (logsData?.length || 0).toString());
 
-        // LÓGICA AJUSTADA: Se lista vazia, mostrar intro
         if (!logsData || logsData.length === 0) {
-          // Nenhum check-in feito - mostrar introdução
           setShowIntro(true);
           setCompletedDays([]);
           setCurrentDay(1);
         } else {
-          // Tem check-ins - mostrar tela normal
+          // 👇 GATILHO DA GUILHOTINA: Verifica se passou de 48 horas
+          const lastLog = logsData[logsData.length - 1];
+          if (lastLog && lastLog.completed_at) {
+            const lastCheckIn = new Date(lastLog.completed_at).getTime();
+            const now = new Date().getTime();
+            const hoursSinceLastCheckin = (now - lastCheckIn) / (1000 * 60 * 60);
+
+            if (hoursSinceLastCheckin > 48) {
+              // O usuário falhou. Abre a tela de punição e interrompe o carregamento.
+              setShowPunishmentModal(true);
+              setLoading(false);
+              return; 
+            }
+          }
+
           const completedDayNumbers = logsData.map((log: any) => log.day_number);
           setCompletedDays(completedDayNumbers);
 
-          // Definir dia atual como o próximo dia não completado
           const maxCompletedDay = Math.max(...completedDayNumbers);
           if (maxCompletedDay < 21) {
             setCurrentDay(maxCompletedDay + 1);
@@ -119,7 +126,6 @@ export default function JornadaPage() {
             setShowClaimButton(true);
           }
 
-          // Marcar tarefas como completadas baseado nos dias completados
           const newCompletedTasks: Record<string, boolean> = {};
           const protocolData = JOURNEY_DATA[userProtocol];
           
@@ -133,7 +139,7 @@ export default function JornadaPage() {
           });
 
           setCompletedTasks(newCompletedTasks);
-          setShowIntro(false); // Já tem progresso, não mostrar intro
+          setShowIntro(false); 
         }
       }
     } catch (error) {
@@ -486,8 +492,8 @@ if (showIntro) {
   return (
     <div className="min-h-screen bg-zinc-950 py-8 px-4 pb-40">
       <div className="max-w-4xl mx-auto">
-        {/* Header - DARK PREMIUM COM GLASSMORPHISM + LÓGICA DE GÊNERO */}
-        <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border border-white/10 p-6 md:p-8 mb-8 overflow-hidden">
+  {/* Header - DARK PREMIUM COM GLASSMORPHISM + LÓGICA DE GÊNERO */}
+  <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border border-white/10 p-6 md:p-8 mb-8 overflow-hidden">
           {/* Gradiente de fundo sutil */}
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 pointer-events-none"></div>
           
@@ -503,8 +509,14 @@ if (showIntro) {
                     : 'Força, Testosterona e Domínio Mental'}
                 </p>
               </div>
-              <div className="text-5xl filter drop-shadow-[0_0_15px_rgba(251,191,36,0.4)]">
-                {protocol === 'male' ? '🦁' : '🐆'}
+              
+              {/* 👇 GATILHO DE RETENÇÃO: O Contador de Ofensiva (Streak) */}
+              <div className="flex flex-col items-center justify-center bg-zinc-950/80 border border-amber-500/30 rounded-xl p-3 shadow-[0_0_15px_rgba(251,191,36,0.2)] transform hover:scale-105 transition-transform cursor-default">
+                <div className="flex items-center gap-1">
+                  <Flame className={`w-8 h-8 ${completedDays.length > 0 ? 'text-orange-500 animate-pulse' : 'text-zinc-600'}`} />
+                  <span className="text-3xl font-black text-white">{completedDays.length}</span>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-1">Dias Seguidos</span>
               </div>
             </div>
             
@@ -625,9 +637,8 @@ if (showIntro) {
                         </div>
                       </div>
                     </div>
-
-                    {/* Lista de Tarefas - DARK COM RADIO BUTTON LARANJA */}
-                    <div className="space-y-3">
+{/* Lista de Tarefas - DARK COM RADIO BUTTON LARANJA */}
+<div className="space-y-3">
                       <div className="font-semibold text-gray-100">Tarefas do Dia:</div>
                       {day.tasks.map((task) => {
                         const taskKey = `day${day.day}_${task.id}`;
@@ -638,14 +649,17 @@ if (showIntro) {
                             <div key={task.id} className="flex items-center gap-3">
                               <button
                                 onClick={() => toggleTask(day.day, task.id)}
-                                className={`flex items-center gap-3 p-4 rounded-lg transition-all backdrop-blur-md ${
+                                className={`flex items-center gap-3 p-4 rounded-lg transition-all duration-300 backdrop-blur-md active:scale-95 ${
                                   isCompleted
-                                    ? 'bg-green-900/30 border-2 border-green-500/60 shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                                    : 'bg-zinc-800/50 hover:bg-zinc-800/70 border-2 border-zinc-700/50'
+                                    ? 'bg-green-900/30 border-2 border-green-500/60 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                                    : 'bg-zinc-800/50 hover:bg-zinc-800/70 border-2 border-zinc-700/50 hover:border-zinc-600'
                                 }`}
                               >
                                 {isCompleted ? (
-                                  <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                  <div className="relative">
+                                    <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                    <Flame className="w-4 h-4 text-orange-500 absolute -top-2 -right-2 animate-bounce drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]" />
+                                  </div>
                                 ) : (
                                   <Circle className="w-5 h-5 text-gray-500 flex-shrink-0" />
                                 )}
@@ -669,14 +683,17 @@ if (showIntro) {
                           <button
                             key={task.id}
                             onClick={() => toggleTask(day.day, task.id)}
-                            className={`w-full flex items-center gap-3 p-4 rounded-lg transition-all backdrop-blur-md ${
+                            className={`w-full flex items-center gap-3 p-4 rounded-lg transition-all duration-300 backdrop-blur-md active:scale-95 ${
                               isCompleted
-                                ? 'bg-green-900/30 border-2 border-green-500/60 shadow-[0_0_15px_rgba(34,197,94,0.3)]'
-                                : 'bg-zinc-800/50 hover:bg-zinc-800/70 border-2 border-zinc-700/50'
+                                ? 'bg-green-900/30 border-2 border-green-500/60 shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                                : 'bg-zinc-800/50 hover:bg-zinc-800/70 border-2 border-zinc-700/50 hover:border-zinc-600'
                             }`}
                           >
                             {isCompleted ? (
-                              <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                              <div className="relative">
+                                <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0 drop-shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                <Flame className="w-4 h-4 text-orange-500 absolute -top-2 -right-2 animate-bounce drop-shadow-[0_0_5px_rgba(249,115,22,0.8)]" />
+                              </div>
                             ) : (
                               <Circle className="w-5 h-5 text-orange-500 flex-shrink-0" />
                             )}
@@ -747,6 +764,37 @@ if (showIntro) {
                 Sim, Reiniciar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+{/* Modal de Reset de Sequência (O Estranho Frio) */}
+{showPunishmentModal && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[110] backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-zinc-900 border border-orange-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
+            
+            <div className="flex justify-center mb-6 relative">
+              <X className="w-16 h-16 text-orange-500 relative z-20" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Sequência Interrompida</h2>
+            <p className="text-orange-400 font-semibold tracking-widest text-xs uppercase mb-6">RECALCULANDO ROTA</p>
+            
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-5 mb-8 shadow-inner">
+              <p className="text-zinc-400 text-sm leading-relaxed">
+                O sistema detectou mais de 48 horas de inatividade. Na biologia, a consistência é a única métrica que gera resultados reais. Sua sequência foi resetada e seu protocolo voltará para o Dia 1.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowPunishmentModal(false);
+                handleResetProtocol(); // Reinicia o protocolo para o Dia 1
+              }}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all active:scale-95 uppercase tracking-wide"
+            >
+              REINICIAR PROTOCOLO
+            </button>
           </div>
         </div>
       )}

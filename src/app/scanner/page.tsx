@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, CheckCircle, Skull, Loader2, RotateCcw } from 'lucide-react';
+import { Camera, CheckCircle, Skull, Loader2, RotateCcw, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
@@ -9,7 +9,60 @@ interface ScanResult {
   verdict: 'ALLOWED' | 'BANNED';
   title: string;
   explanation: string;
+  curiosity_fact?: string; // O novo campo da IA que trará o segredo
 }
+
+// --- ARMAS DE RETENÇÃO: MOTOR TÁTIL E SONORO NATIVO ---
+const triggerFeedback = (type: 'success' | 'error') => {
+  if (typeof window === 'undefined') return;
+
+  // 1. O Motor Tátil (Vibração - Funciona no Android)
+  if ('vibrate' in navigator) {
+    if (type === 'error') {
+      navigator.vibrate([200, 100, 300, 100, 400]); // Choque pesado e longo
+    } else {
+      navigator.vibrate([50, 50, 50]); // Clique curto e crocante
+    }
+  }
+
+  // 2. O Motor Sonoro (Sintetizador Web Audio API - Funciona em iOS e Android)
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    if (type === 'error') {
+      // Som de "Acesso Negado" (Buzzer Grave)
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } else {
+      // Som de "Level Up" (Plim Agudo)
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // Nota Dó (C5)
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // Pula para Mi (E5)
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    }
+  } catch (e) {
+    console.error('Radar sonoro inativo:', e);
+  }
+};
 
 export default function ScannerPage() {
   const [image, setImage] = useState<string | null>(null);
@@ -22,8 +75,10 @@ export default function ScannerPage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [scanCount, setScanCount] = useState(0);
-  // 👇 Nova variável do Odômetro Total do Scanner
   const [totalScansCount, setTotalScansCount] = useState(0);
+  
+  // --- GATILHO DE CURIOSIDADE (NOVO ESTADO) ---
+  const [showCuriosityModal, setShowCuriosityModal] = useState(false);
 
   // --- 1. CARREGAR DADOS REAIS DO SUPABASE ---
   useEffect(() => {
@@ -32,7 +87,6 @@ export default function ScannerPage() {
       if (authUser) {
         setUser(authUser);
         
-        // 👇 Puxa o perfil completo, incluindo o total_scans
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_subscriber, daily_scan_count, total_scans')
@@ -42,7 +96,7 @@ export default function ScannerPage() {
         if (profile) {
           setIsSubscriber(profile.is_subscriber || false);
           setScanCount(profile.daily_scan_count || 0);
-          setTotalScansCount(profile.total_scans || 0); // Guarda o total histórico
+          setTotalScansCount(profile.total_scans || 0); 
         }
       }
     };
@@ -79,7 +133,6 @@ export default function ScannerPage() {
     setResult(null);
 
     try {
-      // Chamada para a API do Gemini
       const response = await fetch('/api/scanner', {
         method: 'POST',
         headers: {
@@ -95,15 +148,21 @@ export default function ScannerPage() {
       const data = await response.json();
       setResult(data);
 
+      // 👇 GATILHO DE DOPAMINA: Dispara som e vibração baseado no resultado
+      if (data.verdict === 'ALLOWED') {
+        triggerFeedback('success');
+      } else {
+        triggerFeedback('error');
+      }
+
       // --- 3. ATUALIZA CONTADOR NO SUPABASE APÓS SUCESSO ---
       if (user) {
         const nextCount = scanCount + 1;
-        const nextTotal = totalScansCount + 1; // Odômetro sobe 1
+        const nextTotal = totalScansCount + 1; 
 
-        setScanCount(nextCount); // Atualiza na tela
-        setTotalScansCount(nextTotal); // Atualiza na tela
+        setScanCount(nextCount); 
+        setTotalScansCount(nextTotal); 
         
-        // 👇 Salva NO BANCO os dois contadores de uma vez
         await supabase
           .from('profiles')
           .update({ 
@@ -269,11 +328,30 @@ export default function ScannerPage() {
                 </p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/10">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 mb-4 border border-white/10">
                 <p className="text-white text-lg text-center leading-relaxed">
                   {result.explanation}
                 </p>
               </div>
+
+              {/* O Botão Fantasma (Gatilho de Curiosidade) */}
+              {result.curiosity_fact && (
+                <div className="flex justify-center mb-8">
+                  <button
+                    onClick={() => setShowCuriosityModal(true)}
+                    className={`flex items-center gap-2 text-sm font-bold tracking-widest uppercase transition-all duration-300 active:scale-95 bg-transparent border-none outline-none ${
+                      result.verdict === 'BANNED' 
+                        ? 'text-red-400/70 hover:text-red-400' 
+                        : 'text-green-400/70 hover:text-green-400'
+                    }`}
+                  >
+                    <span className="text-lg">
+                      {result.verdict === 'BANNED' ? '👁️' : '🧬'}
+                    </span>
+                    {result.verdict === 'BANNED' ? 'Segredo da Indústria' : 'Impacto Metabólico'}
+                  </button>
+                </div>
+              )}
 
               <button
                 onClick={handleReset}
@@ -292,6 +370,47 @@ export default function ScannerPage() {
         onClose={() => setShowPaywall(false)} 
         userId={user?.id || ''} 
       />
+
+      {/* Modal de Curiosidade (O Segredo Revelado) */}
+      {showCuriosityModal && result?.curiosity_fact && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 bg-zinc-950/90 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className={`relative w-full max-w-md border-t-2 sm:border-2 rounded-t-[2rem] sm:rounded-[2rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 ${
+            result.verdict === 'BANNED' ? 'bg-zinc-900 border-red-500/50' : 'bg-zinc-900 border-green-500/50'
+          }`}>
+            
+            <button
+              onClick={() => setShowCuriosityModal(false)}
+              className="absolute top-6 right-6 text-zinc-500 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-3xl">
+                {result.verdict === 'BANNED' ? '👁️' : '🧬'}
+              </span>
+              <h3 className={`text-xl font-black uppercase tracking-tight ${
+                result.verdict === 'BANNED' ? 'text-red-400' : 'text-green-400'
+              }`}>
+                {result.verdict === 'BANNED' ? 'Arquivo Confidencial' : 'Biologia Aplicada'}
+              </h3>
+            </div>
+
+            <div className="bg-zinc-950 rounded-xl p-6 border border-zinc-800 shadow-inner">
+              <p className="text-zinc-300 text-base leading-relaxed font-medium">
+                "{result.curiosity_fact}"
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowCuriosityModal(false)}
+              className="w-full mt-8 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-4 rounded-xl transition-all active:scale-95 uppercase tracking-wider text-sm"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
