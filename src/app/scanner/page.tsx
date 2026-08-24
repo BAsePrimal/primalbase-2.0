@@ -194,10 +194,10 @@ export default function ScannerPage() {
         {/* Header Moderno */}
         <div className="text-center mb-8 pt-6">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-white bg-clip-text text-transparent mb-3">
-            Scanner Visual
+            Scanner IA
           </h1>
           <p className="text-gray-400 text-lg">
-            Escaneie alimentos e descubra se são aprovados na dieta Animal-Based
+            Valide produtos no Protocolo Ancestral em segundos.
           </p>
         </div>
 
