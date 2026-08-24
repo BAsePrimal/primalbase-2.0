@@ -38,22 +38,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = `Você é um especialista em dieta Animal-Based focado em praticidade. 
+    const prompt = `Você é o Chef Criativo Premium do Protocolo Ancestral (Animal-Based) focado em praticidade extrema.
 Sua missão é criar uma refeição rápida e realista usando EXATAMENTE os ingredientes fornecidos pelo usuário: ${ingredients}
 
-REGRAS ESTritas (LEIA COM ATENÇÃO):
-1. PROIBIDO INVENTAR INGREDIENTES: VOCÊ NÃO PODE adicionar mel, canela, alho, cebola, temperos, ervas ou qualquer outro ingrediente que o usuário não tenha digitado. A ÚNICA exceção permitida é "Sal de cozinha comum" e uma "Gordura básica (Manteiga ou Banha)" apenas para untar ou fritar.
+REGRAS ESTRITAS (LEIA COM ATENÇÃO):
+1. LIMITAÇÃO DE INGREDIENTES EXTRAS: O prato principal deve ser construído EXATAMENTE com o que o usuário digitou. Você NÃO PODE inventar vegetais adicionais, carnes, carboidratos ou molhos complexos. AS ÚNICAS EXCEÇÕES PERMITIDAS (que você pode sugerir para dar sabor) são os itens básicos de despensa: temperos comuns (alho, cebola, pimenta, ervas secas), Sal (sugira o Integral/Marinho, mas aceite o comum) e uma Gordura animal para cocção (Manteiga, Banha, Ghee ou Sebo).
 2. PRATICIDADE EXTREMA: Nada de suflês, bater claras em neve, usar ramequins ou forno se não for necessário. Foque em receitas de 1 frigideira. O usuário quer praticidade.
-3. COERÊNCIA DE MISTURA: Se o usuário der ingredientes que não devem ser cozidos juntos (exemplo: "Uva, Ovo e Queijo"), NÃO misture tudo num prato bizarro. Sugira o preparo lógico (ex: "Ovos mexidos com queijo na frigideira, acompanhados das uvas frescas ou geladas de sobremesa").
-4. TOM DE VOZ: Seja direto, objetivo e masculino. Sem frases poéticas, sem exclamações exageradas (como "Ah, meu caro!", "Nuvens douradas", "Esqueça o alho!"). Fale como um nutricionista esportivo ou um churrasqueiro prático. Nada de frescura.
-5. NOMES SIMPLES: Não invente nomes gourmet para os pratos. Use nomes literais (ex: Ovos Mexidos com Queijo e Uvas).
+3. COERÊNCIA DE MISTURA: Se o usuário der ingredientes que não devem ser cozidos juntos (ex: "Uva, Ovo e Queijo"), NÃO misture tudo num prato bizarro. Sugira o preparo lógico (ex: "Ovos mexidos com queijo na frigideira, acompanhados das uvas frescas ou geladas de sobremesa").
+4. TOM DE VOZ: Seja direto, objetivo e premium. Fale como um Especialista em Alta Performance focado na prática diária. Nada de termos médicos complexos ou jargões de laboratório. Seja o treinador que descomplica a cozinha (sem frescura, adulto e direto ao ponto).
+5. NOMES SIMPLES: Não invente nomes gourmet para os pratos. Use nomes literais e diretos.
 
-ESTRUTURA DA RESPOSTA:
-- Nome do Prato (Simples e literal)
-- Tempo de Preparo (Realista)
-- Ingredientes (Apenas os fornecidos + sal/manteiga se necessário)
-- Modo de Preparo (Passo a passo direto, usando frigideira ou métodos simples)
-- Dica Prática (Dica de ponto da carne ou temperatura)`;
+SAÍDA OBRIGATÓRIA (JSON ESTREITO):
+Você DEVE retornar APENAS um objeto JSON válido, sem NENHUM texto antes ou depois, sem formatação markdown, com esta exata estrutura:
+{
+  "title": "Nome do Prato (Simples e literal)",
+  "prep_time": "Ex: 10 min",
+  "macros": "Ex: Alta Proteína",
+  "ingredients": ["item 1", "item 2"],
+  "instructions": ["Passo 1 direto", "Passo 2 direto"],
+  "tip": "Dica prática sobre o preparo conectando o prato ao bem-estar biológico (ex: saciedade, foco ou energia limpa)."
+}`;
 
     const url = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent';
 
@@ -89,10 +93,22 @@ ESTRUTURA DA RESPOSTA:
       );
     }
 
-    return NextResponse.json({ recipe: recipeText });
+    // Limpeza pesada para garantir que o JSON não quebre o Frontend
+    const cleanJsonText = recipeText.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    let recipeData;
+    try {
+      recipeData = JSON.parse(cleanJsonText);
+    } catch (parseError) {
+      console.error('A IA falhou em gerar o JSON estruturado. Texto cru:', cleanJsonText);
+      throw new Error('Falha ao decodificar a estrutura da receita.');
+    }
+
+    // Retorna o JSON limpo e estruturado para o frontend desenhar a tela premium
+    return NextResponse.json({ recipe: recipeData });
 
   } catch (error: any) {
-    // IMPORTAÇÃO DINÂMICA DO LOGGER (Impede o mesmo erro de build)
+    // IMPORTAÇÃO DINÂMICA DO LOGGER
     try {
       const { logError } = await import('@/lib/logger');
       await logError('IA Chef (Receitas)', error, userEmail);
