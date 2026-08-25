@@ -283,7 +283,7 @@ export default function ChefIAPage() {
             {/* Dica do Chef */}
             <div className="bg-gradient-to-r from-orange-900/20 to-transparent border-l-4 border-orange-500 p-5 rounded-r-xl mb-8">
               <p className="text-orange-300 font-medium italic leading-relaxed">
-                "{receita.tip}"
+                {receita.tip.replace(/"/g, '')}
               </p>
             </div>
 
