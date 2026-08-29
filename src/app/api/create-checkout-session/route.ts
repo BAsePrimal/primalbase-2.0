@@ -3,7 +3,8 @@ import { stripe, STRIPE_PRICE_ID } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, email } = await req.json();
+    // Agora capturamos o "plan" que vem do frontend
+    const { userId, email, plan } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -16,12 +17,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // A MÁQUINA DE PREÇOS: Define qual código usar baseado na escolha da tela
+    let selectedPriceId = STRIPE_PRICE_ID; // Mensal como padrão
+
+    if (plan === 'anual') {
+      selectedPriceId = 'price_1U9p33Cf4oilBdJA7fwtkoeL';
+    } else if (plan === 'semestral') {
+      selectedPriceId = 'price_1U9ovJCf4oilBdJAwsmy1Hnf';
+    }
+
     // Criar sessão de checkout com trial de 3 dias
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: STRIPE_PRICE_ID,
+          price: selectedPriceId,
           quantity: 1,
         },
       ],

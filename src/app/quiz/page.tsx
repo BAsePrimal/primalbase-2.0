@@ -19,11 +19,6 @@ export default function QuizPage() {
   const [loadingText, setLoadingText] = useState('')
   const [progress, setProgress] = useState(0)
 
-  // Omitindo a forçagem de dark mode genérico, usaremos Tailwind absoluto
-  // useEffect(() => {
-  //   document.documentElement.classList.add('dark')
-  // }, [])
-
   const handleAnswer = (key: keyof QuizAnswers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
 
@@ -94,7 +89,6 @@ export default function QuizPage() {
   }) => (
     <button
       onClick={onClick}
-      // Padrão de botão de opção alinhado com o seu Modal
       className="w-full h-20 px-6 text-left text-lg md:text-xl font-medium rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-800 text-zinc-200 transition-all duration-200 flex items-center shadow-sm"
     >
       {children}
@@ -116,13 +110,12 @@ export default function QuizPage() {
             </h1>
             
             <p className="text-lg md:text-xl text-zinc-400 text-center max-w-2xl px-4 font-normal leading-relaxed">
-              A vida moderna travou o seu metabolismo. Descubra como reativar a <strong className="text-amber-500 font-semibold">Cirurgia da Natureza</strong>.
+              A vida moderna travou o seu metabolismo. Descubra o atalho para <strong className="text-amber-500 font-black uppercase tracking-wider">religar o seu corpo</strong>.
             </p>
             
             <div className="w-full max-w-md mt-12 px-4">
               <button
                 onClick={() => setStep(1)}
-                // IDÊNTICO ao botão do seu Modal de "Iniciar Protocolo"
                 className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none"
               >
                 INICIAR MAPEAMENTO
@@ -273,56 +266,54 @@ export default function QuizPage() {
         )
 
         case 7:
-            // Lógica de Inteligência Emocional (Efeito Barnum)
-            const isFeminine = answers.biology === 'feminine';
-            
-            let goalText = "derreter a gordura teimosa e forçar seu corpo a usar o próprio estoque como combustível de alta performance."; // Padrão
-            if (answers.goal === 'mental-clarity') {
-              goalText = "eliminar a névoa cerebral, resetar seus receptores biológicos e te entregar um foco absoluto.";
-            } else if (answers.goal === 'reduce-inflammation') {
-              goalText = "zerar o inchaço constante, desligar a inflamação silenciosa e restaurar o seu sistema digestivo.";
-            } else if (answers.goal === 'longevity') {
-              goalText = "ativar a autofagia celular (a faxina do corpo), renovar seus tecidos e blindar a sua imunidade.";
-            }
-    
-            return (
-              <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
-                <div className="flex justify-center mb-6">
-                  <Flame className="w-16 h-16 text-amber-500" />
-                </div>
-                
-                <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
-                  PROTOCOLO ENCONTRADO
-                </h1>
-                
-                {/* Box idêntico ao "Card de Informação" do seu app */}
-                <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
-                   <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                  
-                  <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
-                    Seu perfil biológico indica que o seu metabolismo está funcionando à base de açúcar e inflamação constante. Suas quedas de energia são o principal alerta.
-                    <br /><br />
-                    <span className="text-white font-semibold">A boa notícia?</span> Sua biologia {isFeminine ? "feminina" : "masculina"} pode ser resetada.
-                    <br /><br />
-                    Nós preparamos um <strong className="text-amber-500 font-medium">Desafio de 21 Dias</strong> que vai {goalText}
-                  </p>
-                </div>
-    
-                <div className="w-full max-w-md mx-auto mt-10">
-              <button 
-                onClick={() => window.location.href = 'https://www.primalbase.com.br/login'}
-                className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce"
-              >
-                ACESSAR MEU PROTOCOLO (GRÁTIS)
-              </button>
-            </div>
+          const isFeminine = answers.biology === 'feminine';
+          
+          let painPointText = "gerando inflamação. Esse é o verdadeiro motivo do seu cansaço e dificuldade em derreter gordura.";
+          
+          if (answers.goal === 'mental-clarity') {
+            painPointText = "causando picos de insulina. Esse é o verdadeiro motivo do seu cansaço e da sua névoa cerebral.";
+          } else if (answers.goal === 'reduce-inflammation') {
+            painPointText = "gerando estresse celular. Esse é o verdadeiro motivo do seu cansaço e do seu inchaço corporal.";
+          } else if (answers.goal === 'longevity') {
+            painPointText = "acelerando a oxidação celular. Esse é o verdadeiro motivo do seu cansaço e da sua falta de energia vital.";
+          }
+
+          return (
+            <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
+              <div className="flex justify-center mb-6">
+                <Flame className="w-16 h-16 text-amber-500" />
               </div>
-            )
+              
+              <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
+                PROTOCOLO ENCONTRADO
+              </h1>
+              
+              <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
+                 <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                
+                <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
+                  O seu resultado mostra que a sua biologia {isFeminine ? "feminina" : "masculina"} está travada no açúcar e {painPointText}
+                  <br /><br />
+                  <span className="text-white font-semibold">A boa notícia? É que isso tem conserto rápido.</span>
+                  <br /><br />
+                  Nós mapeamos o seu <strong className="text-amber-500 font-medium">Protocolo de 21 Dias</strong>. Ele é o único atalho que você precisa para limpar o seu corpo de forma prática, sem ter que ficar adivinhando o que comer. Clique abaixo para descobrir como nós vamos fazer isso por você.
+                </p>
+              </div>
+  
+              <div className="w-full max-w-md mx-auto mt-10">
+                <button 
+                  onClick={() => window.location.href = 'https://www.primalbase.com.br/login'}
+                  className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce"
+                >
+                  ACESSAR MEU PROTOCOLO (GRÁTIS)
+                </button>
+              </div>
+            </div>
+          )
         }
       }
 
   return (
-    // Fundo fixado no zinc-950 puro, alinhado ao centro.
     <div className="min-h-[100dvh] w-full bg-zinc-950 flex flex-col justify-center items-center py-8">
       <div className="w-full max-w-3xl flex flex-col justify-center">
         
