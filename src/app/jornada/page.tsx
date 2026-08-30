@@ -37,7 +37,6 @@ export default function JornadaPage() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPunishmentModal, setShowPunishmentModal] = useState(false);
 
-  // Carregar dados do usuário e jornada
   useEffect(() => {
     loadUserJourney();
   }, []);
@@ -86,7 +85,6 @@ export default function JornadaPage() {
         setUserGender(profileData.gender);
         setIsLoadingProfile(false);
 
-        // 👇 MODO CARRASCO: Buscamos também a data do check-in (completed_at)
         const { data: logsData } = await supabase
           .from('jornada_logs')
           .select('day_number, completed_at')
@@ -100,7 +98,6 @@ export default function JornadaPage() {
           setCompletedDays([]);
           setCurrentDay(1);
         } else {
-          // 👇 GATILHO DA GUILHOTINA: Verifica se passou de 48 horas
           const lastLog = logsData[logsData.length - 1];
           if (lastLog && lastLog.completed_at) {
             const lastCheckIn = new Date(lastLog.completed_at).getTime();
@@ -108,7 +105,6 @@ export default function JornadaPage() {
             const hoursSinceLastCheckin = (now - lastCheckIn) / (1000 * 60 * 60);
 
             if (hoursSinceLastCheckin > 48) {
-              // O usuário falhou. Abre a tela de punição e interrompe o carregamento.
               setShowPunishmentModal(true);
               setLoading(false);
               return; 
@@ -149,14 +145,11 @@ export default function JornadaPage() {
     }
   }
 
-  // Selecionar protocolo (caso não tenha perfil)
   const handleSelectProtocol = async (protocolType: 'male' | 'female') => {
     if (!userId) return;
 
     try {
       setLoading(true);
-      
-      // Atualizar perfil com gênero
       const gender = protocolType === 'male' ? 'Masculino' : 'Feminino';
       await supabase
         .from('profiles')
@@ -173,12 +166,10 @@ export default function JornadaPage() {
     }
   };
 
-  // Resetar protocolo - SAFE RESET COM TRATAMENTO DE ERRO
   const handleResetProtocol = async () => {
     if (!userId) return;
 
     try {
-      // Tentar deletar todos os logs da jornada
       const { error } = await supabase
         .from('jornada_logs')
         .delete()
@@ -190,14 +181,12 @@ export default function JornadaPage() {
         return;
       }
 
-      // SUCESSO: Forçar estado para tela de Introdução
       setCompletedDays([]);
       setCompletedTasks({});
       setCurrentDay(1);
       setShowIntro(true);
       localStorage.removeItem('primal_intro_seen');
       
-      // Recarregar página para garantir limpeza total
       window.location.reload();
     } catch (error) {
       console.error('Erro ao resetar protocolo:', error);
@@ -205,13 +194,11 @@ export default function JornadaPage() {
     }
   };
 
-  // Começar desafio (fechar intro)
   const handleStartChallenge = () => {
     localStorage.setItem('primal_intro_seen', 'true');
     setShowIntro(false);
   };
 
-  // Toggle de tarefa e inserção no banco - CORRIGIDO COM RECÁLCULO ESTRITO E NUVEM
   async function toggleTask(dayNum: number, taskId: string) {
     if (dayNum > currentDay || !userId) return;
 
@@ -220,24 +207,19 @@ export default function JornadaPage() {
     const newCompleted = { ...completedTasks, [taskKey]: !isCurrentlyCompleted };
     setCompletedTasks(newCompleted);
 
-    // Verificar se todas as tarefas do dia foram completadas
     const protocolData = protocol ? JOURNEY_DATA[protocol] : null;
     if (!protocolData) return;
 
     const currentDayData = protocolData.days.find((d: any) => d.day === dayNum);
     if (!currentDayData) return;
 
-    // RECÁLCULO ESTRITO: Verificar se TODAS as tarefas estão marcadas
     const allTasksCompleted = currentDayData.tasks.every((task: any) => {
       const key = `day${dayNum}_${task.id}`;
       return newCompleted[key] === true;
     });
 
-    // LÓGICA CORRIGIDA: Recalcular status do dia em TODA interação
     if (allTasksCompleted && !completedDays.includes(dayNum)) {
-      // TODAS as tarefas completadas E dia ainda não estava marcado como concluído
       try {
-        // Inserir na tabela jornada_logs com o status concluido
         await supabase
           .from('jornada_logs')
           .insert({
@@ -247,17 +229,14 @@ export default function JornadaPage() {
             completed_at: new Date().toISOString(),
           });
 
-        // Atualizar estado local
         const newCompletedDays = [...completedDays, dayNum];
         setCompletedDays(newCompletedDays);
 
-        // Se completou o Dia 21, mostrar botão de reivindicar
         if (dayNum === 21) {
           setShowClaimButton(true);
           return;
         }
 
-        // Avançar para o próximo dia
         if (dayNum === currentDay && currentDay < 21) {
           const newCurrentDay = currentDay + 1;
           setCurrentDay(newCurrentDay);
@@ -268,20 +247,16 @@ export default function JornadaPage() {
         alert('Erro ao salvar progresso. Tente novamente.');
       }
     } else if (!allTasksCompleted && completedDays.includes(dayNum)) {
-      // PELO MENOS UMA tarefa desmarcada E dia estava marcado como concluído
       try {
-        // Remover da tabela jornada_logs
         await supabase
           .from('jornada_logs')
           .delete()
           .eq('user_id', userId)
           .eq('day_number', dayNum);
 
-        // Atualizar estado local - remover dia da lista de completados
         const newCompletedDays = completedDays.filter(d => d !== dayNum);
         setCompletedDays(newCompletedDays);
 
-        // Se era o dia 21, esconder botão de reivindicar
         if (dayNum === 21) {
           setShowClaimButton(false);
         }
@@ -297,13 +272,6 @@ export default function JornadaPage() {
     setShowBenefitsModal(true);
   }
 
-  function getDayStatus(dayNum: number): 'completed' | 'current' | 'locked' {
-    if (completedDays.includes(dayNum)) return 'completed';
-    if (dayNum === currentDay) return 'current';
-    return 'locked';
-  }
-
-  // Função para determinar o conteúdo do modal baseado na meta de jejum
   function getBenefitsContent(goalHours: number) {
     if (goalHours === 12 || goalHours === 14) {
       return {
@@ -339,7 +307,6 @@ export default function JornadaPage() {
       };
     }
 
-    // Fallback padrão
     return {
       title: 'Benefícios do Jejum',
       ring: goalHours,
@@ -361,7 +328,6 @@ export default function JornadaPage() {
     );
   }
 
-  // Tela de seleção de protocolo (caso não tenha)
   if (!protocol) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
@@ -379,38 +345,42 @@ export default function JornadaPage() {
             <button
               onClick={() => handleSelectProtocol('male')}
               disabled={loading}
-              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              <div className="text-6xl mb-4">🦁</div>
+              <div className="mb-6 flex justify-start">
+                <Zap className="w-16 h-16 text-amber-500 group-hover:scale-110 transition-transform duration-300" />
+              </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Protocolo Leão
+                Protocolo Masculino
               </h2>
               <p className="text-gray-600 text-lg mb-6">
-                Força, Testosterona e Domínio Mental.
+                Performance e Domínio Mental.
               </p>
               <div className="space-y-2 text-sm text-gray-500">
                 <p>✓ 21 dias de transformação</p>
                 <p>✓ Foco em força e energia</p>
-                <p>✓ Otimização hormonal masculina</p>
+                <p>✓ Otimização hormonal</p>
               </div>
             </button>
 
             <button
               onClick={() => handleSelectProtocol('female')}
               disabled={loading}
-              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-rose-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-rose-500 disabled:opacity-50 disabled:cursor-not-allowed group"
             >
-              <div className="text-6xl mb-4">🐆</div>
+              <div className="mb-6 flex justify-start">
+                <Sparkles className="w-16 h-16 text-rose-500 group-hover:scale-110 transition-transform duration-300" />
+              </div>
               <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Protocolo Leoa
+                Protocolo Feminino
               </h2>
               <p className="text-gray-600 text-lg mb-6">
-                Hormônios, Energia e Vitalidade.
+                Equilíbrio e Vitalidade.
               </p>
               <div className="space-y-2 text-sm text-gray-500">
                 <p>✓ 21 dias de renovação</p>
-                <p>✓ Equilíbrio hormonal feminino</p>
-                <p>✓ Energia e beleza natural</p>
+                <p>✓ Equilíbrio e regulação</p>
+                <p>✓ Energia constante</p>
               </div>
             </button>
           </div>
@@ -421,51 +391,40 @@ export default function JornadaPage() {
 
   const protocolData = JOURNEY_DATA[protocol];
 
-// Tela de Introdução (Onboarding) - DARK MODE PREMIUM COM SKELETON RESPONSIVO
 if (showIntro) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950">
-      {/* Fundo escuro fixo para não dar barra branca ao rolar */}
       <div className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-black to-zinc-950 pointer-events-none"></div>
 
       <div className="relative z-10 max-w-3xl w-full my-auto py-10">
-        {/* CONTAINER PRINCIPAL DO MODAL - Borda redonda e contorno elegante */}
         <div className="relative bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] p-8 md:p-14 text-center overflow-hidden flex flex-col justify-center min-h-[50vh]">
           
-          {/* Gradiente de fundo sutil */}
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 pointer-events-none"></div>
           
-          {/* Conteúdo */}
           <div className="relative z-10">
             
-            {/* Ícone com brilho */}
             <div className="flex justify-center mb-8 md:mb-12">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                <div className="relative text-7xl md:text-8xl filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]">
-                  {protocol === 'male' ? '🦁' : '🐆'}
-                </div>
+                <Zap className="relative z-10 w-24 h-24 md:w-32 md:h-32 text-amber-500 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
               </div>
             </div>
 
-            {/* Título Minimalista e Impactante */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight leading-tight">
               <span className="text-white">O DESPERTAR </span>
               <span className="text-amber-500 block sm:inline">BIOLÓGICO</span>
             </h1>
             
-            {/* Subtítulo Dinâmico */}
             {isLoadingProfile ? (
               <div className="flex flex-col items-center gap-3 mb-10">
                 <div className="h-6 w-3/4 bg-zinc-800 rounded-md animate-pulse"></div>
               </div>
             ) : (
               <p className="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-400 mb-10">
-                Você está {userGender?.toLowerCase().includes('masculino') || userGender?.toLowerCase().includes('leão') ? 'pronto' : 'pronta'} para assumir o controle?
+                Você está {userGender?.toLowerCase().includes('masculino') ? 'pronto' : 'pronta'} para assumir o controle?
               </p>
             )}
 
-            {/* Card de Informação */}
             <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mb-10 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div> 
               <p className="text-gray-300 leading-relaxed text-base md:text-lg pl-4">
@@ -473,7 +432,6 @@ if (showIntro) {
               </p>
             </div>
 
-            {/* Botão Sólido - Sem margem branca e sem borda falhada */}
             <button
               onClick={handleStartChallenge}
               disabled={isLoadingProfile}
@@ -492,26 +450,26 @@ if (showIntro) {
   return (
     <div className="min-h-screen bg-zinc-950 py-8 px-4 pb-40">
       <div className="max-w-4xl mx-auto">
-  {/* Header - DARK PREMIUM COM GLASSMORPHISM + LÓGICA DE GÊNERO */}
-  <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border border-white/10 p-6 md:p-8 mb-8 overflow-hidden">
-          {/* Gradiente de fundo sutil */}
+        <div className="relative backdrop-blur-xl bg-white/5 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border border-white/10 p-6 md:p-8 mb-8 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5 pointer-events-none"></div>
           
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent mb-2">
-                  {protocolData.title}
-                </h1>
-                <p className="text-gray-400 text-lg">
-                  {protocol === 'female' 
-                    ? 'Hormônios, Energia e Vitalidade' 
-                    : 'Força, Testosterona e Domínio Mental'}
-                </p>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl shrink-0 shadow-inner">
+                  <Shield className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent mb-1">
+                    Protocolo Ancestral
+                  </h1>
+                  <p className="text-gray-400 text-sm md:text-base font-medium">
+                    Performance, Clareza e Domínio Mental
+                  </p>
+                </div>
               </div>
               
-              {/* 👇 GATILHO DE RETENÇÃO: O Contador de Ofensiva (Streak) */}
-              <div className="flex flex-col items-center justify-center bg-zinc-950/80 border border-amber-500/30 rounded-xl p-3 shadow-[0_0_15px_rgba(251,191,36,0.2)] transform hover:scale-105 transition-transform cursor-default">
+              <div className="flex flex-col items-center justify-center bg-zinc-950/80 border border-amber-500/30 rounded-xl p-3 shadow-[0_0_15px_rgba(251,191,36,0.2)] transform hover:scale-105 transition-transform cursor-default w-full md:w-auto">
                 <div className="flex items-center gap-1">
                   <Flame className={`w-8 h-8 ${completedDays.length > 0 ? 'text-orange-500 animate-pulse' : 'text-zinc-600'}`} />
                   <span className="text-3xl font-black text-white">{completedDays.length}</span>
@@ -520,7 +478,6 @@ if (showIntro) {
               </div>
             </div>
             
-            {/* Barra de Progresso - GROSSA E IMPACTANTE COM GLOW */}
             <div className="flex items-center gap-4 mt-6">
               <div className="flex-1 bg-zinc-800/50 rounded-full h-4 overflow-hidden border border-zinc-700/50">
                 <div
@@ -535,10 +492,8 @@ if (showIntro) {
           </div>
         </div>
 
-        {/* Timeline de Dias - DARK PREMIUM */}
         <div className="space-y-4">
         {protocolData.days.map((day) => {
-            // LÓGICA BLINDADA DE STATUS
             const prevDayCompleted = day.day === 1 || completedDays.includes(day.day - 1);
             const isDayCompleted = completedDays.includes(day.day);
             
@@ -550,7 +505,6 @@ if (showIntro) {
             }
             const isExpanded = expandedDay === day.day;
             
-            // NOVAS REGRAS SEPARADAS: Paywall vs Sequência
             const isPaywallLocked = day.day > 3 && !isSubscriber;
             const isSequentiallyLocked = status === 'locked';
             const isLocked = isPaywallLocked || isSequentiallyLocked;
@@ -578,9 +532,9 @@ if (showIntro) {
                 <button
                   onClick={() => {
                     if (isPaywallLocked) {
-                      setShowPaywall(true); // Abre a venda SÓ se for bloqueio de pagamento
+                      setShowPaywall(true); 
                     } else if (isSequentiallyLocked) {
-                      // Não faz nada, a pessoa tem que terminar o dia anterior
+                      // Nada
                     } else {
                       setExpandedDay(isExpanded ? null : day.day);
                     }
@@ -623,7 +577,6 @@ if (showIntro) {
 
                 {isExpanded && !isLocked && (
                   <div className="px-6 pb-6 space-y-4 border-t border-zinc-800/50">
-                    {/* Box 'Entender a Ciência' - DARK COM BORDA LARANJA */}
                     <div className="backdrop-blur-md bg-zinc-800/50 rounded-lg p-4 mt-4 border border-orange-500/30">
                       <div className="flex items-start gap-2">
                         <span className="text-xl">💡</span>
@@ -637,8 +590,7 @@ if (showIntro) {
                         </div>
                       </div>
                     </div>
-{/* Lista de Tarefas - DARK COM RADIO BUTTON LARANJA */}
-<div className="space-y-3">
+                    <div className="space-y-3">
                       <div className="font-semibold text-gray-100">Tarefas do Dia:</div>
                       {day.tasks.map((task) => {
                         const taskKey = `day${day.day}_${task.id}`;
@@ -722,7 +674,6 @@ if (showIntro) {
           })}
         </div>
 
-        {/* Link de Reset Seguro */}
         <button
           onClick={() => setShowResetModal(true)}
           className="w-full py-4 mt-8 text-sm text-zinc-500 hover:text-red-500 underline transition-colors"
@@ -731,7 +682,6 @@ if (showIntro) {
         </button>
       </div>
 
-      {/* Modal de Reset Seguro */}
       {showResetModal && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 backdrop-blur-sm p-4">
           <div className="bg-gradient-to-br from-red-950/90 to-zinc-950/90 border-2 border-red-500/50 rounded-2xl p-8 max-w-md w-full shadow-[0_0_40px_rgba(239,68,68,0.3)] backdrop-blur-xl">
@@ -768,8 +718,7 @@ if (showIntro) {
         </div>
       )}
 
-{/* Modal de Reset de Sequência (O Estranho Frio) */}
-{showPunishmentModal && (
+      {showPunishmentModal && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[110] backdrop-blur-md p-4 animate-in fade-in zoom-in duration-300">
           <div className="bg-zinc-900 border border-orange-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl text-center relative overflow-hidden">
             
@@ -789,7 +738,7 @@ if (showIntro) {
             <button
               onClick={() => {
                 setShowPunishmentModal(false);
-                handleResetProtocol(); // Reinicia o protocolo para o Dia 1
+                handleResetProtocol(); 
               }}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 rounded-xl transition-all active:scale-95 uppercase tracking-wide"
             >
@@ -799,11 +748,8 @@ if (showIntro) {
         </div>
       )}
 
-{/* Modal de Vitória - O GRAND FINALE (Emoji Livre sem Borda) */}
-{showVictoryModal && (
+      {showVictoryModal && (
         <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-[100] backdrop-blur-md p-4 animate-in fade-in duration-500">
-          
-          {/* CHUVA DE CONFETES DOURADOS PREMIUM */}
           <div className="fixed inset-0 pointer-events-none z-0">
              <Confetti 
                width={typeof window !== 'undefined' ? window.innerWidth : 1000}
@@ -815,10 +761,7 @@ if (showIntro) {
              />
           </div>
 
-          {/* Container Principal */}
           <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-[2.5rem] shadow-[0_0_80px_rgba(251,191,36,0.15)] z-50 flex flex-col items-center text-center p-8 md:p-12 [&::-webkit-scrollbar]:hidden scrollbar-hide">
-            
-            {/* Botão Fechar */}
             <button
               onClick={() => setShowVictoryModal(false)}
               className="absolute top-6 right-6 p-2 bg-zinc-900/50 hover:bg-zinc-800 rounded-full transition-colors z-10 border border-zinc-700/50"
@@ -828,28 +771,20 @@ if (showIntro) {
             </button>
 
             <div className="w-full space-y-6 md:space-y-8 relative z-10 mt-4">
-              
-              {/* ÍCONE DO ANIMAL (LIVRE, SEM BORDA) */}
               <div className="flex justify-center relative mb-6">
-                {/* Luz difusa atrás do emoji para ele não ficar chapado */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-amber-500/30 blur-[50px] rounded-full"></div>
-                {/* O Emoji em si, bem grande */}
-                <span className="relative z-10 text-7xl md:text-8xl filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                  {protocol === 'male' ? '🦁' : '🐆'}
-                </span>
+                <Shield className="relative z-10 w-24 h-24 md:w-32 md:h-32 text-amber-500 filter drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]" />
               </div>
 
-              {/* TÍTULOS */}
               <div className="flex flex-col gap-3">
                 <h1 className="text-transparent bg-clip-text bg-gradient-to-b from-amber-300 to-amber-600 font-black text-4xl md:text-5xl tracking-tighter leading-none uppercase drop-shadow-lg">
                   Jornada Dominada
                 </h1>
                 <h2 className="text-zinc-400 font-bold tracking-[0.2em] text-sm md:text-base uppercase">
-                  O Rebanho Ficou Para Trás
+                  A Base Foi Forjada
                 </h2>
               </div>
 
-              {/* Corpo do Texto Premium */}
               <div className="bg-zinc-900/60 rounded-2xl p-6 md:p-8 border border-zinc-800/80 relative text-left shadow-inner mx-auto max-w-sm md:max-w-full mt-4">
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-2/3 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(251,191,36,0.5)]"></div>
                 <p className="text-zinc-300 font-light tracking-wide leading-relaxed text-sm md:text-base pl-5">
@@ -857,17 +792,14 @@ if (showIntro) {
                 </p>
               </div>
 
-              {/* Divisor Elegante */}
               <div className="w-24 h-px bg-gradient-to-r from-transparent via-zinc-600 to-transparent mx-auto"></div>
 
-              {/* Frase de Impacto */}
               <p className="font-serif italic text-zinc-500 text-base md:text-lg">
-                "A selva não perdoa. Isso foi apenas o aquecimento."
+                "A biologia não perdoa. Isso foi apenas o começo."
               </p>
 
-              {/* Botão Nível 2 - Copy de Antecipação e Exclusividade */}
               <button
-                onClick={() => alert("ACESSO RESTRITO 🔒\n\nVocê dominou a base e provou o seu valor.\n\nO Nível 2 exigirá ainda mais do seu corpo e mente. As coordenadas desta nova fase estão sendo preparadas exclusivamente para os veteranos que chegaram até aqui.\n\nMantenha seus novos hábitos blindados e aguarde a convocação oficial.")}
+                onClick={() => alert("ACESSO RESTRITO 🔒\n\nVocê dominou a base e provou o seu valor.\n\nO Nível 2 exigirá ainda mais do seu corpo e mente. As coordenadas desta nova fase estão sendo preparadas exclusivamente para os que chegaram até aqui.\n\nMantenha seus novos hábitos blindados e aguarde a convocação oficial.")}
                 className="w-full relative bg-zinc-950 border border-zinc-800 hover:border-amber-500/30 text-zinc-500 hover:text-amber-500/80 font-black py-5 md:py-6 rounded-2xl text-lg flex items-center justify-center gap-3 mt-8 active:scale-[0.98] uppercase tracking-widest shadow-inner transition-all"
               >
                 <Lock className="w-5 h-5" /> ACESSAR NÍVEL 2
@@ -878,12 +810,10 @@ if (showIntro) {
         </div>
       )}
 
-     {/* Modal de Benefícios do Jejum - RAIO-X + DOSSIÊ DA SOBREVIVÊNCIA */}
      {showBenefitsModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/85 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative w-full max-w-lg bg-zinc-900 border border-zinc-700/50 rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden max-h-[90vh] flex flex-col">
             
-            {/* Cabeçalho Fixo do Modal */}
             <div className="relative z-20 bg-zinc-900/90 backdrop-blur-sm p-5 md:p-6 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
@@ -903,15 +833,12 @@ if (showIntro) {
               </button>
             </div>
 
-            {/* Área de Rolagem do Conteúdo */}
             <div className="overflow-y-auto p-6 md:p-8 [&::-webkit-scrollbar]:hidden scrollbar-hide flex-1">
               
-              {/* LÓGICA DINÂMICA ENTRANDO EM AÇÃO */}
               {(() => {
                 const content = getBenefitsContent(currentTaskGoal); 
                 return (
                   <div className="flex flex-col items-center mb-10">
-                    {/* Círculo da Meta */}
                     <div className="relative w-32 h-32 md:w-36 md:h-36 mb-6">
                       <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 192 192">
                         <circle cx="96" cy="96" r="88" stroke="#18181b" strokeWidth="8" fill="none" />
@@ -929,7 +856,6 @@ if (showIntro) {
                       {content.title}
                     </h2>
 
-                    {/* Linha do Tempo Dinâmica */}
                     <div className="w-full space-y-0 relative">
                       <div className="absolute left-[1.35rem] top-4 bottom-4 w-px bg-zinc-800"></div>
                       {content.timeline.map((phase, index) => (
@@ -952,20 +878,17 @@ if (showIntro) {
                 );
               })()}
 
-              {/* DIVISOR ÉPICO */}
               <div className="flex items-center gap-4 my-8 opacity-60">
                 <div className="flex-1 h-px bg-zinc-800"></div>
                 <Info className="w-4 h-4 text-zinc-500" />
                 <div className="flex-1 h-px bg-zinc-800"></div>
               </div>
 
-              {/* A CIÊNCIA DO BRANDINI - "Dossiê" */}
               <div className="space-y-6">
                 <h3 className="text-amber-500 font-black text-lg uppercase tracking-wider mb-4 flex items-center gap-2">
                   <Flame className="w-5 h-5" /> A Mecânica Ancestral
                 </h3>
 
-                {/* Card 1: Grelina e Leptina */}
                 <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5">
                   <h4 className="text-white font-bold text-sm uppercase mb-2">A Ilusão da Fome</h4>
                   <p className="text-zinc-400 text-sm leading-relaxed font-light">
@@ -973,7 +896,6 @@ if (showIntro) {
                   </p>
                 </div>
 
-                {/* Card 2: Queima Inteligente */}
                 <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5 border-l-2 border-l-amber-500">
                   <h4 className="text-white font-bold text-sm uppercase mb-2">Preservação Muscular</h4>
                   <p className="text-zinc-400 text-sm leading-relaxed font-light">
@@ -981,7 +903,6 @@ if (showIntro) {
                   </p>
                 </div>
 
-                {/* Card 3: Cérebro e Evolução (BDNF & GH) */}
                 <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5">
                   <h4 className="text-white font-bold text-sm uppercase mb-2">Sobrevivência do Mais Forte</h4>
                   <p className="text-zinc-400 text-sm leading-relaxed font-light">
@@ -989,7 +910,6 @@ if (showIntro) {
                   </p>
                 </div>
 
-                {/* Card de Regra Prática (Sal e Água) */}
                 <div className="bg-zinc-900 border border-orange-500/30 rounded-xl p-4 flex items-start gap-3 mt-4 shadow-inner">
                   <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                   <div>
@@ -1003,14 +923,10 @@ if (showIntro) {
 
             </div>
 
-           {/* Botão Inferior Fixo */}
            <div className="p-4 bg-zinc-900 border-t border-zinc-800 shrink-0">
               <button
                 onClick={() => {
-                  // 1. Ação Imediata: Fecha o modal na hora para o usuário não perceber nada
                   setShowBenefitsModal(false);
-
-                  // 2. Tiro com Silenciador: Avisa o nosso Quartel-General para agendar o Push
                   if (userId && currentTaskGoal) {
                     fetch('/api/cron/agendar-jejum', {
                       method: 'POST',
@@ -1032,14 +948,12 @@ if (showIntro) {
         </div>
       )}
 
-      {/* --- ADICIONE O PAYWALL AQUI --- */}
       <PaywallModal 
         isOpen={showPaywall} 
         onClose={() => setShowPaywall(false)} 
         userId={user?.id || ''} 
       />
 
-      {/* Espaçador para evitar corte pela Navbar */}
       <div className="h-32"></div>
     </div>
   );

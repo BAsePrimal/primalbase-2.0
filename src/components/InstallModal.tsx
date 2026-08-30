@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Share, MoreVertical, Smartphone, X, Compass } from 'lucide-react';
+import { Share, MoreVertical, Smartphone, X, Compass, Download } from 'lucide-react';
 
 export default function InstallModal() {
   const [showModal, setShowModal] = useState(false);
-  const [deviceInfo, setDeviceInfo] = useState<'ios-safari' | 'ios-other' | 'android' | null>(null);
+  const [deviceInfo, setDeviceInfo] = useState<'ios-safari' | 'ios-other' | 'android' | 'desktop' | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -17,24 +17,25 @@ export default function InstallModal() {
 
     // 2. Verifica se o app já está instalado (PWA Standalone)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return; // Se o soldado já instalou, o modal nunca mais aparece. Fim da caçada.
+    if (isStandalone) return;
 
-    // 🔥 3. O NOVO CÉREBRO DE MEMÓRIA (COOLDOWN DE 2 HORAS)
+    // 3. Cooldown de 2 horas
     const lastDismissed = localStorage.getItem('primalbase_install_cooldown');
     if (lastDismissed) {
       const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
-      const duasHoras = 2 * 60 * 60 * 1000; // 2 horas de folga
+      const duasHoras = 2 * 60 * 60 * 1000;
       
       if (tempoPassado < duasHoras) {
         return; 
       }
     }
 
-    // 4. O Cérebro que lê o celular (Se chegou aqui, é hora de mostrar o modal)
+    // 4. Detecção do dispositivo
     const ua = window.navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(ua);
     const isAndroid = /android/.test(ua);
     const isSafari = /safari/.test(ua) && !/chrome|crios|fxios/.test(ua);
+    const isDesktop = !isIOS && !isAndroid;
 
     if (isIOS && isSafari) {
       setDeviceInfo('ios-safari');
@@ -45,16 +46,19 @@ export default function InstallModal() {
     } else if (isAndroid) {
       setDeviceInfo('android');
       setShowModal(true);
+    } else if (isDesktop) {
+      setDeviceInfo('desktop');
+      setShowModal(true); // Mostra também no PC
     }
   }, [pathname]);
 
-  // O "OUVIDO": Escuta o clique do botão no Perfil (Caso o cara queira forçar a abertura)
   useEffect(() => {
     const handleForceShow = () => {
       const ua = window.navigator.userAgent.toLowerCase();
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isAndroid = /android/.test(ua);
       const isSafari = /safari/.test(ua) && !/chrome|crios|fxios/.test(ua);
+      const isDesktop = !isIOS && !isAndroid;
 
       if (isIOS && isSafari) {
         setDeviceInfo('ios-safari');
@@ -62,6 +66,8 @@ export default function InstallModal() {
         setDeviceInfo('ios-other');
       } else if (isAndroid) {
         setDeviceInfo('android');
+      } else if (isDesktop) {
+        setDeviceInfo('desktop');
       }
       
       setShowModal(true);
@@ -72,7 +78,6 @@ export default function InstallModal() {
   }, []);
 
   const handleDismiss = () => {
-    // 🔥 AQUI NÓS LIGAMOS O CRONÔMETRO: Grava o milissegundo exato que ele clicou em fechar
     localStorage.setItem('primalbase_install_cooldown', Date.now().toString());
     setShowModal(false);
   };
@@ -101,12 +106,12 @@ export default function InstallModal() {
           </div>
 
           <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-3 leading-tight">
-            Leve a Alcateia <br />
-            <span className="text-amber-500">no seu Bolso</span>
+            LEVE O PRIMAL BASE <br />
+            <span className="text-amber-500">NO BOLSO</span>
           </h2>
           
           <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-            Para receber os alertas biológicos do seu jejum, instale o PrimalBase no seu celular agora.
+            Adicione o aplicativo à tela inicial para ativar os alertas do seu cardápio e acessar tudo com 1 clique.
           </p>
 
           <div className="w-full bg-zinc-950/50 rounded-2xl p-4 border border-zinc-800/50 mb-6">
@@ -161,6 +166,19 @@ export default function InstallModal() {
                 </p>
                 <p className="text-amber-500 text-sm font-bold mt-1">
                   Abra o site no SAFARI para instalar.
+                </p>
+              </div>
+            )}
+
+            {/* 🔥 NOVO: INSTRUÇÃO PARA COMPUTADOR (PC) */}
+            {deviceInfo === 'desktop' && (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <Download className="w-8 h-8 text-amber-500 mb-2" />
+                <p className="text-zinc-300 text-sm">
+                  Você está no computador.
+                </p>
+                <p className="text-amber-500 text-sm font-bold mt-1">
+                  Clique no ícone de instalar na barra de endereços do seu navegador (lá no topo).
                 </p>
               </div>
             )}

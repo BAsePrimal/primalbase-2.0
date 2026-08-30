@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCircle, ShieldAlert } from 'lucide-react';
+import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCircle, ShieldAlert, Mars, Venus, Target, Scale, Ruler } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -213,12 +213,18 @@ export default function PerfilPage() {
   }
 
   function getGenderIcon() {
-    if (!profile) return '🦁';
+    if (!profile) return <UserIcon className="w-8 h-8 text-amber-500" />;
+    
     const gender = profile.gender?.toLowerCase() || '';
-    if (gender.includes('feminino') || gender.includes('leoa')) {
-      return '🐆';
+    
+    if (gender.includes('feminino')) {
+      return <Venus className="w-8 h-8 text-amber-500" />;
     }
-    return '🦁';
+    if (gender.includes('masculino')) {
+      return <Mars className="w-8 h-8 text-amber-500" />;
+    }
+    
+    return <UserIcon className="w-8 h-8 text-amber-500" />;
   }
 
   if (loading) {
@@ -289,8 +295,8 @@ export default function PerfilPage() {
 
           {/* Bloco de Dados Biológicos - Grid 2x2 */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
-              <div className="text-4xl">{getGenderIcon()}</div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
+              {getGenderIcon()}
               <div className="text-center">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Gênero</p>
                 <p className="text-base font-semibold text-zinc-200 mt-1">
@@ -300,30 +306,30 @@ export default function PerfilPage() {
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
-              <div className="text-3xl font-bold text-amber-500">
-                {profile?.current_weight || 0}
-              </div>
+              <Scale className="w-8 h-8 text-amber-500" />
               <div className="text-center">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Peso</p>
-                <p className="text-base font-semibold text-zinc-200 mt-1">kg</p>
+                <p className="text-lg font-bold text-zinc-200 mt-1">
+                  {profile?.current_weight || 0} <span className="text-sm font-medium text-zinc-500">kg</span>
+                </p>
               </div>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
-              <div className="text-3xl font-bold text-amber-500">
-                {profile?.height || 0}
-              </div>
+              <Ruler className="w-8 h-8 text-amber-500" />
               <div className="text-center">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Altura</p>
-                <p className="text-base font-semibold text-zinc-200 mt-1">cm</p>
+                <p className="text-lg font-bold text-zinc-200 mt-1">
+                  {profile?.height || 0} <span className="text-sm font-medium text-zinc-500">cm</span>
+                </p>
               </div>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center justify-center space-y-3">
-              <div className="text-2xl">🎯</div>
+              <Target className="w-8 h-8 text-amber-500" />
               <div className="text-center">
                 <p className="text-xs text-zinc-500 uppercase tracking-wider">Meta</p>
-                <p className="text-sm font-semibold text-zinc-200 mt-1 leading-tight">
+                <p className="text-sm font-bold text-zinc-200 mt-1 leading-tight">
                   {profile?.goal || 'Não definida'}
                 </p>
               </div>
@@ -395,24 +401,34 @@ export default function PerfilPage() {
 
       {/* Modal de Sucesso Premium */}
       {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="relative w-full max-w-md bg-zinc-900 border border-amber-500/30 rounded-2xl p-8 text-center shadow-2xl shadow-amber-500/20 transform scale-100 animate-in zoom-in-95 duration-300">
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-zinc-900 rounded-full p-4 border-4 border-zinc-950 shadow-xl">
-              <span className="text-5xl">🦁</span>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)] transform scale-100 animate-in zoom-in-95 duration-300">
+            
+            {/* Ícone Flutuante */}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-900 rounded-2xl p-4 border border-zinc-800 shadow-xl flex items-center justify-center">
+              <span className="text-4xl">🔥</span>
             </div>
             
-            <h2 className="mt-6 text-2xl font-bold text-white">Bem-vindo à Tribo!</h2>
-            <p className="mt-3 text-zinc-400">
-              Seu acesso <span className="text-amber-500 font-semibold">Premium</span> foi liberado com sucesso. Agora você tem controle total da sua evolução.
+            {/* Título Premium */}
+            <h2 className="mt-8 text-3xl font-black text-white uppercase tracking-tight leading-tight">
+              Protocolo <br/> <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Desbloqueado!</span>
+            </h2>
+            
+            {/* Copy de Retenção */}
+            <p className="mt-4 text-zinc-400 text-sm md:text-base leading-relaxed font-medium">
+              O seu período de teste no <strong className="text-white">Primal Base</strong> foi ativado. Você agora tem acesso sem restrições a todas as ferramentas VIP.
             </p>
-            <div className="mt-8 space-y-3">
+            
+            {/* CTA */}
+            <div className="mt-8">
               <button 
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-amber-500/25"
+                className="w-full py-4 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-black uppercase tracking-widest text-sm rounded-xl transition-all transform active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
               >
-                Começar Agora
+                Acessar Meu Protocolo
               </button>
             </div>
+            
           </div>
         </div>
       )}

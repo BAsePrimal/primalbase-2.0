@@ -12,7 +12,6 @@ export default function BannerRadar() {
   useEffect(() => {
     const checkStatus = setTimeout(() => {
       if (typeof window !== 'undefined') {
-        // 🔥 A BLINDAGEM: Verifica se o usuário instalou na tela inicial (PWA) 🔥
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
 
         if (isStandalone && OneSignal.Notifications) {
@@ -29,12 +28,10 @@ export default function BannerRadar() {
   const handleAtivar = async () => {
     setCarregando(true);
     try {
-      // 🔥 A MÁGICA TÁTICA: Em vez de chamar a Apple direto, chama o nosso Modal!
       window.dispatchEvent(new Event('forcePushModal'));
       
       const verificaId = setInterval(async () => {
         const temPermissao = OneSignal.Notifications.permission;
-        // Evita erro se o OneSignal demorar 1 segundo a mais para gerar o ID
         const onesignalId = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
 
         if (temPermissao && onesignalId) {
@@ -56,7 +53,6 @@ export default function BannerRadar() {
         }
       }, 1000);
 
-      // Aumentei o tempo de desistência para 45s porque agora ele vai ler o Modal primeiro
       setTimeout(() => {
         clearInterval(verificaId);
         setCarregando(false);
@@ -80,9 +76,9 @@ export default function BannerRadar() {
             <BellRing className="w-6 h-6 text-amber-500 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-white font-black uppercase tracking-tight text-sm">Alerta de Jejum Desativado</h3>
+            <h3 className="text-white font-black uppercase tracking-tight text-sm">Alertas Desligados</h3>
             <p className="text-zinc-400 text-xs mt-1 max-w-xs">
-              Não perca a hora de quebrar o jejum. Ative o radar para receber notificações da sua jornada.
+              Para que o Primal Base funcione com precisão, precisamos te avisar sobre o seu cardápio e janelas de jejum.
             </p>
           </div>
         </div>
@@ -97,7 +93,7 @@ export default function BannerRadar() {
           ) : (
             <ShieldCheck className="w-4 h-4" />
           )}
-          {carregando ? 'Conectando...' : 'Ativar Agora'}
+          {carregando ? 'Ativando...' : 'Ativar Alertas'}
         </button>
       </div>
     </div>

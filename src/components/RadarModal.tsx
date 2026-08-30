@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import OneSignal from 'react-onesignal';
-import { Bell, X, Activity, Loader2 } from 'lucide-react';
+import { Bell, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function RadarModal() {
@@ -77,16 +77,23 @@ export default function RadarModal() {
 
         <div className="flex flex-col items-center text-center mt-4 relative z-10">
           <div className="w-16 h-16 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-center mb-5">
-            <Activity className="w-8 h-8 text-amber-500" />
+            <Bell className="w-8 h-8 text-amber-500" />
           </div>
           
           <h2 className="text-2xl font-black text-white uppercase tracking-tight leading-tight mb-3">
-            Sincronize seu <br /><span className="text-amber-500">Relógio Biológico</span>
+            SEUS ALERTAS ESTÃO <br /><span className="text-amber-500">DESLIGADOS</span>
           </h2>
           
-          <p className="text-zinc-400 text-sm mb-8 leading-relaxed">
-            Seu jejum é calculado ao minuto. Ative os alertas para que a Matilha te avise o momento exato de comer e de fechar a janela.
+          <p className="text-zinc-400 text-sm mb-5 leading-relaxed">
+            Para que o Primal Base funcione com precisão, a inteligência precisa te avisar sobre o seu cardápio diário e as janelas de jejum.
           </p>
+
+          {/* 🔥 CAIXA DE INSTRUÇÃO (Novo Design) 🔥 */}
+          <div className="w-full bg-zinc-950/80 border border-zinc-800/80 rounded-xl p-4 mb-6">
+            <p className="text-zinc-300 text-xs md:text-sm leading-relaxed">
+              Ao clicar abaixo, seu celular vai perguntar se você permite notificações. <strong className="text-amber-500">Clique em Permitir.</strong>
+            </p>
+          </div>
 
           <div className="w-full space-y-3">
             <button
@@ -95,7 +102,7 @@ export default function RadarModal() {
               className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 disabled:scale-100 active:scale-95"
             >
               {carregando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Bell className="w-5 h-5" />}
-              {carregando ? 'Conectando Matilha...' : 'Sincronizar Alertas'}
+              {carregando ? 'Ativando...' : 'Ativar Alertas Agora'}
             </button>
             
             <button
