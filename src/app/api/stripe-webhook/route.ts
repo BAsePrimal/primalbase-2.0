@@ -291,16 +291,16 @@ export async function POST(req: NextRequest) {
 
             // 3. Dispara o tiro de resgate financeiro
             await resend.emails.send({
-              from: 'PrimalBase <suporte@primalbase.com.br>',
+              from: 'Primal Base <suporte@primalbase.com.br>',
               to: profileData.email,
-              subject: '⚠️ Pagamento Recusado - Acesso à Matilha Pausado',
+              subject: '⚠️ Pagamento Recusado - Acesso ao Protocolo Pausado',
               html: `
-                <div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center; border-radius: 8px;">
-                  <h2 style="color: #ef4444;">Acesso VIP Pausado</h2>
-                  <p>Guerreiro, seu cartão foi recusado no último ciclo.</p>
-                  <p>Seu acesso às jornadas e receitas exclusivas foi bloqueado temporariamente.</p>
-                  <p>Atualize sua forma de pagamento para voltar a caçar com a matilha.</p>
-                  <a href="https://primalbase.com.br/perfil" style="display: inline-block; padding: 12px 24px; background-color: #ef4444; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold;">Atualizar Pagamento</a>
+                <div style="font-family: sans-serif; padding: 20px; background-color: #18181b; color: #f4f4f5; text-align: center; border-radius: 8px; border: 1px solid #27272a;">
+                  <h2 style="color: #ef4444; text-transform: uppercase; letter-spacing: 1px;">Acesso Premium Pausado</h2>
+                  <p style="font-size: 16px; color: #d4d4d8;">O seu cartão de crédito foi recusado no processamento do último ciclo.</p>
+                  <p style="font-size: 16px; color: #d4d4d8;">Seu acesso às jornadas do Protocolo Ancestral foi bloqueado temporariamente.</p>
+                  <p style="font-size: 16px; color: #a1a1aa; margin-bottom: 25px;">Atualize sua forma de pagamento para restaurar seu progresso imediatamente.</p>
+                  <a href="https://primalbase.com.br/perfil" style="display: inline-block; padding: 14px 28px; background-color: #ef4444; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Atualizar Pagamento</a>
                 </div>
               `
             });

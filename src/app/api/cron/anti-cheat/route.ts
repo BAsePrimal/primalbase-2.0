@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js'; // 👈 IMPORTAÇÃO DA CHAVE MESTRA
+import { createClient } from '@supabase/supabase-js';
 import { dispararPush } from '@/lib/push-commander';
 
-// 👇 INJEÇÃO DA CHAVE MESTRA: Cria um cliente que ignora as restrições do RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -10,43 +9,39 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   try {
-    // 👇 USANDO O SUPABASE ADMIN PARA EXTRAIR TODOS OS IDs SEM BLOQUEIO
-    const { data: guerreiros, error } = await supabaseAdmin
+    const { data: usuarios, error } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_id')
       .not('onesignal_id', 'is', null);
 
-    if (error || !guerreiros || guerreiros.length === 0) {
-      return NextResponse.json({ message: 'Nenhum alvo encontrado.' });
+    if (error || !usuarios || usuarios.length === 0) {
+      return NextResponse.json({ message: 'Nenhum dispositivo encontrado.' });
     }
 
-    const playerIds = guerreiros.map((g: any) => g.onesignal_id);
+    const playerIds = usuarios.map((u: any) => u.onesignal_id);
 
-    // --- ARSENAL DE SEXTA-FEIRA (BLINDAGEM DE FIM DE SEMANA) ---
-    const arsenalFimDeSemana = [
-      { titulo: "O Fim de Semana Chegou. ⚠️", corpo: "A indústria fatura alto hoje. O álcool e o lixo vão destruir o treino da semana? Mantenha a base limpa." },
-      { titulo: "Álcool vs Testosterona. 🍻", corpo: "Cada copo trava a queima de gordura e bagunça a sua regulação hormonal. Escolha sua prioridade." },
-      { titulo: "O Preço de 2 Dias de Erro. 💸", corpo: "O pico de dopamina da pizza passa hoje, a inflamação e o inchaço ficam até quarta. Coma como um adulto." },
-      { titulo: "A Fraqueza é Contagiosa. 🦠", corpo: "Evite ambientes que te forçam a errar. Se for sair, coma proteína antes. Não negocie com a fome na rua." },
-      { titulo: "Sem Feriado Para o Corpo. 🥩", corpo: "O seu metabolismo não sabe que hoje é sexta. O que você vai jantar hoje define a disposição de amanhã." },
-      { titulo: "Cuidado com as Exceções. ⚠️", corpo: "Uma exceção na sexta vira três no sábado. O final de semana é onde a maioria joga o resultado no lixo." },
-      { titulo: "O Açúcar do Fim de Semana. 🍩", corpo: "Não troque resultados sólidos por 5 minutos de prazer palatável. Mantenha a rota limpa hoje à noite." },
-      { titulo: "Lado a Lado com o Foco. 🛡️", corpo: "O ambiente de hoje vai testar sua disciplina. Não terceirize suas escolhas para o cardápio do bar." },
-      { titulo: "A Fatura de Segunda-feira. 🧾", corpo: "Todo lixo industrializado que você comer hoje e amanhã será cobrado na balança segunda de manhã." },
-      { titulo: "Estratégia de Sobrevivência. 🗺️", corpo: "Vai sair hoje? Faça uma refeição densa em proteína antes. Não chegue com fome no território inimigo." }
+    const mensagensFimDeSemana = [
+      { titulo: "Teste de Consistência 🛡️", corpo: "Seu metabolismo não tira folga aos finais de semana. Proteja o progresso dos últimos dias contra alimentos que inflamam." },
+      { titulo: "Impacto Hormonal 🛡️", corpo: "O álcool trava a queima de gordura na hora e derruba sua testosterona. Proteja seu equilíbrio hormonal neste final de semana." },
+      { titulo: "Custos Biológicos ⚡", corpo: "O pico do açúcar dura minutos; a inflamação no corpo todo dura dias. Mantenha a restrição e o foco na nutrição ancestral." },
+      { titulo: "Defesa Biológica 🛡️", corpo: "O ambiente molda o comportamento. Antes de eventos sociais, garanta uma refeição com proteína e gordura animal para segurar sua saciedade." },
+      { titulo: "Continuidade Fisiológica ⚡", corpo: "Sua resposta à insulina não para às sextas-feiras. O que você colocar no prato hoje à noite determina sua energia e disposição amanhã." },
+      { titulo: "Efeito Cascata 🛡️", corpo: "Quebrar o protocolo na sexta altera sua fome e seus desejos para o resto do final de semana. Mantenha o padrão de alta performance." },
+      { titulo: "Armadilha do Açúcar ⚡", corpo: "Carboidratos refinados viciam o cérebro. Troque o prazer passageiro por resultados reais e visíveis no seu corpo a longo prazo." },
+      { titulo: "Autonomia Alimentar 🛡️", corpo: "O cardápio moderno é feito para gerar dependência. Assuma o controle de tudo o que você come e opte apenas por comida de verdade." },
+      { titulo: "Acúmulo Inflamatório ⚡", corpo: "A resposta inflamatória dos ultraprocessados de hoje vai destruir seu foco até a próxima semana. Escolha a alta performance." },
+      { titulo: "Logística de Antecipação 🛡️", corpo: "Nunca deixe a fome decidir por você. Se for a eventos sociais, faça uma refeição densa antes de sair para blindar sua vontade de comer besteira na rua." }
     ];
 
-    // Sorteia a munição
-    const tiroSexta = arsenalFimDeSemana[Math.floor(Math.random() * arsenalFimDeSemana.length)];
+    const alertaSexta = mensagensFimDeSemana[Math.floor(Math.random() * mensagensFimDeSemana.length)];
 
-    // 2. Dispara e Registra usando a Fábrica Centralizada
-    await dispararPush(playerIds, tiroSexta.titulo, tiroSexta.corpo, 'ROBÔ ANTI-CHEAT (SEXTA)');
+    await dispararPush(playerIds, alertaSexta.titulo, alertaSexta.corpo, 'ALERTA BIOLÓGICO (SEXTA)');
 
     return NextResponse.json({ 
       success: true, 
-      mensagem: "Anti-Cheat (Sexta) disparado e registrado com sucesso!",
+      mensagem: "Alerta de fim de semana disparado e registrado com sucesso!",
       alvos: playerIds.length,
-      tiroUsado: tiroSexta.titulo
+      alertaUsado: alertaSexta.titulo
     });
 
   } catch (error) {

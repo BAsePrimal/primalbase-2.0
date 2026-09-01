@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js'; // 👈 IMPORTAÇÃO NECESSÁRIA PARA A CHAVE MESTRA
+import { createClient } from '@supabase/supabase-js';
 import { dispararPush } from '@/lib/push-commander';
 
-// 👇 INJEÇÃO DA CHAVE MESTRA: Cria um cliente que ignora o RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL as string,
   process.env.SUPABASE_SERVICE_ROLE_KEY as string
@@ -10,42 +9,39 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   try {
-    // 👇 USANDO O SUPABASE ADMIN PARA PERFURAR O ESCUDO DE SEGURANÇA
-    const { data: guerreiros, error } = await supabaseAdmin
+    const { data: usuarios, error } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_id')
       .not('onesignal_id', 'is', null);
 
-    if (error || !guerreiros || guerreiros.length === 0) {
-      return NextResponse.json({ message: 'Nenhum alvo encontrado.' });
+    if (error || !usuarios || usuarios.length === 0) {
+      return NextResponse.json({ message: 'Nenhum dispositivo encontrado.' });
     }
 
-    const playerIds = guerreiros.map((g: any) => g.onesignal_id);
+    const playerIds = usuarios.map((u: any) => u.onesignal_id);
 
-    // --- ARSENAL DE DOMINGO (PLANEJAMENTO E PREPARAÇÃO) ---
-    const arsenalDomingo = [
-      { titulo: "Semana Limpa Começa Hoje. ⚔️", corpo: "Quem não planeja no domingo, pede lixo no iFood na segunda. Como está a sua geladeira?" },
-      { titulo: "A Regra dos 5 Minutos. ⏱️", corpo: "Abra o aplicativo e monte sua lista de mercado agora. Proteja sua semana contra a falta de tempo." },
-      { titulo: "O Erro de Segunda-Feira. 🛑", corpo: "90% falham no almoço amanhã por não ter o que comer. Compre os ingredientes hoje. O Chef IA resolve o resto." },
-      { titulo: "O Preço da Preguiça. 💸", corpo: "Se não deixar as refeições esquematizadas, vai gastar mais dinheiro com fast-food amanhã. Assuma o controle." },
-      { titulo: "Radar Ligado. 📡", corpo: "Amanhã a correria começa. Facilite a sua vida: deixe a primeira refeição do dia engatilhada e à prova de falhas." },
-      { titulo: "A Regra de Ouro. 🔑", corpo: "O sucesso da sua semana mora na prateleira da sua geladeira. Faça o planejamento de compras agora." },
-      { titulo: "Sem Surpresas Amanhã. 📅", corpo: "Não acorde segunda-feira para pensar no que vai comer. Decida hoje, deixe o app calcular e execute amanhã." },
-      { titulo: "O Custo de Não Planejar. 💸", corpo: "Não ter comida pronta na segunda é garantia de gastar dinheiro com lixo empacotado. Proteja seu bolso." },
-      { titulo: "O Controle Retorna. 🎮", corpo: "O final de semana acabou. Hora de voltar o foco 100% para a base. Como estão os macros de amanhã?" },
-      { titulo: "Escudo Ativado. 🛡️", corpo: "Deixe a primeira refeição de amanhã no esquema. Um começo de dia limpo garante uma semana forte." }
+    const mensagensDomingo = [
+      { titulo: "A Semana Começa Hoje 📋", corpo: "Quem não planeja no domingo, cede ao iFood na segunda. Como está o estoque de comida de verdade na sua geladeira?" },
+      { titulo: "A Regra dos 5 Minutos ⚡", corpo: "Abra o aplicativo e monte sua lista de mercado agora. Proteja seus resultados contra a correria que começa amanhã." },
+      { titulo: "O Ponto de Falha 🛡️", corpo: "A maioria desiste no almoço de segunda por não ter o que comer. Garanta os ingredientes hoje e deixe o Chef Primal sugerir o prato amanhã." },
+      { titulo: "O Preço da Desorganização ⚡", corpo: "Sem comida limpa na geladeira, a rotina te engole. Assuma o controle hoje para não depender de fast-food amanhã." },
+      { titulo: "Preparação Antecipada 📋", corpo: "Amanhã a correria volta. Facilite sua vida: deixe os ingredientes da primeira refeição engatilhados e à prova de desculpas." },
+      { titulo: "A Base de Tudo 🛡️", corpo: "O sucesso do seu Protocolo Ancestral mora na prateleira da sua geladeira. Faça seu planejamento de compras hoje à noite." },
+      { titulo: "Sem Fadiga de Decisão ⚡", corpo: "Não acorde segunda-feira para adivinhar o que vai comer. Organize os ingredientes hoje e deixe o Primal Base te guiar amanhã." },
+      { titulo: "Blindagem para a Semana 🛡️", corpo: "Não ter comida na segunda é o caminho mais rápido para acabar consumindo ultraprocessados. Proteja seu corpo e sua rotina." },
+      { titulo: "O Foco Retorna ⚡", corpo: "O final de semana acabou. Hora de voltar a atenção 100% para a nutrição ancestral. Você já sabe o que vai comer amanhã?" },
+      { titulo: "Garantindo a Segunda 🛡️", corpo: "Deixe a primeira refeição de amanhã esquematizada. Um começo de dia limpo e com foco é o que garante uma semana inteira de resultados." }
     ];
 
-    const tiroDomingo = arsenalDomingo[Math.floor(Math.random() * arsenalDomingo.length)];
+    const alertaDomingo = mensagensDomingo[Math.floor(Math.random() * mensagensDomingo.length)];
 
-    // Dispara e registra usando a fábrica centralizada
-    await dispararPush(playerIds, tiroDomingo.titulo, tiroDomingo.corpo, 'ROBÔ DOMINGO (PREPARAÇÃO)');
+    await dispararPush(playerIds, alertaDomingo.titulo, alertaDomingo.corpo, 'ALERTA BIOLÓGICO (DOMINGO)');
 
     return NextResponse.json({ 
       success: true, 
-      mensagem: "Robô de Domingo disparado e registrado com sucesso!",
+      mensagem: "Alerta de planejamento disparado e registrado com sucesso!",
       alvos: playerIds.length,
-      tiroUsado: tiroDomingo.titulo
+      alertaUsado: alertaDomingo.titulo
     });
 
   } catch (error) {
