@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, ChefHat, Copy, Check, CheckCircle2, Mic } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, ChefHat, Copy, Check, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
+// 👇 Nova tipagem para o JSON estruturado
 interface RecipeData {
   title: string;
   prep_time: string;
@@ -30,6 +31,7 @@ export default function ChefIAPage() {
   const [receita, setReceita] = useState<RecipeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  
   const [phraseIndex, setPhraseIndex] = useState(0);
 
   // --- ESTADOS DO PAYWALL E MEMÓRIA ---
@@ -40,13 +42,7 @@ export default function ChefIAPage() {
   const [user, setUser] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // --- ESTADOS DO MICROFONE (VOICE-TO-TEXT) ---
-  const [isListening, setIsListening] = useState(false);
-  const [hasMicSupport, setHasMicSupport] = useState(false);
-  const recognitionRef = useRef<any>(null);
-
   useEffect(() => {
-    // Carrega dados do usuário
     async function loadChefData() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
@@ -66,44 +62,6 @@ export default function ChefIAPage() {
       }
     }
     loadChefData();
-
-    // Inicializa a Inteligência de Reconhecimento de Voz Nativa
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setHasMicSupport(true);
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = false;
-        recognition.lang = 'pt-BR';
-
-        recognition.onresult = (event: any) => {
-          let finalTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
-            }
-          }
-          if (finalTranscript) {
-            setIngredientes((prev) => {
-              const prefix = prev.trim() ? prev.trim() + ' ' : '';
-              return prefix + finalTranscript.trim();
-            });
-          }
-        };
-
-        recognition.onerror = (event: any) => {
-          console.error('Erro na captação de voz:', event.error);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
-        recognitionRef.current = recognition;
-      }
-    }
   }, []);
 
   useEffect(() => {
@@ -117,24 +75,8 @@ export default function ChefIAPage() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const toggleMicrophone = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current?.start();
-      setIsListening(true);
-    }
-  };
-
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
-
-    // Se estiver gravando, para o microfone antes de enviar
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    }
 
     if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
@@ -166,7 +108,7 @@ export default function ChefIAPage() {
         throw new Error('Formato estruturado não reconhecido.');
       }
 
-      // Atualiza banco de dados
+      // --- ATUALIZA CONTADOR NO SUPABASE ---
       if (user) {
         const nextCount = usageCount + 1;
         const nextTotal = totalRecipesCount + 1; 
@@ -190,8 +132,9 @@ export default function ChefIAPage() {
     }
   };
 
+  // 👇 Formatador do texto para Copiar / Compartilhar
   const formatRecipeText = (recipe: RecipeData) => {
-    return `*${recipe.title}* 🥩\n⏱️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
+    return `*${recipe.title}* 🥩\n⏱️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do PrimalBase. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
   };
 
   const handleCopy = async () => {
@@ -241,30 +184,12 @@ export default function ChefIAPage() {
             </p>
           </div>
 
-          <div className="relative">
-            <textarea
-              value={ingredientes}
-              onChange={(e) => setIngredientes(e.target.value)}
-              placeholder="Digite ou fale os ingredientes que você tem..."
-              className="w-full h-32 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none pr-14"
-            />
-            
-            {/* BOTÃO DO MICROFONE */}
-            {hasMicSupport && (
-              <button
-                type="button"
-                onClick={toggleMicrophone}
-                className={`absolute bottom-3 right-3 p-2.5 rounded-lg transition-all duration-300 flex items-center justify-center ${
-                  isListening 
-                    ? 'bg-red-500/20 text-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.3)]' 
-                    : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'
-                }`}
-                title={isListening ? "Parar gravação" : "Ditar ingredientes"}
-              >
-                <Mic className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+          <textarea
+            value={ingredientes}
+            onChange={(e) => setIngredientes(e.target.value)}
+            placeholder="Digite os ingredientes que você tem..."
+            className="w-full h-32 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+          />
 
           <button
             onClick={handleGerarReceita}
@@ -312,10 +237,12 @@ export default function ChefIAPage() {
         {!loading && receita && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-500">
             
+            {/* Título Hero */}
             <h2 className="text-3xl md:text-4xl font-black text-white mb-6 tracking-tight leading-tight">
               {receita.title}
             </h2>
 
+            {/* Badges Premium */}
             <div className="flex flex-wrap gap-3 mb-8">
               <span className="flex items-center gap-2 bg-zinc-800 text-zinc-300 text-sm font-bold px-4 py-2 rounded-full border border-zinc-700">
                 ⏱️ {receita.prep_time}
@@ -325,6 +252,7 @@ export default function ChefIAPage() {
               </span>
             </div>
 
+            {/* Lista de Ingredientes (Estilo Check) */}
             <div className="mb-8">
               <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-widest text-xs">Ingredientes</h3>
               <ul className="space-y-3">
@@ -337,6 +265,7 @@ export default function ChefIAPage() {
               </ul>
             </div>
 
+            {/* Instruções em Blocos */}
             <div className="mb-8">
               <h3 className="text-lg font-bold text-white mb-4 uppercase tracking-widest text-xs">Preparo</h3>
               <div className="space-y-4">
@@ -351,12 +280,14 @@ export default function ChefIAPage() {
               </div>
             </div>
 
+            {/* Dica do Chef */}
             <div className="bg-gradient-to-r from-orange-900/20 to-transparent border-l-4 border-orange-500 p-5 rounded-r-xl mb-8">
               <p className="text-orange-300 font-medium italic leading-relaxed">
                 {receita.tip.replace(/"/g, '')}
               </p>
             </div>
 
+            {/* Botões de Ação */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-zinc-800/50">
               <button
                 onClick={handleCopy}

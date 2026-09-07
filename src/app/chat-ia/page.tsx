@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Mic } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
@@ -22,9 +22,13 @@ export default function ChatIAPage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
-  // 👇 Nova variável do Odômetro Total
   const [totalChatsCount, setTotalChatsCount] = useState(0); 
   const [user, setUser] = useState<any>(null);
+
+  // --- ESTADOS DO MICROFONE (VOICE-TO-TEXT) ---
+  const [isListening, setIsListening] = useState(false);
+  const [hasMicSupport, setHasMicSupport] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,14 +38,13 @@ export default function ChatIAPage() {
     scrollToBottom();
   }, [messages]);
 
-  // 1. Carrega o status do Assinante e a Memória de uso direto do SUPABASE
+  // 1. Carrega o status do Assinante e a Memória de uso
   useEffect(() => {
     async function loadInitialData() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
         setUser(authUser);
         
-        // 👇 Agora ele puxa o total_chats também!
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_subscriber, daily_chat_count, total_chats')
@@ -56,13 +59,67 @@ export default function ChatIAPage() {
       }
     }
     loadInitialData();
+
+    // 2. Inicializa a Inteligência de Reconhecimento de Voz Nativa
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        setHasMicSupport(true);
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.lang = 'pt-BR';
+
+        recognition.onresult = (event: any) => {
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            }
+          }
+          if (finalTranscript) {
+            setInput((prev) => {
+              const prefix = prev.trim() ? prev.trim() + ' ' : '';
+              return prefix + finalTranscript.trim();
+            });
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error('Erro na captação de voz:', event.error);
+          setIsListening(false);
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
   }, []);
+
+  const toggleMicrophone = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // --- TRAVA DE SEGURANÇA (BLOQUEIA ANTES DE GASTAR) ---
+    // Se estiver gravando, desliga o microfone antes de enviar
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+
+    // --- TRAVA DE SEGURANÇA ---
     if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
       return;
@@ -94,12 +151,11 @@ export default function ChatIAPage() {
       // --- ATUALIZA CONTADOR NO SUPABASE ---
       if (user) {
         const nextCount = usageCount + 1;
-        const nextTotal = totalChatsCount + 1; // Odômetro sobe 1
+        const nextTotal = totalChatsCount + 1; 
 
-        setUsageCount(nextCount); // Atualiza na tela
-        setTotalChatsCount(nextTotal); // Atualiza na tela
+        setUsageCount(nextCount); 
+        setTotalChatsCount(nextTotal); 
         
-        // 👇 Salva NO BANCO os dois contadores de uma vez
         await supabase
           .from('profiles')
           .update({ 
@@ -180,19 +236,41 @@ export default function ChatIAPage() {
       {/* Input Area */}
       <div className="fixed bottom-20 left-0 right-0 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 p-4 z-50">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Sua dúvida sobre nutrição..."
-              className="flex-1 bg-zinc-900 border border-zinc-800 text-zinc-50 rounded-full px-6 py-3 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              disabled={isLoading}
-            />
+          <div className="flex gap-2 items-center">
+            
+            {/* Wrapper Relativo para Input + Microfone */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Digite ou fale sua dúvida..."
+                className="w-full bg-zinc-900 border border-zinc-800 text-zinc-50 rounded-full pl-6 pr-14 py-3 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                disabled={isLoading}
+              />
+              
+              {/* BOTÃO DO MICROFONE */}
+              {hasMicSupport && (
+                <button
+                  type="button"
+                  onClick={toggleMicrophone}
+                  disabled={isLoading}
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-300 flex items-center justify-center ${
+                    isListening 
+                      ? 'bg-red-500/20 text-red-500 animate-pulse' 
+                      : 'text-zinc-400 hover:text-white disabled:opacity-50'
+                  }`}
+                  title={isListening ? "Parar gravação" : "Ditar mensagem"}
+                >
+                  <Mic className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-amber-500 text-zinc-950 rounded-full p-3 hover:bg-amber-600 transition-colors disabled:opacity-50"
+              className="bg-amber-500 text-zinc-950 rounded-full p-3 hover:bg-amber-600 transition-colors disabled:opacity-50 flex-shrink-0"
             >
               <Send className="w-5 h-5" />
             </button>
