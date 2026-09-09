@@ -129,15 +129,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-zinc-950 text-zinc-50;
-  }
-}
-
 /* 👇 GATILHO DE DOPAMINA: Tremor de tela (Haptics Visual para iPhone) */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
