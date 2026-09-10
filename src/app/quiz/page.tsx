@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Flame, Activity, Target, Zap } from 'lucide-react'
+import LegalFooter from '@/components/LegalFooter';
 
 type QuizStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 
@@ -317,15 +318,21 @@ export default function QuizPage() {
     <div className="min-h-[100dvh] w-full bg-zinc-950 flex flex-col justify-center items-center py-8">
       <div className="w-full max-w-3xl flex flex-col justify-center">
         
-        {step > 0 && step < 6 && (
+      {step > 0 && step < 6 && (
           <div className="mb-10 w-full max-w-xl mx-auto px-6">
             <ProgressBar value={(step / 5) * 100} />
           </div>
         )}
 
-        {renderStep()}
+{renderStep()}
         
       </div>
+
+      {/* 👇 RODAPÉ CONDICIONAL (Aparece APENAS no Início [0] e na Tela de Resultado [6]) 👇 */}
+      {(step === 0 || step === 7) && (
+        <LegalFooter />
+      )}
+
     </div>
   )
 }
