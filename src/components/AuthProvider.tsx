@@ -11,7 +11,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   // 🔥 LISTA VIP: Rotas que qualquer civil pode acessar sem precisar de login
-  const publicRoutes = ['/login', '/auth/forgot-password', '/quiz'];
+  const publicRoutes = ['/login', '/auth/forgot-password', '/quiz', '/politica-privacidade', '/politica-termos-uso'];
 
   useEffect(() => {
     const checkSession = async () => {
