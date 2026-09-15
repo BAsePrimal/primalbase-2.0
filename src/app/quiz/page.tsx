@@ -100,24 +100,60 @@ export default function QuizPage() {
     switch (step) {
       case 0:
         return (
-          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center">
-            <div className="flex justify-center items-center mb-4 relative w-24 h-24">
+          <div className="space-y-10 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center pb-8">
+            
+            {/* Importação das Fontes: Bebas Neue e Montserrat (pesos 700 e 900) */}
+            <style dangerouslySetInnerHTML={{__html: `
+              @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;900&display=swap');
+            `}} />
+            
+            <div className="flex justify-center items-center mb-2 relative w-24 h-24">
               <div className="absolute inset-0 bg-amber-500/20 blur-[25px] rounded-full"></div>
               <Flame className="w-16 h-16 text-amber-500 relative z-10" />
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-center text-white leading-tight tracking-tight px-4">
-              O Seu Corpo Esqueceu Como Queimar Gordura.
+            {/* TÍTULO */}
+            <h1 
+              className="uppercase text-center text-white w-full"
+              style={{ 
+                fontFamily: "'Bebas Neue', sans-serif", 
+                fontSize: "clamp(3rem, 12vw, 4.5rem)", 
+                lineHeight: "1.1",
+                letterSpacing: "0.5px"
+              }}
+            >
+              O QUE VOCÊ <span className="text-amber-500">COME</span>
+              <br className="md:hidden" />
+              <span className="hidden md:inline"> </span>
+              DITA COMO O SEU
+              <br className="md:hidden" />
+              <span className="hidden md:inline"> </span>
+              <span className="text-amber-500">CORPO FUNCIONA.</span>
             </h1>
             
-            <p className="text-lg md:text-xl text-zinc-400 text-center max-w-2xl px-4 font-normal leading-relaxed">
-              A vida moderna travou o seu metabolismo. Descubra o atalho para <strong className="text-amber-500 font-black uppercase tracking-wider">religar o seu corpo</strong>.
+            {/* SUBTÍTULO: Base inteira Grossa (700) + Palavras em Laranja Extrapesado (900) */}
+            <p 
+              className="text-center text-zinc-300 mx-auto text-lg"
+              style={{ 
+                fontFamily: "'Montserrat', sans-serif", 
+                fontWeight: 700, /* Base encorpada como o seu print antigo */
+                lineHeight: "1.6",
+                maxWidth: "90%"
+              }}
+            >
+              As escolhas erradas na sua rotina roubam a sua <span className="text-amber-500" style={{ fontWeight: 900 }}>energia e saúde</span>. Preencha o seu perfil e acesse o <span className="text-amber-500" style={{ fontWeight: 900 }}>mapa exato</span> para ajustar a sua alimentação.
             </p>
             
+            {/* BOTÃO */}
             <div className="w-full max-w-md mt-12 px-4">
               <button
                 onClick={() => setStep(1)}
-                className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none"
+                className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none"
+                style={{ 
+                  fontFamily: "'Montserrat', sans-serif", 
+                  fontWeight: 900, 
+                  fontSize: "1.25rem" 
+                }}
               >
                 INICIAR MAPEAMENTO
               </button>
