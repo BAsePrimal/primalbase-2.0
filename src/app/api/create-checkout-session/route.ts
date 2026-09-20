@@ -26,36 +26,37 @@ export async function POST(req: NextRequest) {
       selectedPriceId = 'price_1U9ovJCf4oilBdJAwsmy1Hnf';
     }
 
-    // Criar sessão de checkout com trial de 3 dias
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: selectedPriceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/perfil?success=true`,
-      cancel_url: `${req.headers.get('origin')}/perfil?canceled=true`,
-      customer_email: email || undefined,
+   // Criar sessão de checkout com trial de 3 dias
+   const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: selectedPriceId,
+        quantity: 1,
+      },
+    ],
+    mode: 'subscription',
+    // 👇 AS DUAS LINHAS ALTERADAS AQUI 👇
+    success_url: `${req.headers.get('origin')}/?success=true`, 
+    cancel_url: `${req.headers.get('origin')}/`, 
+    customer_email: email || undefined,
+    metadata: {
+      userId: userId,
+    },
+    subscription_data: {
+      trial_period_days: 3,
       metadata: {
         userId: userId,
       },
-      subscription_data: {
-        trial_period_days: 3,
-        metadata: {
-          userId: userId,
-        },
-      },
-    });
+    },
+  });
 
-    return NextResponse.json({ sessionId: session.id, url: session.url });
-  } catch (error: any) {
-    console.error('Erro ao criar sessão de checkout:', error);
-    return NextResponse.json(
-      { error: error.message || 'Erro ao criar sessão de checkout' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ sessionId: session.id, url: session.url });
+} catch (error: any) {
+  console.error('Erro ao criar sessão de checkout:', error);
+  return NextResponse.json(
+    { error: error.message || 'Erro ao criar sessão de checkout' },
+    { status: 500 }
+  );
+}
 }

@@ -43,36 +43,12 @@ export default function PerfilPage() {
     loadProfile();
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const url = new URL(window.location.href);
-      const success = url.searchParams.get('success');
-
-      if (success === 'true') {
-        setShowSuccessModal(true);
-
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-
-        url.searchParams.delete('success');
-        window.history.replaceState({}, '', url.toString());
-      }
-    } catch (error) {
-      console.error('Erro ao processar parâmetro de sucesso:', error);
-    }
-  }, []);
-
   async function loadProfile() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
+        setLoading(false); // Para de girar a bolinha e mostra a tela de visitante
         return;
       }
 
@@ -398,40 +374,6 @@ export default function PerfilPage() {
           </div>
         </main>
       </div>
-
-      {/* Modal de Sucesso Premium */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)] transform scale-100 animate-in zoom-in-95 duration-300">
-            
-            {/* Ícone Flutuante */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-900 rounded-2xl p-4 border border-zinc-800 shadow-xl flex items-center justify-center">
-              <span className="text-4xl">🔥</span>
-            </div>
-            
-            {/* Título Premium */}
-            <h2 className="mt-8 text-3xl font-black text-white uppercase tracking-tight leading-tight">
-              Protocolo <br/> <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Desbloqueado!</span>
-            </h2>
-            
-            {/* Copy de Retenção */}
-            <p className="mt-4 text-zinc-400 text-sm md:text-base leading-relaxed font-medium">
-              O seu período de teste no <strong className="text-white">Primal Base</strong> foi ativado. Você agora tem acesso sem restrições a todas as ferramentas VIP.
-            </p>
-            
-            {/* CTA */}
-            <div className="mt-8">
-              <button 
-                onClick={() => setShowSuccessModal(false)}
-                className="w-full py-4 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-black uppercase tracking-widest text-sm rounded-xl transition-all transform active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
-              >
-                Acessar Meu Protocolo
-              </button>
-            </div>
-            
-          </div>
-        </div>
-      )}
 
       {/* Modal de Edição */}
       {isModalOpen && (

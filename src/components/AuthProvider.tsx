@@ -10,8 +10,23 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const router = useRouter();
   const pathname = usePathname();
 
-  // 🔥 LISTA VIP: Rotas que qualquer civil pode acessar sem precisar de login
-  const publicRoutes = ['/login', '/auth/forgot-password', '/quiz', '/politica-privacidade', '/politica-termos-uso'];
+ // 🔥 LISTA VIP: Rotas que o visitante pode acessar (Modo Convidado / Freemium)
+ const publicRoutes = [
+  '/', 
+  '/login', 
+  '/auth/forgot-password', 
+  '/quiz', 
+  '/guide',
+  '/politica-privacidade', 
+  '/politica-termos-uso',
+  '/perfil',
+  '/chef-ia',
+  '/chat-ia',
+  '/scanner',
+  '/jornada',
+  '/nutricao',
+  '/recipes'
+];
 
   useEffect(() => {
     const checkSession = async () => {

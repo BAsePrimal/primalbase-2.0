@@ -1,5 +1,7 @@
 'use client';
 
+import { useSearchParams, useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Sun, Moon, ChefHat, Brain, User, Flame, Droplet, Droplets, X, Trophy } from 'lucide-react';
@@ -25,7 +27,26 @@ export default function HomePage() {
   
   const [aguaConsumida, setAguaConsumida] = useState(0);
   const [showOtimizacao, setShowOtimizacao] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setShowSuccessModal(true);
+      
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      
+      const url = new URL(window.location.href);
+      url.searchParams.delete('success');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+  
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -70,7 +91,6 @@ export default function HomePage() {
 
   function getGreeting() {
     const hour = new Date().getHours();
-    const firstName = profile?.full_name?.split(' ')[0] || 'Guerreiro';
     if (hour >= 5 && hour < 12) return 'Bom dia';
     if (hour >= 12 && hour < 18) return 'Boa tarde';
     return 'Boa noite';
@@ -104,6 +124,7 @@ export default function HomePage() {
 
       <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
         <img src="https://k6hrqrxuu8obbfwn.public.blob.vercel-storage.com/temp/612876e9-e369-433d-a381-d02938696ed1.png" alt="PrimalBase" className="h-20 w-auto" style={{ imageRendering: 'crisp-edges' }} />
+        
         <Link href="/perfil">
           <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center hover:bg-zinc-700 transition-colors">
             <User className="w-5 h-5 text-zinc-400" />
@@ -126,7 +147,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 👇 CARD DE ÁGUA - COMPACTO E AZUL FIRME 👇 */}
+        {/* CARD DE ÁGUA */}
         {!showOtimizacao ? (
           <div 
             onClick={() => setShowOtimizacao(true)}
@@ -135,7 +156,6 @@ export default function HomePage() {
             }`}
           >
             {isWaterGoalReached ? (
-              // Layout quando bate a meta: Centralizado, Ícone Azul Gota Preenchida, texto estilo iPhone
               <>
                 <Droplet className="w-7 h-7 text-blue-500 fill-blue-500 drop-shadow-[0_0_5px_rgba(59,130,246,0.4)]" />
                 <h3 className="text-base font-semibold tracking-wide text-blue-400">
@@ -143,7 +163,6 @@ export default function HomePage() {
                 </h3>
               </>
             ) : (
-              // Layout antes da meta: Padrão
               <>
                 <Droplet className="w-8 h-8 flex-shrink-0 text-blue-500 transition-colors" />
                 <div>
@@ -187,6 +206,7 @@ export default function HomePage() {
               </div>
             </div>
           </Link>
+
           <Link href="/chat-ia">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/50 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer group">
               <div className="flex flex-col items-center text-center space-y-3">
@@ -219,7 +239,9 @@ export default function HomePage() {
             <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
               <div className={`${isCompleted ? 'bg-gradient-to-r from-yellow-500 to-amber-500 shadow-[0_0_15px_rgba(234,179,8,0.6)]' : 'bg-gradient-to-r from-orange-500 to-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]'} h-full transition-all duration-500 rounded-full`} style={{ width: `${Math.min((diasFeitos / 21) * 100, 100)}%` }}></div>
             </div>
-            <Link href="/jornada" className={`${isCompleted ? 'text-yellow-500 hover:text-yellow-400' : 'text-amber-500 hover:text-amber-400'} font-medium text-xs mt-2 inline-block`}>{isCompleted ? 'Ver Conquistas →' : 'Continuar Jornada →'}</Link>
+            <Link href="/jornada" className={`${isCompleted ? 'text-yellow-500 hover:text-yellow-400' : 'text-amber-500 hover:text-amber-400'} font-medium text-xs mt-2 inline-block`}>
+              {isCompleted ? 'Ver Conquistas →' : 'Continuar Jornada →'}
+            </Link>
           </div>
         ) : (
           <div className="bg-gradient-to-br from-orange-500/20 to-red-500/10 border border-orange-500/30 rounded-2xl p-5 shadow-lg">
@@ -229,11 +251,46 @@ export default function HomePage() {
                 <h3 className="text-lg font-semibold text-orange-500">Desafio 21 Dias</h3>
                 <p className="text-xs text-zinc-400 mt-1">Transforme sua vida com hábitos ancestrais</p>
               </div>
-              <Link href="/jornada" className="w-full mt-2"><button className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 font-semibold py-2.5 px-6 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-300">Começar Desafio</button></Link>
+              <Link href="/jornada" className="w-full mt-2">
+                <button className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-zinc-950 font-semibold py-2.5 px-6 rounded-lg hover:from-orange-600 hover:to-amber-600 transition-all duration-300">
+                  Começar Desafio
+                </button>
+              </Link>
             </div>
           </div>
         )}
       </main>
+
+      {/* 👇 O MODAL DE SUCESSO DO STRIPE (Permanece intacto!) 👇 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)] transform scale-100 animate-in zoom-in-95 duration-300">
+            
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-zinc-900 rounded-2xl p-4 border border-zinc-800 shadow-xl flex items-center justify-center">
+              <span className="text-4xl">🔥</span>
+            </div>
+            
+            <h2 className="mt-8 text-3xl font-black text-white uppercase tracking-tight leading-tight">
+              Protocolo <br/> <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Desbloqueado!</span>
+            </h2>
+            
+            <p className="mt-4 text-zinc-400 text-sm md:text-base leading-relaxed font-medium">
+              O seu período de teste no <strong className="text-white">Primal Base</strong> foi ativado. Você agora tem acesso sem restrições a todas as ferramentas VIP.
+            </p>
+            
+            <div className="mt-8">
+              <button 
+                onClick={() => router.push('/login')}
+                className="w-full py-4 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-black uppercase tracking-widest text-sm rounded-xl transition-all transform active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+              >
+                CRIAR CONTA PREMIUM
+              </button>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

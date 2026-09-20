@@ -89,10 +89,18 @@ export default function NutritionPage() {
 
   // Passo B: Carregar dados
   useEffect(() => {
-    if (!user) return;
-
     const loadData = async () => {
       setIsLoading(true);
+
+      // 👇 INJEÇÃO DA VITRINE: Se não tiver usuário, gera a comida real e para por aqui!
+      if (!user) {
+        setUserGoal('perda');
+        await generateAndSaveMenu('perda'); // Gera o cardápio lindo de demonstração
+        setIsLoading(false);
+        return;
+      }
+
+      // --- SE O USUÁRIO FOR REAL, CONTINUA O SEU FLUXO NORMAL ---
       try {
         const { data: profile } = await supabase
           .from('profiles')
@@ -150,7 +158,7 @@ export default function NutritionPage() {
 
 // --- 3. GERAÇÃO INTELIGENTE (VERSÃO EQUILÍBRIO DE OVOS - 5 DIAS) ---
 const generateAndSaveMenu = async (goal: string) => {
-  if (!user) return;
+  // A linha que bloqueava o visitante foi retirada daqui!
   setLoading(true);
 
   try {
@@ -417,21 +425,25 @@ const generateAndSaveMenu = async (goal: string) => {
       .map(([name, category]) => ({ name, category, checked: false }))
       .sort((a, b) => a.category.localeCompare(b.category));
 
-    await supabase.from('meal_plans').upsert({
-      user_id: user.id,
-      week_plan: newWeekPlan,
-      shopping_list: newShoppingList,
-      goal_type: goal,
-      created_at: new Date().toISOString()
-    }, { onConflict: 'user_id' });
-
+    // 👇 1. ATUALIZA A TELA COM A COMIDA (Para todos verem: logados ou visitantes)
     setMenu(newWeekPlan);
     setShoppingList(newShoppingList);
+
+    // 👇 2. SÓ SALVA NO BANCO SE TIVER CONTA LOGADA
+    if (user) {
+      await supabase.from('meal_plans').upsert({
+        user_id: user.id,
+        week_plan: newWeekPlan,
+        shopping_list: newShoppingList,
+        goal_type: goal,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+    }
+
     console.log('✅ Cardápio 26.1 (Equilíbrio de Ovos: 5 Dias) Gerado!');
 
   } catch (err) {
     console.error('Erro na geração:', err);
-    alert('Erro ao gerar cardápio.');
   } finally {
     setLoading(false);
   }

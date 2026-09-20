@@ -339,7 +339,7 @@ export default function QuizPage() {
   
               <div className="w-full max-w-md mx-auto mt-10">
                 <button 
-                  onClick={() => window.location.href = 'https://www.primalbase.com.br/login'}
+                  onClick={() => window.location.href = '/'}
                   className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce"
                 >
                   ACESSAR MEU PROTOCOLO (GRÁTIS)

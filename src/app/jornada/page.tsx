@@ -64,7 +64,14 @@ export default function JornadaPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
+        // 👇 PERFIL FANTASMA: Injeta os dados para a vitrine não quebrar!
+        setProtocol('male'); // Carrega o protocolo base
+        setUserGender('Masculino');
+        setCurrentDay(1); // Trava no dia 1
+        setCompletedDays([]); // Começa zerado
+        setShowIntro(true); // Mostra a introdução bonitona
+        setLoading(false);
+        setIsLoadingProfile(false);
         return;
       }
 
