@@ -207,13 +207,19 @@ export default function JornadaPage() {
   };
 
   async function toggleTask(dayNum: number, taskId: string) {
-    if (dayNum > currentDay || !userId) return;
+    // 1. Tiramos o bloqueio de visitante daqui (agora ele passa)
+    if (dayNum > currentDay) return;
 
+    // 2. Atualiza a tela na hora (a caixinha é marcada visualmente)
     const taskKey = `day${dayNum}_${taskId}`;
     const isCurrentlyCompleted = completedTasks[taskKey];
     const newCompleted = { ...completedTasks, [taskKey]: !isCurrentlyCompleted };
     setCompletedTasks(newCompleted);
 
+    // 👇 3. A TRAVA DO BANCO DE DADOS: Se não tiver conta, a função morre aqui e não salva no Supabase
+    if (!userId) return;
+
+    // --- DAQUI PRA BAIXO É O SEU CÓDIGO NORMAL ---
     const protocolData = protocol ? JOURNEY_DATA[protocol] : null;
     if (!protocolData) return;
 
