@@ -27,13 +27,21 @@ export default function HomePage() {
   
   const [aguaConsumida, setAguaConsumida] = useState(0);
   const [showOtimizacao, setShowOtimizacao] = useState(false);
+  
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // 👇 1. O COFRE: Guarda o ID para não se perder quando a URL for limpa
+  const [ticketDourado, setTicketDourado] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
+      
+      // 👇 2. Salvamos o Ticket Dourado no cofre!
+      const sid = searchParams.get('session_id');
+      if (sid) setTicketDourado(sid);
       
       confetti({
         particleCount: 150,
@@ -44,6 +52,18 @@ export default function HomePage() {
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+  
+  useEffect(() => {
+    // 👇 3. A REGRA DE EXCEÇÃO: O "Guarda-Costas" não atua se houver festa!
+    // Só tentamos buscar dados (e correr o risco de ser expulso para o login)
+    // SE não viermos de um pagamento com sucesso.
+    if (searchParams.get('success') !== 'true') {
+      fetchUserData();
+    } else {
+      // Como não vamos buscar utilizador, paramos o loading para mostrar a página de fundo e o modal
+      setLoading(false); 
     }
   }, [searchParams]);
   
@@ -279,8 +299,15 @@ export default function HomePage() {
             </p>
             
             <div className="mt-8">
-              <button 
-                onClick={() => router.push('/login')}
+            <button 
+                onClick={() => {
+                  // 👇 Se ele tiver o ticket guardado, leva para o login com o ticket!
+                  if (ticketDourado) {
+                    router.push(`/login?session_id=${ticketDourado}`);
+                  } else {
+                    router.push('/login');
+                  }
+                }}
                 className="w-full py-4 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-black uppercase tracking-widest text-sm rounded-xl transition-all transform active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
               >
                 CRIAR CONTA PREMIUM
