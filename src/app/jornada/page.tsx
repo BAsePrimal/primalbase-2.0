@@ -207,19 +207,13 @@ export default function JornadaPage() {
   };
 
   async function toggleTask(dayNum: number, taskId: string) {
-    // 1. Tiramos o bloqueio de visitante daqui (agora ele passa)
     if (dayNum > currentDay) return;
 
-    // 2. Atualiza a tela na hora (a caixinha é marcada visualmente)
     const taskKey = `day${dayNum}_${taskId}`;
     const isCurrentlyCompleted = completedTasks[taskKey];
     const newCompleted = { ...completedTasks, [taskKey]: !isCurrentlyCompleted };
     setCompletedTasks(newCompleted);
 
-    // 👇 3. A TRAVA DO BANCO DE DADOS: Se não tiver conta, a função morre aqui e não salva no Supabase
-    if (!userId) return;
-
-    // --- DAQUI PRA BAIXO É O SEU CÓDIGO NORMAL ---
     const protocolData = protocol ? JOURNEY_DATA[protocol] : null;
     if (!protocolData) return;
 
@@ -232,50 +226,53 @@ export default function JornadaPage() {
     });
 
     if (allTasksCompleted && !completedDays.includes(dayNum)) {
-      try {
-        await supabase
-          .from('jornada_logs')
-          .insert({
-            user_id: userId,
-            day_number: dayNum,
-            status: 'concluido',
-            completed_at: new Date().toISOString(),
-          });
+      // 1. Atualiza a tela primeiro (Liberado para visitantes)
+      const newCompletedDays = [...completedDays, dayNum];
+      setCompletedDays(newCompletedDays);
 
-        const newCompletedDays = [...completedDays, dayNum];
-        setCompletedDays(newCompletedDays);
+      if (dayNum === 21) {
+        setShowClaimButton(true);
+      } else if (dayNum === currentDay && currentDay < 21) {
+        const newCurrentDay = currentDay + 1;
+        setCurrentDay(newCurrentDay);
+        setExpandedDay(newCurrentDay);
+      }
 
-        if (dayNum === 21) {
-          setShowClaimButton(true);
-          return;
+      // 2. Salva no banco (Protegido só para quem tem conta)
+      if (userId) {
+        try {
+          await supabase
+            .from('jornada_logs')
+            .insert({
+              user_id: userId,
+              day_number: dayNum,
+              status: 'concluido',
+              completed_at: new Date().toISOString(),
+            });
+        } catch (error) {
+          console.error('Erro ao salvar progresso:', error);
         }
-
-        if (dayNum === currentDay && currentDay < 21) {
-          const newCurrentDay = currentDay + 1;
-          setCurrentDay(newCurrentDay);
-          setExpandedDay(newCurrentDay);
-        }
-      } catch (error) {
-        console.error('Erro ao salvar progresso:', error);
-        alert('Erro ao salvar progresso. Tente novamente.');
       }
     } else if (!allTasksCompleted && completedDays.includes(dayNum)) {
-      try {
-        await supabase
-          .from('jornada_logs')
-          .delete()
-          .eq('user_id', userId)
-          .eq('day_number', dayNum);
+      // 1. Atualiza a tela primeiro (Liberado para visitantes)
+      const newCompletedDays = completedDays.filter(d => d !== dayNum);
+      setCompletedDays(newCompletedDays);
 
-        const newCompletedDays = completedDays.filter(d => d !== dayNum);
-        setCompletedDays(newCompletedDays);
+      if (dayNum === 21) {
+        setShowClaimButton(false);
+      }
 
-        if (dayNum === 21) {
-          setShowClaimButton(false);
+      // 2. Remove do banco (Protegido só para quem tem conta)
+      if (userId) {
+        try {
+          await supabase
+            .from('jornada_logs')
+            .delete()
+            .eq('user_id', userId)
+            .eq('day_number', dayNum);
+        } catch (error) {
+          console.error('Erro ao remover progresso:', error);
         }
-      } catch (error) {
-        console.error('Erro ao remover progresso:', error);
-        alert('Erro ao atualizar progresso. Tente novamente.');
       }
     }
   }
