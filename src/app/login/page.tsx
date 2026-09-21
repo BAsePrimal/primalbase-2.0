@@ -22,6 +22,10 @@ function LoginContent() {
   const [whatsapp, setWhatsapp] = useState('');
   const [gender, setGender] = useState<'Masculino' | 'Feminino' | ''>('');
   const [goal, setGoal] = useState('');
+  
+  // 👇 Novos estados para Peso e Altura
+  const [currentWeight, setCurrentWeight] = useState('');
+  const [height, setHeight] = useState('');
 
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, ''); 
@@ -89,7 +93,8 @@ function LoginContent() {
     setLoading(true);
     setError('');
 
-    if (!fullName || !email || !password || !whatsapp || !gender || !goal) {
+    // 👇 Validação atualizada para exigir Peso e Altura
+    if (!fullName || !email || !password || !whatsapp || !gender || !goal || !currentWeight || !height) {
       setError('Por favor, preencha todos os campos');
       setLoading(false);
       return;
@@ -119,6 +124,8 @@ function LoginContent() {
             whatsapp: whatsapp, 
             gender: gender,
             goal: goal,
+            current_weight: parseFloat(currentWeight), // 👇 Salva o peso no banco
+            height: parseInt(height, 10), // 👇 Salva a altura no banco
             level: 1,
           });
 
@@ -357,6 +364,37 @@ function LoginContent() {
                     >
                       Feminino
                     </button>
+                  </div>
+                </div>
+
+                {/* 👇 NOVOS CAMPOS LADO A LADO: PESO E ALTURA */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Peso Atual (kg)</label>
+                    <input
+                      type="number"
+                      value={currentWeight}
+                      onChange={(e) => setCurrentWeight(e.target.value)}
+                      required
+                      step="0.1"
+                      min="30"
+                      max="300"
+                      className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Ex: 75.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">Altura (cm)</label>
+                    <input
+                      type="number"
+                      value={height}
+                      onChange={(e) => setHeight(e.target.value)}
+                      required
+                      min="100"
+                      max="250"
+                      className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="Ex: 175"
+                    />
                   </div>
                 </div>
 
