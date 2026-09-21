@@ -32,14 +32,14 @@ export default function HomePage() {
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  // 👇 1. O COFRE: Guarda o ID para não se perder quando a URL for limpa
+  // 👇 1. O COFRE: Guarda o ID para não se perder
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
 
+  // 👇 2. O EFEITO DOS CONFETES (Só roda se tiver success na URL)
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
       
-      // 👇 2. Salvamos o Ticket Dourado no cofre!
       const sid = searchParams.get('session_id');
       if (sid) setTicketDourado(sid);
       
@@ -52,23 +52,22 @@ export default function HomePage() {
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, '', url.toString());
+
+      // Para o carregamento e deixa a festa acontecer
+      setLoading(false);
     }
   }, [searchParams]);
   
+  // 👇 3. O GUARDA-COSTAS (Seu fetch original intacto e sem loop!)
   useEffect(() => {
-    // 👇 3. A REGRA DE EXCEÇÃO: O "Guarda-Costas" não atua se houver festa!
-    // Só tentamos buscar dados (e correr o risco de ser expulso para o login)
-    // SE não viermos de um pagamento com sucesso.
-    if (searchParams.get('success') !== 'true') {
+    // Lemos a URL direto do navegador para o React não surtar e criar loop
+    const urlAtual = new URLSearchParams(window.location.search);
+    const veioDoPagamento = urlAtual.get('success') === 'true';
+
+    // Se NÃO veio do pagamento, faz a checagem normal de segurança
+    if (!veioDoPagamento) {
       fetchUserData();
-    } else {
-      // Como não vamos buscar utilizador, paramos o loading para mostrar a página de fundo e o modal
-      setLoading(false); 
     }
-  }, [searchParams]);
-  
-  useEffect(() => {
-    fetchUserData();
   }, []);
 
   async function fetchUserData() {
