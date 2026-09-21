@@ -3,25 +3,20 @@ import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-// Webhook secret (você precisa configurar no Stripe Dashboard)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-// Cliente Supabase com Service Role para uso exclusivo em ambiente server (webhook)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// Usa Service Role para burlar o RLS apenas aqui no backend
 const supabaseAdmin =
   supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey)
     : (null as any);
 
-// 🚨 ACIONA A SUA CAIXA PRETA OFICIAL (Aparece no Admin + Manda E-mail)
 async function acionarCaixaPreta(userId: string, erroDetalhado: any) {
   try {
     const { logError } = await import('@/lib/logger');
     const mensagemErro = `Falha Crítica no Pagamento. Erro no banco de dados ao tentar atualizar o status VIP do usuário. Erro: ${erroDetalhado?.message || JSON.stringify(erroDetalhado)}`;
-    // Envia para o seu logger oficial: (Serviço, Erro, "Identificador")
     await logError('Stripe Webhook (Pagamento)', mensagemErro, `Guerreiro ID: ${userId}`);
     console.log("🚨 Pane registrada na Caixa Preta com sucesso!");
   } catch (err) {
@@ -53,24 +48,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Webhook error' }, { status: 400 });
   }
 
-  // Processar eventos do Stripe
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // userId vindo do metadata da sessão de checkout
         const userId =
           (session.metadata && (session.metadata as any).userId) ||
           (session.client_reference_id as string | null);
 
-        if (!userId) {
-          console.error('No userId in checkout.session.completed metadata');
-          break;
+        // 👇 A MÁGICA: Se não houver ID (visitante), o webhook apenas observa e não dá erro.
+        if (!userId || userId === '') {
+          console.log('🛒 [Visitante] Compra aprovada! O cliente vai criar a conta agora com o session_id.');
+          break; 
         }
 
         try {
-          // Buscar a assinatura criada a partir da sessão
           const subscriptionId = session.subscription as string | null;
 
           if (subscriptionId) {
@@ -82,7 +75,6 @@ export async function POST(req: NextRequest) {
               subscription.status
             );
 
-            // Atualizar perfil do usuário para assinante
             const { error: profileError } = await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: isActive })
@@ -92,7 +84,6 @@ export async function POST(req: NextRequest) {
               await acionarCaixaPreta(userId, profileError);
             }
 
-            // Salvar/atualizar dados da assinatura
             const currentPeriodEnd = (subscription as any).current_period_end;
             const safeCurrentPeriodEnd = currentPeriodEnd && typeof currentPeriodEnd === 'number' && !isNaN(currentPeriodEnd)
               ? new Date(currentPeriodEnd * 1000).toISOString()
@@ -120,7 +111,6 @@ export async function POST(req: NextRequest) {
               `✅ checkout.session.completed processed for user ${userId}`
             );
           } else {
-            // Caso extremo: não há subscription ainda, mas já marcamos o usuário como assinante
             const { error: noSubProfileError } = await supabaseAdmin
               .from('profiles')
               .update({ is_subscriber: true })
@@ -146,18 +136,17 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as any; // FORÇANDO ANY AQUI
-        const userId = subscription.metadata.userId;
+        const subscription = event.data.object as any; 
+        const userId = subscription.metadata?.userId;
 
-        if (!userId) {
-          console.error('No userId in subscription metadata');
+        // 👇 A MÁGICA: Ignora atualizações de visitantes até que o registo seja concluído.
+        if (!userId || userId === '') {
+          console.log(`🛒 [Visitante] Assinatura ${subscription.status} atualizada no Stripe. A aguardar registo no ecrã de login.`);
           break;
         }
 
-        // Verificar se a assinatura está ativa ou em trial
         const isActive = ['active', 'trialing'].includes(subscription.status);
 
-        // Atualizar is_subscriber no perfil
         const { error: updateProfileError } = await supabaseAdmin
           .from('profiles')
           .update({ is_subscriber: isActive })
@@ -167,7 +156,6 @@ export async function POST(req: NextRequest) {
           await acionarCaixaPreta(userId, updateProfileError);
         }
 
-        // Salvar/atualizar dados da assinatura
         const currentPeriodEnd = subscription.current_period_end;
         const safeCurrentPeriodEnd = currentPeriodEnd && typeof currentPeriodEnd === 'number' && !isNaN(currentPeriodEnd)
           ? new Date(currentPeriodEnd * 1000).toISOString()
@@ -275,9 +263,8 @@ export async function POST(req: NextRequest) {
           .eq('stripe_customer_id', stripeCustomerId);
 
         console.log(`⚠️ Payment failed for user ${userId}`);
-        // --- 🚨 INÍCIO DO AVISO DE FALHA DE PAGAMENTO ---
+        
         try {
-          // 1. Busca o e-mail do guerreiro no banco
           const { data: profileData } = await supabaseAdmin
             .from('profiles')
             .select('email')
@@ -285,11 +272,9 @@ export async function POST(req: NextRequest) {
             .maybeSingle();
 
           if (profileData?.email) {
-            // 2. Importa o Resend direto aqui para não quebrar o topo do seu arquivo
             const { Resend } = await import('resend');
             const resend = new Resend(process.env.RESEND_API_KEY);
 
-            // 3. Dispara o tiro de resgate financeiro
             await resend.emails.send({
               from: 'Primal Base <suporte@primalbase.com.br>',
               to: profileData.email,
@@ -309,7 +294,6 @@ export async function POST(req: NextRequest) {
         } catch (emailErr) {
           console.error('Falha ao tentar enviar e-mail de cobrança. O sistema segue normal:', emailErr);
         }
-        // --- FIM DO AVISO DE FALHA DE PAGAMENTO ---
         break;
       }
 
