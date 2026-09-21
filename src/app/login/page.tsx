@@ -1,19 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
+// Separamos o conteúdo num componente interno para o Next.js não dar erro de build com a leitura de URL
+function LoginContent() {
   const router = useRouter();
-  // 🔥 MUDANÇA 1: Abre na aba de cadastro por padrão
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get('session_id'); // 🎫 CAPTURANDO O TICKET DOURADO!
+
   const [mode, setMode] = useState<'login' | 'signup'>('signup');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Campos do formulário (Peso e Altura removidos do estado)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -21,7 +23,6 @@ export default function LoginPage() {
   const [gender, setGender] = useState<'Masculino' | 'Feminino' | ''>('');
   const [goal, setGoal] = useState('');
 
-  // 🔥 MUDANÇA 2: Função da Máscara do WhatsApp
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, ''); 
     if (value.length <= 11) {
@@ -39,10 +40,23 @@ export default function LoginPage() {
           redirectTo: window.location.origin + '/auth/callback',
         },
       });
-
       if (error) throw error;
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login com Google');
+    }
+  };
+
+  // 🔥 FUNÇÃO NOVA: A Ponte que avisa o Stripe e o Supabase que a assinatura tem dono
+  const vincularAssinatura = async (userId: string) => {
+    if (!sessionId) return; // Se não tiver ticket na URL, não faz nada (cadastro grátis normal)
+    try {
+      await fetch('/api/link-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, userId }),
+      });
+    } catch (err) {
+      console.error('Erro ao vincular assinatura:', err);
     }
   };
 
@@ -60,6 +74,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       if (data.user) {
+        await vincularAssinatura(data.user.id); // 🔗 Vincula se for cliente logando
         router.replace('/');
       }
     } catch (err: any) {
@@ -74,7 +89,6 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // 🔥 MUDANÇA 3: Validação sem peso e altura
     if (!fullName || !email || !password || !whatsapp || !gender || !goal) {
       setError('Por favor, preencha todos os campos');
       setLoading(false);
@@ -89,7 +103,7 @@ export default function LoginPage() {
           data: {
             full_name: fullName,
             gender: gender,
-            goal: goal, // Enviando apenas a meta
+            goal: goal, 
           },
         },
       });
@@ -110,12 +124,9 @@ export default function LoginPage() {
 
         if (profileError) throw profileError;
 
-        // O GATILHO DA NOSSA API DO RESEND (E-MAIL DE BOAS-VINDAS)
         fetch('/api/send-welcome', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email, name: fullName }),
         }).catch(err => console.error("Falha no disparo em segundo plano:", err));
 
@@ -125,6 +136,8 @@ export default function LoginPage() {
         });
 
         if (signInError) throw signInError;
+
+        await vincularAssinatura(data.user.id); // 🔗 Vincula a compra a esta nova conta!
 
         router.replace('/');
       }
@@ -138,8 +151,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-{/* Logo */}
-<div className="text-center mb-8">
+        <div className="text-center mb-8">
           <img 
             src="https://k6hrqrxuu8obbfwn.public.blob.vercel-storage.com/temp/612876e9-e369-433d-a381-d02938696ed1.png" 
             alt="PrimalBase" 
@@ -153,9 +165,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card Principal */}
         <div className="bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden">
-          {/* Abas */}
           <div className="flex border-b border-zinc-800">
             <button
               onClick={() => setMode('login')}
@@ -179,7 +189,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Formulário */}
           <div className="p-6">
             {error && (
               <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-4 text-sm">
@@ -189,29 +198,16 @@ export default function LoginPage() {
 
             {mode === 'login' ? (
               <form onSubmit={handleLogin} className="space-y-4">
-                {/* Botão Google */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
                   className="w-full bg-white hover:bg-gray-50 text-gray-900 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-3 border border-gray-300"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   Continuar com Google
                 </button>
@@ -226,9 +222,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
                   <input
                     type="email"
                     value={email}
@@ -240,9 +234,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Senha
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Senha</label>
                   <input
                     type="password"
                     value={password}
@@ -262,19 +254,11 @@ export default function LoginPage() {
                   disabled={loading}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    'Entrar'
-                  )}
+                  {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Entrando...</> : 'Entrar'}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
-                {/* 🔥 MUDANÇA 4: Adicionamos o botão Google aqui no Cadastro também */}
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
@@ -299,9 +283,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Nome Completo
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Nome Completo</label>
                   <input
                     type="text"
                     value={fullName}
@@ -313,9 +295,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Email</label>
                   <input
                     type="email"
                     value={email}
@@ -327,9 +307,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    WhatsApp (com DDD)
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">WhatsApp (com DDD)</label>
                   <input
                     type="tel"
                     value={whatsapp}
@@ -342,9 +320,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Senha
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Senha</label>
                   <input
                     type="password"
                     value={password}
@@ -357,9 +333,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Gênero
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Gênero</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -387,9 +361,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">
-                    Sua Meta
-                  </label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">Sua Meta</label>
                   <select
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
@@ -407,14 +379,7 @@ export default function LoginPage() {
                   disabled={loading}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Criando conta...
-                    </>
-                  ) : (
-                    'Criar Conta'
-                  )}
+                  {loading ? <><Loader2 className="w-5 h-5 animate-spin" /> Criando conta...</> : 'Criar Conta'}
                 </button>
               </form>
             )}
@@ -422,5 +387,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// O Next.js exige que leitura de URL fique dentro de um "Suspense"
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-amber-500" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
