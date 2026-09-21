@@ -32,14 +32,14 @@ function HomeContent() {
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  // O nosso cofre invisível que não quebra nada
+  // 👇 1. SÓ ADICIONE ESTA LINHA AQUI NO SEU CÓDIGO ORIGINAL
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
       
-      // Guardamos o ticket antes da URL ser limpa
+      // 👇 2. E ADICIONE ESTAS DUAS LINHAS AQUI NO SEU CÓDIGO ORIGINAL
       const sid = searchParams.get('session_id');
       if (sid) setTicketDourado(sid);
       
@@ -55,7 +55,7 @@ function HomeContent() {
     }
   }, [searchParams]);
   
-  // O SEU CÓDIGO INTACTO!
+  // O SEU CÓDIGO FICA INTACTO AQUI PARA BAIXO
   useEffect(() => {
     fetchUserData();
   }, []);
