@@ -1,10 +1,10 @@
 'use client';
 
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Sun, Moon, ChefHat, Brain, User, Flame, Droplet, Droplets, X, Trophy } from 'lucide-react';
+import { Sun, Moon, ChefHat, Brain, User, Flame, Droplet, X, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompleteProfileGate from '@/components/CompleteProfileGate';
 import Rastreador from '@/components/Rastreador';
@@ -20,11 +20,11 @@ interface Profile {
   level: number;
 }
 
-export default function HomePage() {
+// 👇 1. Transformamos a sua página num componente interno para evitar o crash de produção
+function HomeContent() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [diasFeitos, setDiasFeitos] = useState(0);
-  
   const [aguaConsumida, setAguaConsumida] = useState(0);
   const [showOtimizacao, setShowOtimizacao] = useState(false);
   
@@ -32,14 +32,14 @@ export default function HomePage() {
   const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  // 👇 1. O COFRE: Guarda o ID para não se perder
+  // O nosso cofre invisível que não quebra nada
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
 
-  // 👇 2. O EFEITO DOS CONFETES (Só roda se tiver success na URL)
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
       setShowSuccessModal(true);
       
+      // Guardamos o ticket antes da URL ser limpa
       const sid = searchParams.get('session_id');
       if (sid) setTicketDourado(sid);
       
@@ -52,28 +52,18 @@ export default function HomePage() {
       const url = new URL(window.location.href);
       url.searchParams.delete('success');
       window.history.replaceState({}, '', url.toString());
-
-      // Para o carregamento e deixa a festa acontecer
-      setLoading(false);
     }
   }, [searchParams]);
   
-  // 👇 3. O GUARDA-COSTAS (Seu fetch original intacto e sem loop!)
+  // O SEU CÓDIGO INTACTO!
   useEffect(() => {
-    // Lemos a URL direto do navegador para o React não surtar e criar loop
-    const urlAtual = new URLSearchParams(window.location.search);
-    const veioDoPagamento = urlAtual.get('success') === 'true';
-
-    // Se NÃO veio do pagamento, faz a checagem normal de segurança
-    if (!veioDoPagamento) {
-      fetchUserData();
-    }
+    fetchUserData();
   }, []);
 
   async function fetchUserData() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) return; // Aqui ele já poupa o visitante e não dá loop!
 
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (profileData) setProfile(profileData);
@@ -280,7 +270,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* 👇 O MODAL DE SUCESSO DO STRIPE (Permanece intacto!) 👇 */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)] transform scale-100 animate-in zoom-in-95 duration-300">
@@ -298,9 +287,8 @@ export default function HomePage() {
             </p>
             
             <div className="mt-8">
-            <button 
+              <button 
                 onClick={() => {
-                  // 👇 Se ele tiver o ticket guardado, leva para o login com o ticket!
                   if (ticketDourado) {
                     router.push(`/login?session_id=${ticketDourado}`);
                   } else {
@@ -318,5 +306,18 @@ export default function HomePage() {
       )}
 
     </div>
+  );
+}
+
+// 👇 2. O VERDADEIRO SALVADOR DA PÁTRIA: Embrulhamos a página no Suspense.
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
