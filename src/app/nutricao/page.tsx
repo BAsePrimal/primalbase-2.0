@@ -78,59 +78,47 @@ export default function NutritionPage() {
   const [activeDay, setActiveDay] = useState(0);
   const [userGoal, setUserGoal] = useState<string>('');
 
-  // --- 1. AUTENTICAÇÃO E INICIALIZAÇÃO ---
+  // --- INICIALIZAÇÃO BLINDADA (USUÁRIO VS VISITANTE) ---
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) setUser(authUser);
-    };
-    getUser();
-  }, []);
+    let isMounted = true;
 
-  // Passo B: Carregar dados
-  useEffect(() => {
-    const loadData = async () => {
+    const initializePage = async () => {
       setIsLoading(true);
 
-      // 👇 INJEÇÃO DA VITRINE: Se não tiver usuário, gera a comida real e para por aqui!
-      if (!user) {
-        setUserGoal('perda');
-        await generateAndSaveMenu('perda'); // Gera o cardápio lindo de demonstração
-        setIsLoading(false);
-        return;
-      }
-
-      // --- SE O USUÁRIO FOR REAL, CONTINUA O SEU FLUXO NORMAL ---
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*') 
-          .eq('id', user.id)
-          .single();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Verificar status de assinante
+        // 1. LÓGICA DO VISITANTE (Geração Dinâmica Real)
+        if (!session) {
+          const isVisitor = localStorage.getItem('primalbase_visitor') === 'true';
+          
+          if (!isVisitor) {
+            window.location.href = '/login';
+            return;
+          }
+
+          // 👇 Chama o gerador inteligente, mas sem passar ID de usuário para não salvar no banco!
+          setUser(null);
+          setUserGoal('perda');
+          await generateAndSaveMenu('perda', null); 
+          return;
+        }
+
+        // 2. LÓGICA DO USUÁRIO LOGADO / PREMIUM
+        setUser(session.user);
+        
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         setIsSubscriber(profile?.is_subscriber || false);
 
-        // Mapeamento de Objetivo
         const raw = (profile?.goal || profile?.goal_type || '').toLowerCase();
-        const currentGoal = (
-          raw.includes('ganho') || 
-          raw.includes('massa') || 
-          raw.includes('hipertrofia') || 
-          raw.includes('crescer')
-        ) ? 'ganho' : 'perda';
-        
+        const currentGoal = (raw.includes('ganho') || raw.includes('massa') || raw.includes('hipertrofia') || raw.includes('crescer')) ? 'ganho' : 'perda';
         setUserGoal(currentGoal);
 
-        const { data: existingPlan } = await supabase
-          .from('meal_plans')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { data: existingPlan } = await supabase.from('meal_plans').select('*').eq('user_id', session.user.id).maybeSingle();
 
         if (existingPlan && existingPlan.goal_type !== currentGoal) {
           await supabase.from('meal_plans').delete().eq('id', existingPlan.id);
-          await generateAndSaveMenu(currentGoal);
+          await generateAndSaveMenu(currentGoal, session.user.id);
           return;
         }
 
@@ -141,313 +129,297 @@ export default function NutritionPage() {
             ...day,
             breakfast: { ...day.breakfast, sides: day.breakfast?.sides ?? [] }
           }));
-          setMenu(week);
-          setShoppingList(parsedList || []);
-        } else {
-          await generateAndSaveMenu(currentGoal);
-        }
-      } catch (err) {
-        console.error('Erro ao carregar dados:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user]);
-
-// --- 3. GERAÇÃO INTELIGENTE (VERSÃO EQUILÍBRIO DE OVOS - 5 DIAS) ---
-const generateAndSaveMenu = async (goal: string) => {
-  // A linha que bloqueava o visitante foi retirada daqui!
-  setLoading(true);
-
-  try {
-    const { data: rawFoods, error } = await supabase
-      .from('foods')
-      .select('*')
-      .neq('status', 'banned');
-
-    if (error || !rawFoods || rawFoods.length === 0) throw new Error('Erro ao buscar alimentos.');
-    
-    const allFoods = (rawFoods as unknown as Food[]);
-
-    const globalBlacklist = [
-      'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 
-      'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
-    ];
-
-    const isFatLoss = goal.toLowerCase().includes('perda') || goal.toLowerCase().includes('emagrecimento');
-
-    const fatLossBlacklist = [
-      'bacon', 'torresmo', 'barriga', 'panceta', 'costela', 'cupim', 
-      'parmesão', 'mussarela', 'prato', 'amarelo', 'curado', 'provolone',
-      'tâmara', 'coco seco', 'banana da terra', 'manga', 'caqui', 'uva'
-    ];
-
-    const primalFoods = allFoods.filter(f => {
-      const n = f.name.toLowerCase();
-      if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
-      if (globalBlacklist.some(b => n.includes(b))) return false;
-      if (isFatLoss && fatLossBlacklist.some(b => n.includes(b))) return false;
-      return true;
-    });
-
-    const bucketMainMeats = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        const isMeat = f.category === 'Proteína' || f.category === 'Órgãos';
-        const isSideOrSnack = n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça') || n.includes('salsicha') || n.includes('ovo') || n.includes('queijo') || n.includes('presunto') || n.includes('atum') || n.includes('sardinha') || n.includes('mocotó');
-        return isMeat && !isSideOrSnack;
-    });
-
-    const bucketEggs = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return (f.category === 'Proteína' || f.category === 'Laticínio') && (n.includes('ovo') || n.includes('omelete'));
-    });
-
-    const bucketDairyBreakfast = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return (f.category === 'Laticínio' || f.category === 'Proteína') && 
-               (n.includes('iogurte') || n.includes('kefir') || n.includes('coalhada') || n.includes('queijo') || n.includes('ricota') || n.includes('cottage')) && 
-               !n.includes('ovo');
-    });
-
-    const bucketMorningDrinks = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return n.includes('café') || n.includes('chá') || n.includes('limão') || n.includes('turbo');
-    });
-    
-    const bucketBreakfastFruits = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        const isFruit = f.category === 'Fruta';
-        const isCarbo = n.includes('panqueca') || n.includes('tapioca') || n.includes('banana');
-        const isLunchVeg = f.category === 'Vegetais' || f.category === 'Carboidrato'; 
-        return (isFruit || isCarbo) && !isLunchVeg && !n.includes('limão');
-    });
-
-    const bucketSideProtein = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return (f.category === 'Proteína' || f.category === 'Laticínio') && 
-               (n.includes('queijo') || n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça')) && !n.includes('ovo');
-    });
-
-    const bucketSideRoots = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        const isRootOrVeg = f.category === 'Carboidrato' || f.category === 'Vegetais';
-        const allowedRoots = n.includes('mandioca') || n.includes('aipim') || n.includes('batata') || n.includes('abóbora') || n.includes('jerimum') || n.includes('inhame') || n.includes('cará') || n.includes('abobrinha');
-        return isRootOrVeg && allowedRoots && f.category !== 'Fruta';
-    });
-
-    const bucketSideFruits = primalFoods.filter(f => f.category === 'Fruta' && !f.name.toLowerCase().includes('abacate') && !f.name.toLowerCase().includes('coco') && !f.name.toLowerCase().includes('limão'));
-    const bucketSideFats = primalFoods.filter(f => f.name.toLowerCase().includes('abacate') || f.name.toLowerCase().includes('coco'));
-
-    const bucketHoney = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) && !n.includes('melão') && !n.includes('melancia');
-    });
-    
-    const bucketCookingFats = primalFoods.filter(f => {
-        const n = f.name.toLowerCase();
-        return f.category === 'Gordura' && (n.includes('manteiga') || n.includes('banha') || n.includes('sebo') || n.includes('azeite') || n.includes('coco') || n.includes('ghee'));
-    });
-
-    const createDeck = (bucket: Food[], exactSize: number) => {
-        if (!bucket || bucket.length === 0) return [];
-        let deck = [...bucket].sort(() => Math.random() - 0.5);
-        while (deck.length < exactSize) {
-            deck = [...deck, ...bucket.sort(() => Math.random() - 0.5)];
-        }
-        return deck.slice(0, exactSize);
-    };
-
-    const weeklyMeatPool = [...bucketMainMeats].sort(() => Math.random() - 0.5).slice(0, 4);
-    let meatDeck = createDeck(weeklyMeatPool, 7);
-
-    // CAFÉ DA MANHÃ: Mistura exata de 5 Ovos e 2 Laticínios
-    const deckEggs = createDeck(bucketEggs, 5);
-    const deckDairy = createDeck(bucketDairyBreakfast, 2);
-    const weekBreakfastMains = [...deckEggs, ...deckDairy].sort(() => Math.random() - 0.5);
-    
-    const deckMorningDrinks = createDeck(bucketMorningDrinks, 7);
-    const deckSideProteins = createDeck(bucketSideProtein, 14);
-    const deckRoots = createDeck(bucketSideRoots, 14);
-    const deckFruits = createDeck(bucketSideFruits, 20);
-    
-    // REGRA DE FERRO DO ALMOÇO/JANTAR: 5 dias com ovo extra garantido e 2 dias de "folga".
-    const extraEggDays = [true, true, true, true, true, false, false].sort(() => Math.random() - 0.5);
-
-    const newWeekPlan: DayPlan[] = [];
-    const shoppingMap = new Map<string, string>();
-
-    const addToShop = (food: Food | null | undefined) => {
-      if (!food) return;
-      let cleanName = food.name;
-      const n = cleanName.toLowerCase();
-
-      if (n.includes('limão')) cleanName = 'Limão';
-      else if (n.includes('ovo') || n.includes('omelete')) cleanName = 'Ovos (Cartela/Dúzia)';
-      else if (n.includes('queijo') || n.includes('requeijão') || n.includes('coalho')) cleanName = 'Queijos Variados';
-      else if (n.includes('bacon') || n.includes('torresmo') || n.includes('barriga')) cleanName = 'Bacon & Torresmo';
-      else if (n.includes('manteiga')) cleanName = 'Manteiga';
-      else if (n.includes('sebo') || n.includes('banha')) cleanName = 'Gordura (Banha/Sebo)';
-      else if (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) cleanName = 'Mel de Abelha';
-
-      let cat = food.category;
-      if (cleanName.includes('Ovos') || cleanName.includes('Queijos')) cat = 'Laticínios & Ovos';
-      else if (weeklyMeatPool.some(m => m.name === food.name)) cat = 'Açougue (Carnes & Órgãos)'; 
-      else if (cat === 'Gordura') cat = 'Gorduras & Óleos';
-      else cat = 'Hortifruti (Frutas & Raízes)';
-
-      if (n.includes('chá')) cat = 'Despensa & Outros';
-      if (n.includes('limão')) cat = 'Hortifruti (Frutas & Raízes)';
-
-      shoppingMap.set(cleanName, cat);
-    };
-
-    const drawCard = (deck: Food[], exclude: (Food|undefined)[] = []) => {
-       if (!deck || deck.length === 0) return undefined;
-       const validExcludes = exclude.filter(e => e !== undefined);
-       const index = deck.findIndex(item => !validExcludes.some(e => e?.name === item.name));
-       if (index !== -1) return deck.splice(index, 1)[0];
-       return deck.shift();
-    };
-
-    for (let i = 1; i <= 7; i++) {
-      const cookingFat = bucketCookingFats.length > 0 ? bucketCookingFats[i % bucketCookingFats.length] : { id:0, name:'Manteiga', category:'Gordura', goal_tag:'ambos' };
-      
-      const breakfastMain = weekBreakfastMains.shift() || { id:0, name:'Ovos Mexidos', category:'Proteína', goal_tag:'ambos' };
-      
-      let rawDrink = deckMorningDrinks.shift();
-      let drinkDisplayName = rawDrink ? rawDrink.name : 'Café Preto (Sem Açúcar)';
-      if (drinkDisplayName.toLowerCase().includes('limão')) drinkDisplayName = 'Água com Limão';
-      const morningDrink = { id: rawDrink?.id || 0, name: drinkDisplayName, category: 'Bebida', goal_tag: 'ambos' };
-
-      const breakfastSideFood = bucketBreakfastFruits.length > 0 
-        ? bucketBreakfastFruits[Math.floor(Math.random() * bucketBreakfastFruits.length)] 
-        : null;
-
-      const finalBreakfastSides = [morningDrink];
-      if (breakfastSideFood) finalBreakfastSides.push(breakfastSideFood);
-
-      let dailyMeat = meatDeck.pop() || {id:0, name:'Carne Bovina', category:'Proteína', goal_tag:'ambos'};
-
-      const lunchSides: Food[] = [];
-      const lunchDesserts: Food[] = [];
-      
-      const lSide1 = drawCard(deckSideProteins, [breakfastMain]);
-      if(lSide1) lunchSides.push(lSide1);
-
-      const lSide2 = drawCard(deckRoots, lunchSides);
-      if(lSide2) lunchSides.push(lSide2);
-
-      const lSide3 = drawCard(deckFruits, lunchSides);
-      if(lSide3) lunchSides.push(lSide3);
-
-      if (goal === 'ganho') {
-           const lSide4 = drawCard(deckFruits, lunchSides);
-           if(lSide4) lunchSides.push(lSide4);
-           
-           if (Math.random() < 0.3) {
-               const honey = bucketHoney.length > 0 ? bucketHoney[0] : null;
-               if(honey) lunchDesserts.push(honey);
-           }
-      }
-
-      const dinnerSides: Food[] = [];
-      const dinnerDesserts: Food[] = [];
-      const dayExcludes = [...lunchSides, breakfastMain];
-
-      const lunchHadCheese = lunchSides.some(f => f.name.toLowerCase().includes('queijo') || f.name.toLowerCase().includes('coalho'));
-      
-      let dSide1;
-      if (lunchHadCheese) {
-          const idx = deckSideProteins.findIndex(f => !f.name.toLowerCase().includes('queijo'));
-          if (idx !== -1) dSide1 = deckSideProteins.splice(idx, 1)[0];
-          else dSide1 = deckSideProteins.shift();
-      } else {
-          dSide1 = deckSideProteins.shift();
-      }
-      if(dSide1) dinnerSides.push(dSide1);
-
-      let dSide2;
-      if (Math.random() > 0.5) dSide2 = drawCard(deckFruits, [...dayExcludes, ...dinnerSides]);
-      else if (bucketSideFats.length > 0) dSide2 = bucketSideFats[Math.floor(Math.random() * bucketSideFats.length)];
-      
-      if(dSide2) dinnerSides.push(dSide2);
-
-      // Injeção de ovos com base na dosagem de 5 dias
-      if (extraEggDays[i - 1]) {
-          const extraEggs = { id: 0, name: 'Ovos (Quantidade a gosto)', category: 'Laticínios & Ovos', goal_tag: 'ambos' };
-          if (Math.random() > 0.5) {
-              lunchSides.push(extraEggs);
-          } else {
-              dinnerSides.push(extraEggs);
+          
+          if (isMounted) {
+            setMenu(week);
+            setShoppingList(parsedList || []);
+            setIsLoading(false);
           }
-          addToShop(extraEggs);
+        } else {
+          await generateAndSaveMenu(currentGoal, session.user.id);
+        }
+
+      } catch (err) {
+        console.error('Erro na inicialização da página:', err);
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    initializePage();
+    return () => { isMounted = false; };
+  }, []);
+
+  // --- 3. GERAÇÃO INTELIGENTE (VERSÃO EQUILÍBRIO DE OVOS - 5 DIAS) ---
+  const generateAndSaveMenu = async (goal: string, targetUserId: string | null = null) => {
+    setLoading(true);
+    
+    // Fallback de segurança: usa o targetUserId se passado (no load inicial), ou o user do state (nos clicks de reset)
+    const activeUserId = targetUserId || user?.id;
+
+    try {
+      const { data: rawFoods, error } = await supabase.from('foods').select('*').neq('status', 'banned');
+
+      if (error || !rawFoods || rawFoods.length === 0) throw new Error('Erro ao buscar alimentos.');
+      
+      const allFoods = (rawFoods as unknown as Food[]);
+
+      const globalBlacklist = [
+        'gelo', 'sal', 'vinagre', 'tempero', 'pimenta', 'maracujá', 'chimarrão', 
+        'cenoura', 'beterraba', 'tomate', 'pepino', 'azeitona', 'alface', 'rúcula', 'agrião', 'cebola', 'pimentão'
+      ];
+
+      const isFatLoss = goal.toLowerCase().includes('perda') || goal.toLowerCase().includes('emagrecimento');
+
+      const fatLossBlacklist = [
+        'bacon', 'torresmo', 'barriga', 'panceta', 'costela', 'cupim', 
+        'parmesão', 'mussarela', 'prato', 'amarelo', 'curado', 'provolone',
+        'tâmara', 'coco seco', 'banana da terra', 'manga', 'caqui', 'uva'
+      ];
+
+      const primalFoods = allFoods.filter(f => {
+        const n = f.name.toLowerCase();
+        if (n.includes('arroz') || n.includes('feijão') || n.includes('macarrão') || n.includes('pão') || n.includes('trigo') || n.includes('aveia') || n.includes('soja') || n.includes('biscoito')) return false;
+        if (globalBlacklist.some(b => n.includes(b))) return false;
+        if (isFatLoss && fatLossBlacklist.some(b => n.includes(b))) return false;
+        return true;
+      });
+
+      const bucketMainMeats = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          const isMeat = f.category === 'Proteína' || f.category === 'Órgãos';
+          const isSideOrSnack = n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça') || n.includes('salsicha') || n.includes('ovo') || n.includes('queijo') || n.includes('presunto') || n.includes('atum') || n.includes('sardinha') || n.includes('mocotó');
+          return isMeat && !isSideOrSnack;
+      });
+
+      const bucketEggs = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return (f.category === 'Proteína' || f.category === 'Laticínio') && (n.includes('ovo') || n.includes('omelete'));
+      });
+
+      const bucketDairyBreakfast = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return (f.category === 'Laticínio' || f.category === 'Proteína') && 
+                 (n.includes('iogurte') || n.includes('kefir') || n.includes('coalhada') || n.includes('queijo') || n.includes('ricota') || n.includes('cottage')) && 
+                 !n.includes('ovo');
+      });
+
+      const bucketMorningDrinks = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return n.includes('café') || n.includes('chá') || n.includes('limão') || n.includes('turbo');
+      });
+      
+      const bucketBreakfastFruits = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          const isFruit = f.category === 'Fruta';
+          const isCarbo = n.includes('panqueca') || n.includes('tapioca') || n.includes('banana');
+          const isLunchVeg = f.category === 'Vegetais' || f.category === 'Carboidrato'; 
+          return (isFruit || isCarbo) && !isLunchVeg && !n.includes('limão');
+      });
+
+      const bucketSideProtein = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return (f.category === 'Proteína' || f.category === 'Laticínio') && 
+                 (n.includes('queijo') || n.includes('bacon') || n.includes('torresmo') || n.includes('linguiça')) && !n.includes('ovo');
+      });
+
+      const bucketSideRoots = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          const isRootOrVeg = f.category === 'Carboidrato' || f.category === 'Vegetais';
+          const allowedRoots = n.includes('mandioca') || n.includes('aipim') || n.includes('batata') || n.includes('abóbora') || n.includes('jerimum') || n.includes('inhame') || n.includes('cará') || n.includes('abobrinha');
+          return isRootOrVeg && allowedRoots && f.category !== 'Fruta';
+      });
+
+      const bucketSideFruits = primalFoods.filter(f => f.category === 'Fruta' && !f.name.toLowerCase().includes('abacate') && !f.name.toLowerCase().includes('coco') && !f.name.toLowerCase().includes('limão'));
+      const bucketSideFats = primalFoods.filter(f => f.name.toLowerCase().includes('abacate') || f.name.toLowerCase().includes('coco'));
+
+      const bucketHoney = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) && !n.includes('melão') && !n.includes('melancia');
+      });
+      
+      const bucketCookingFats = primalFoods.filter(f => {
+          const n = f.name.toLowerCase();
+          return f.category === 'Gordura' && (n.includes('manteiga') || n.includes('banha') || n.includes('sebo') || n.includes('azeite') || n.includes('coco') || n.includes('ghee'));
+      });
+
+      const createDeck = (bucket: Food[], exactSize: number) => {
+          if (!bucket || bucket.length === 0) return [];
+          let deck = [...bucket].sort(() => Math.random() - 0.5);
+          while (deck.length < exactSize) {
+              deck = [...deck, ...bucket.sort(() => Math.random() - 0.5)];
+          }
+          return deck.slice(0, exactSize);
+      };
+
+      const weeklyMeatPool = [...bucketMainMeats].sort(() => Math.random() - 0.5).slice(0, 4);
+      let meatDeck = createDeck(weeklyMeatPool, 7);
+
+      const deckEggs = createDeck(bucketEggs, 5);
+      const deckDairy = createDeck(bucketDairyBreakfast, 2);
+      const weekBreakfastMains = [...deckEggs, ...deckDairy].sort(() => Math.random() - 0.5);
+      
+      const deckMorningDrinks = createDeck(bucketMorningDrinks, 7);
+      const deckSideProteins = createDeck(bucketSideProtein, 14);
+      const deckRoots = createDeck(bucketSideRoots, 14);
+      const deckFruits = createDeck(bucketSideFruits, 20);
+      
+      const extraEggDays = [true, true, true, true, true, false, false].sort(() => Math.random() - 0.5);
+
+      const newWeekPlan: DayPlan[] = [];
+      const shoppingMap = new Map<string, string>();
+
+      const addToShop = (food: Food | null | undefined) => {
+        if (!food) return;
+        let cleanName = food.name;
+        const n = cleanName.toLowerCase();
+
+        if (n.includes('limão')) cleanName = 'Limão';
+        else if (n.includes('ovo') || n.includes('omelete')) cleanName = 'Ovos (Cartela/Dúzia)';
+        else if (n.includes('queijo') || n.includes('requeijão') || n.includes('coalho')) cleanName = 'Queijos Variados';
+        else if (n.includes('bacon') || n.includes('torresmo') || n.includes('barriga')) cleanName = 'Bacon & Torresmo';
+        else if (n.includes('manteiga')) cleanName = 'Manteiga';
+        else if (n.includes('sebo') || n.includes('banha')) cleanName = 'Gordura (Banha/Sebo)';
+        else if (n === 'mel' || n === 'mel cru' || n === 'mel de abelha' || n.startsWith('mel ')) cleanName = 'Mel de Abelha';
+
+        let cat = food.category;
+        if (cleanName.includes('Ovos') || cleanName.includes('Queijos')) cat = 'Laticínios & Ovos';
+        else if (weeklyMeatPool.some(m => m.name === food.name)) cat = 'Açougue (Carnes & Órgãos)'; 
+        else if (cat === 'Gordura') cat = 'Gorduras & Óleos';
+        else cat = 'Hortifruti (Frutas & Raízes)';
+
+        if (n.includes('chá')) cat = 'Despensa & Outros';
+        if (n.includes('limão')) cat = 'Hortifruti (Frutas & Raízes)';
+
+        shoppingMap.set(cleanName, cat);
+      };
+
+      const drawCard = (deck: Food[], exclude: (Food|undefined)[] = []) => {
+         if (!deck || deck.length === 0) return undefined;
+         const validExcludes = exclude.filter(e => e !== undefined);
+         const index = deck.findIndex(item => !validExcludes.some(e => e?.name === item.name));
+         if (index !== -1) return deck.splice(index, 1)[0];
+         return deck.shift();
+      };
+
+      for (let i = 1; i <= 7; i++) {
+        const cookingFat = bucketCookingFats.length > 0 ? bucketCookingFats[i % bucketCookingFats.length] : { id:0, name:'Manteiga', category:'Gordura', goal_tag:'ambos' };
+        
+        const breakfastMain = weekBreakfastMains.shift() || { id:0, name:'Ovos Mexidos', category:'Proteína', goal_tag:'ambos' };
+        
+        let rawDrink = deckMorningDrinks.shift();
+        let drinkDisplayName = rawDrink ? rawDrink.name : 'Café Preto (Sem Açúcar)';
+        if (drinkDisplayName.toLowerCase().includes('limão')) drinkDisplayName = 'Água com Limão';
+        const morningDrink = { id: rawDrink?.id || 0, name: drinkDisplayName, category: 'Bebida', goal_tag: 'ambos' };
+
+        const breakfastSideFood = bucketBreakfastFruits.length > 0 
+          ? bucketBreakfastFruits[Math.floor(Math.random() * bucketBreakfastFruits.length)] 
+          : null;
+
+        const finalBreakfastSides = [morningDrink];
+        if (breakfastSideFood) finalBreakfastSides.push(breakfastSideFood);
+
+        let dailyMeat = meatDeck.pop() || {id:0, name:'Carne Bovina', category:'Proteína', goal_tag:'ambos'};
+
+        const lunchSides: Food[] = [];
+        const lunchDesserts: Food[] = [];
+        
+        const lSide1 = drawCard(deckSideProteins, [breakfastMain]);
+        if(lSide1) lunchSides.push(lSide1);
+
+        const lSide2 = drawCard(deckRoots, lunchSides);
+        if(lSide2) lunchSides.push(lSide2);
+
+        const lSide3 = drawCard(deckFruits, lunchSides);
+        if(lSide3) lunchSides.push(lSide3);
+
+        if (goal === 'ganho') {
+             const lSide4 = drawCard(deckFruits, lunchSides);
+             if(lSide4) lunchSides.push(lSide4);
+             
+             if (Math.random() < 0.3) {
+                 const honey = bucketHoney.length > 0 ? bucketHoney[0] : null;
+                 if(honey) lunchDesserts.push(honey);
+             }
+        }
+
+        const dinnerSides: Food[] = [];
+        const dinnerDesserts: Food[] = [];
+        const dayExcludes = [...lunchSides, breakfastMain];
+
+        const lunchHadCheese = lunchSides.some(f => f.name.toLowerCase().includes('queijo') || f.name.toLowerCase().includes('coalho'));
+        
+        let dSide1;
+        if (lunchHadCheese) {
+            const idx = deckSideProteins.findIndex(f => !f.name.toLowerCase().includes('queijo'));
+            if (idx !== -1) dSide1 = deckSideProteins.splice(idx, 1)[0];
+            else dSide1 = deckSideProteins.shift();
+        } else {
+            dSide1 = deckSideProteins.shift();
+        }
+        if(dSide1) dinnerSides.push(dSide1);
+
+        let dSide2;
+        if (Math.random() > 0.5) dSide2 = drawCard(deckFruits, [...dayExcludes, ...dinnerSides]);
+        else if (bucketSideFats.length > 0) dSide2 = bucketSideFats[Math.floor(Math.random() * bucketSideFats.length)];
+        
+        if(dSide2) dinnerSides.push(dSide2);
+
+        if (extraEggDays[i - 1]) {
+            const extraEggs = { id: 0, name: 'Ovos (Quantidade a gosto)', category: 'Laticínios & Ovos', goal_tag: 'ambos' };
+            if (Math.random() > 0.5) {
+                lunchSides.push(extraEggs);
+            } else {
+                dinnerSides.push(extraEggs);
+            }
+            addToShop(extraEggs);
+        }
+
+        addToShop(breakfastMain);
+        if (rawDrink) addToShop(rawDrink); 
+        if (breakfastSideFood) addToShop(breakfastSideFood);
+        addToShop(dailyMeat);
+        addToShop(cookingFat);
+        lunchSides.forEach(addToShop);
+        lunchDesserts.forEach(addToShop);
+        dinnerSides.forEach(addToShop);
+        dinnerDesserts.forEach(addToShop);
+
+        newWeekPlan.push({
+          day: `Dia ${i}`,
+          breakfast: { name: breakfastMain.name, category: breakfastMain.category, desc: '', sides: finalBreakfastSides },
+          lunch: { main: dailyMeat, fat: cookingFat, sides: lunchSides, desserts: lunchDesserts },
+          dinner: { main: dailyMeat, fat: cookingFat, sides: dinnerSides, desserts: dinnerDesserts }
+        });
       }
 
-      addToShop(breakfastMain);
-      if (rawDrink) addToShop(rawDrink); 
-      if (breakfastSideFood) addToShop(breakfastSideFood);
-      addToShop(dailyMeat);
-      addToShop(cookingFat);
-      lunchSides.forEach(addToShop);
-      lunchDesserts.forEach(addToShop);
-      dinnerSides.forEach(addToShop);
-      dinnerDesserts.forEach(addToShop);
+      if (!shoppingMap.has('Sal')) shoppingMap.set('Sal', 'Despensa & Outros');
+      if (!shoppingMap.has('Café (Sem Açúcar)')) shoppingMap.set('Café', 'Despensa & Outros');
 
-      newWeekPlan.push({
-        day: `Dia ${i}`,
-        breakfast: {
-          name: breakfastMain.name,
-          category: breakfastMain.category,
-          desc: '',
-          sides: finalBreakfastSides
-        },
-        lunch: {
-          main: dailyMeat,
-          fat: cookingFat,
-          sides: lunchSides,
-          desserts: lunchDesserts
-        },
-        dinner: {
-          main: dailyMeat,
-          fat: cookingFat,
-          sides: dinnerSides,
-          desserts: dinnerDesserts
-        }
-      });
+      const newShoppingList = Array.from(shoppingMap.entries())
+        .map(([name, category]) => ({ name, category, checked: false }))
+        .sort((a, b) => a.category.localeCompare(b.category));
+
+      setMenu(newWeekPlan);
+      setShoppingList(newShoppingList);
+
+      // SÓ SALVA NO BANCO SE TIVER CONTA LOGADA
+      if (activeUserId) {
+        await supabase.from('meal_plans').upsert({
+          user_id: activeUserId,
+          week_plan: newWeekPlan,
+          shopping_list: newShoppingList,
+          goal_type: goal,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      }
+
+    } catch (err) {
+      console.error('Erro na geração:', err);
+    } finally {
+      setLoading(false);
+      setIsLoading(false);
     }
-
-    if (!shoppingMap.has('Sal')) shoppingMap.set('Sal', 'Despensa & Outros');
-    if (!shoppingMap.has('Café (Sem Açúcar)')) shoppingMap.set('Café', 'Despensa & Outros');
-
-    const newShoppingList = Array.from(shoppingMap.entries())
-      .map(([name, category]) => ({ name, category, checked: false }))
-      .sort((a, b) => a.category.localeCompare(b.category));
-
-    // 👇 1. ATUALIZA A TELA COM A COMIDA (Para todos verem: logados ou visitantes)
-    setMenu(newWeekPlan);
-    setShoppingList(newShoppingList);
-
-    // 👇 2. SÓ SALVA NO BANCO SE TIVER CONTA LOGADA
-    if (user) {
-      await supabase.from('meal_plans').upsert({
-        user_id: user.id,
-        week_plan: newWeekPlan,
-        shopping_list: newShoppingList,
-        goal_type: goal,
-        created_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-    }
-
-    console.log('✅ Cardápio 26.1 (Equilíbrio de Ovos: 5 Dias) Gerado!');
-
-  } catch (err) {
-    console.error('Erro na geração:', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // --- LÓGICA DO BOTÃO SOS ---
   const handleSosClick = () => {
@@ -456,46 +428,52 @@ const generateAndSaveMenu = async (goal: string) => {
     setShowSosModal(true);
   };
 
- // --- LÓGICA DA ROLETA ANCESTRAL Corrigida ---
- const handleTrocaAlimento = async (dayIdx: number, mealType: 'breakfast' | 'lunch' | 'dinner', section: 'main' | 'sides' | 'desserts', itemIdx: number, novoAlimento: any) => {
-  if (!user) return;
-  
-  const newMenu = JSON.parse(JSON.stringify(menu));
-
-  const objAlimento = typeof novoAlimento === 'string' 
-    ? { name: novoAlimento, category: section === 'main' ? 'Proteína' : 'Carboidrato' } 
-    : novoAlimento;
-
-  if (mealType === 'breakfast') {
-    if (section === 'main') {
-      newMenu[dayIdx].breakfast.name = objAlimento.name;
-      newMenu[dayIdx].breakfast.category = objAlimento.category || '';
-    } else if (section === 'sides') {
-      newMenu[dayIdx].breakfast.sides[itemIdx] = objAlimento;
+  // --- LÓGICA DA ROLETA ANCESTRAL ---
+  const handleTrocaAlimento = async (dayIdx: number, mealType: 'breakfast' | 'lunch' | 'dinner', section: 'main' | 'sides' | 'desserts', itemIdx: number, novoAlimento: any) => {
+    if (!user) {
+      setShowPaywall(true); // Visitante não pode rodar a roleta!
+      return;
     }
-  } else {
-    const targetMeal = newMenu[dayIdx][mealType] as Meal;
-    if (section === 'main') {
-      targetMeal.main = objAlimento;
-    } else if (section === 'sides') {
-      targetMeal.sides[itemIdx] = objAlimento;
-    } else if (section === 'desserts') {
-      targetMeal.desserts[itemIdx] = objAlimento;
+    
+    const newMenu = JSON.parse(JSON.stringify(menu));
+
+    const objAlimento = typeof novoAlimento === 'string' 
+      ? { name: novoAlimento, category: section === 'main' ? 'Proteína' : 'Carboidrato' } 
+      : novoAlimento;
+
+    if (mealType === 'breakfast') {
+      if (section === 'main') {
+        newMenu[dayIdx].breakfast.name = objAlimento.name;
+        newMenu[dayIdx].breakfast.category = objAlimento.category || '';
+      } else if (section === 'sides') {
+        newMenu[dayIdx].breakfast.sides[itemIdx] = objAlimento;
+      }
+    } else {
+      const targetMeal = newMenu[dayIdx][mealType] as Meal;
+      if (section === 'main') {
+        targetMeal.main = objAlimento;
+      } else if (section === 'sides') {
+        targetMeal.sides[itemIdx] = objAlimento;
+      } else if (section === 'desserts') {
+        targetMeal.desserts[itemIdx] = objAlimento;
+      }
     }
-  }
 
-  setMenu(newMenu);
+    setMenu(newMenu);
 
-  try {
-    await supabase.from('meal_plans').update({ week_plan: newMenu }).eq('user_id', user.id);
-  } catch (err) {
-    console.error("Erro ao atualizar troca na roleta:", err);
-  }
-};
+    try {
+      await supabase.from('meal_plans').update({ week_plan: newMenu }).eq('user_id', user.id);
+    } catch (err) {
+      console.error("Erro ao atualizar troca na roleta:", err);
+    }
+  };
 
   // --- 4. CHECKLIST E UI ---
   const toggleCheck = async (index: number) => {
-    if (!user) return;
+    if (!user) {
+      setShowPaywall(true); // Visitante não pode editar compras!
+      return;
+    }
     const newList = [...shoppingList];
     newList[index].checked = !newList[index].checked;
     setShoppingList(newList);
@@ -547,8 +525,7 @@ const generateAndSaveMenu = async (goal: string) => {
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-white font-sans overflow-x-hidden">
       <div className="flex-1 p-4 pb-44">
-{/* INTERFACE DO CABEÇALHO INTEGRADA COM SWITCH TOGGLE iOS DISCRETO */}
-<header className="mb-6 pt-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-zinc-800/50 pb-4">
+        <header className="mb-6 pt-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-zinc-800/50 pb-4">
           <div>
             <h1 className="text-2xl font-bold text-amber-500 flex items-center gap-2"><Utensils /> Nutricionista</h1>
             <p className="text-zinc-500 text-sm mt-1">
@@ -578,10 +555,8 @@ const generateAndSaveMenu = async (goal: string) => {
           </div>
         </header>
 
-        {/* --- TELA DE SUPLEMENTOS --- */}
         {abaAtual === 'suplementos' && <SuplementacaoTab />}
 
-        {/* --- TELA DE CARDÁPIO --- */}
         {abaAtual === 'cardapio' && menu.length > 0 && (
           <>
             <button 
@@ -605,7 +580,6 @@ const generateAndSaveMenu = async (goal: string) => {
             </button>
 
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* Seletor de Dias */}
               <div className="flex overflow-x-auto gap-2 pb-4 scrollbar-hide">
                 {menu.map((day, idx) => {
                   const isLocked = !isSubscriber && idx > 2;
@@ -634,7 +608,6 @@ const generateAndSaveMenu = async (goal: string) => {
                 })}
               </div>
               
-              {/* CARDS DE REFEIÇÃO COM ROLETA ANCESTRAL */}
               <div className={`bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-8 shadow-xl relative ${!isSubscriber && activeDay > 2 ? 'blur-sm pointer-events-none' : ''}`}>
                 
                 {/* Café da Manhã */}
@@ -703,7 +676,6 @@ const generateAndSaveMenu = async (goal: string) => {
                     <div>
                         <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold mt-4">Acompanhamentos & Energia</span>
                         <div className="space-y-2 mt-2">
-                          {/* Mapeia os Acompanhamentos */}
                           {(menu[activeDay]?.lunch?.sides || []).map((item, i) => (
                             item?.name ? (
                               <div key={`l-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
@@ -718,7 +690,6 @@ const generateAndSaveMenu = async (goal: string) => {
                               </div>
                             ) : null
                           ))}
-                          {/* Mapeia as Sobremesas */}
                           {(menu[activeDay]?.lunch?.desserts || []).map((item, i) => (
                             item?.name ? (
                               <div key={`l-dessert-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
@@ -762,7 +733,6 @@ const generateAndSaveMenu = async (goal: string) => {
                     <div>
                         <span className="text-xs text-zinc-500 uppercase mb-2 block pl-1 font-bold mt-4">Acompanhamentos & Energia</span>
                         <div className="space-y-2 mt-2">
-                          {/* Mapeia os Acompanhamentos */}
                           {(menu[activeDay]?.dinner?.sides || []).map((item, i) => (
                             item?.name ? (
                               <div key={`d-side-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
@@ -777,7 +747,6 @@ const generateAndSaveMenu = async (goal: string) => {
                               </div>
                             ) : null
                           ))}
-                          {/* Mapeia as Sobremesas */}
                           {(menu[activeDay]?.dinner?.desserts || []).map((item, i) => (
                             item?.name ? (
                               <div key={`d-dessert-${i}`} className="flex items-center gap-2 text-sm text-zinc-200">
@@ -832,7 +801,7 @@ const generateAndSaveMenu = async (goal: string) => {
                       onClick={async () => {
                           const cleared = shoppingList.map(i => ({...i, checked: false}));
                           setShoppingList(cleared);
-                          await supabase.from('meal_plans').update({ shopping_list: cleared }).eq('user_id', user.id);
+                          if (user) await supabase.from('meal_plans').update({ shopping_list: cleared }).eq('user_id', user.id);
                       }}
                       className="w-full mt-8 p-4 rounded-xl border border-red-900/30 bg-red-900/10 text-red-400 flex items-center justify-center gap-2 hover:bg-red-900/20 transition-all text-sm font-bold"
                     >
@@ -877,7 +846,6 @@ const generateAndSaveMenu = async (goal: string) => {
           userId={user?.id || ''} 
         />
 
-        {/* --- MODAL DO BOTÃO SOS (TELA PRETA) --- */}
         {showSosModal && (
           <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center p-6 z-[60] animate-in fade-in duration-300">
             <div className="text-center max-w-sm w-full">
@@ -898,7 +866,6 @@ const generateAndSaveMenu = async (goal: string) => {
           </div>
         )}
         
-        {/* --- O BOTÃO FLUTUANTE (GATILHO SOS) --- */}
         <button
           onClick={handleSosClick}
           className="fixed bottom-28 right-6 z-40 bg-red-700 hover:bg-red-600 text-white rounded-full p-4 shadow-[0_0_20px_rgba(220,38,38,0.5)] transition-transform hover:scale-110 flex items-center justify-center animate-pulse"

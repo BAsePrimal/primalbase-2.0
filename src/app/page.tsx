@@ -70,22 +70,30 @@ function HomeContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // 👇 A PORTA FECHADA PARA O DOMÍNIO PRINCIPAL
+      // 👇 A PORTA FECHADA (AGORA COM MEMÓRIA)
       if (!session) {
-        const isVisitor = searchParams.get('visitante') === 'true';
+        const isVisitorQuery = searchParams.get('visitante') === 'true';
         const isSuccess = searchParams.get('success') === 'true';
+        const isVisitorLocal = localStorage.getItem('primalbase_visitor') === 'true';
 
-        // Se digitou primalbase.com.br limpo, chuta para o Login
+        // Se veio pelo Quiz, carimba o passe de visitante na memória do telemóvel
+        if (isVisitorQuery) {
+          localStorage.setItem('primalbase_visitor', 'true');
+        }
+
+        // É visitante se tem a tag na URL OU se já tem o carimbo na memória
+        const isVisitor = isVisitorQuery || isVisitorLocal;
+
         if (!isVisitor && !isSuccess) {
           router.replace('/login');
           return; 
         }
 
-        // Se veio do Quiz ou pagou, permite carregar
         setLoading(false);
         return; 
       }
 
+      // Se passou daqui, é cliente logado
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (profileData) setProfile(profileData);
 

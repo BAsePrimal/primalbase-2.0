@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Search, BookOpen, Apple, ChefHat, AlertCircle, CheckCircle2, TriangleAlert, Lock } from 'lucide-react';
-import PaywallModal from '@/components/PaywallModal'; // IMPORT DO SEU POP-UP VIP
+import PaywallModal from '@/components/PaywallModal';
 
 export default function GuidePage() {
   const router = useRouter();
@@ -19,23 +19,33 @@ export default function GuidePage() {
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // --- VERIFICAÇÃO DE USUÁRIO E BUSCA DE ALIMENTOS ---
+  // --- VERIFICAÇÃO BLINDADA (USUÁRIO VS VISITANTE) ---
   useEffect(() => {
     async function fetchData() {
       try {
-        // 1. Verifica Assinatura
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-          setUser(authUser);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          const isVisitor = localStorage.getItem('primalbase_visitor') === 'true';
+          
+          if (!isVisitor) {
+            window.location.href = '/login';
+            return;
+          }
+          // Se é visitante, tratamos como não assinante (exibe a vitrine com blur)
+          setUser(null);
+          setIsSubscriber(false);
+        } else {
+          setUser(session.user);
           const { data: profile } = await supabase
             .from('profiles')
             .select('is_subscriber')
-            .eq('id', authUser.id)
+            .eq('id', session.user.id)
             .single();
           setIsSubscriber(profile?.is_subscriber || false);
         }
 
-        // 2. Busca Alimentos
+        // Busca Alimentos para todos (assinantes e visitantes)
         const { data: foodsData, error } = await supabase
           .from('foods')
           .select('*')
@@ -71,21 +81,17 @@ export default function GuidePage() {
   };
 
   const translateStatus = (status: string | null | undefined) => {
-    // Se o status vier vazio do banco, ele não quebra a tela, apenas retorna um texto padrão
     if (!status) return 'NÃO DEFINIDO'; 
-    
     if (status === 'allowed') return 'PERMITIDO';
     if (status === 'moderate') return 'MODERADO';
     if (status === 'banned') return 'PROIBIDO';
-    
     return status.toUpperCase();
   };
 
   const handleReceitasClick = () => {
-    router.push('/recipes'); // Se receitas não for assinante, a trava deve estar lá na página de receitas
+    router.push('/recipes'); 
   };
 
-  // Trava para a barra de pesquisa
   const handleSearchClick = () => {
     if (!isSubscriber) {
       setShowPaywall(true);
@@ -168,7 +174,6 @@ export default function GuidePage() {
             ) : filteredFoods.length > 0 ? (
                 <>
                   {filteredFoods.map((item, idx) => {
-                    // SE NÃO É ASSINANTE E PASSOU DO 3º ITEM, APLICA O BLUR E BLOQUEIA
                     const isBlurred = !isSubscriber && idx >= 3;
                     
                     return (
