@@ -56,6 +56,12 @@ export default function ChatIAPage() {
           setUsageCount(profile.daily_chat_count || 0);
           setTotalChatsCount(profile.total_chats || 0);
         }
+      } else {
+        // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS da memória do telemóvel
+        const localUsage = localStorage.getItem('primalbase_free_credits');
+        if (localUsage) {
+          setUsageCount(parseInt(localUsage, 10));
+        }
       }
     }
     loadInitialData();
@@ -119,8 +125,8 @@ export default function ChatIAPage() {
       setIsListening(false);
     }
 
-    // --- TRAVA DE SEGURANÇA ---
-    if (!isSubscriber && usageCount >= 3) {
+    // 👇 TRAVA DE SEGURANÇA GLOBAL (Limite de 5 usos no total)
+    if (!isSubscriber && usageCount >= 5) {
       setShowPaywall(true);
       return;
     }
@@ -148,12 +154,12 @@ export default function ChatIAPage() {
       
       setMessages([...newMessages, { role: 'assistant', content: data.response }]);
 
-      // --- ATUALIZA CONTADOR NO SUPABASE ---
-      if (user) {
-        const nextCount = usageCount + 1;
-        const nextTotal = totalChatsCount + 1; 
+      // 👇 ATUALIZA O CONTADOR (Supabase ou LocalStorage)
+      const nextCount = usageCount + 1;
+      setUsageCount(nextCount); // Atualiza visualmente a barra na hora
 
-        setUsageCount(nextCount); 
+      if (user) {
+        const nextTotal = totalChatsCount + 1; 
         setTotalChatsCount(nextTotal); 
         
         await supabase
@@ -163,6 +169,9 @@ export default function ChatIAPage() {
             total_chats: nextTotal 
           })
           .eq('id', user.id);
+      } else {
+        // 👇 SE FOR VISITANTE: Grava a contagem unificada na memória do telemóvel!
+        localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
     } catch (error) {
@@ -276,16 +285,17 @@ export default function ChatIAPage() {
             </button>
           </div>
           
+          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (Ajustada para 5) */}
           {!isSubscriber && (
             <div className="mt-3 flex flex-col items-center gap-1">
               <div className="w-full max-w-[200px] h-1 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-500 transition-all duration-500" 
-                  style={{ width: `${Math.min((usageCount / 3) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((usageCount / 5) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-black">
-                Créditos: {Math.max(3 - usageCount, 0)} / 3
+                Créditos Gratuitos: {Math.max(5 - usageCount, 0)} / 5
               </p>
             </div>
           )}

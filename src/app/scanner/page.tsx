@@ -9,7 +9,7 @@ interface ScanResult {
   verdict: 'ALLOWED' | 'BANNED';
   title: string;
   explanation: string;
-  curiosity_fact?: string; // O novo campo da IA que trará o segredo
+  curiosity_fact?: string;
 }
 
 // --- ARMAS DE RETENÇÃO: MOTOR TÁTIL E SONORO NATIVO ---
@@ -74,22 +74,22 @@ export default function ScannerPage() {
   const [user, setUser] = useState<any>(null);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [scanCount, setScanCount] = useState(0);
+  const [scanCount, setScanCount] = useState(0); // Este agora vai refletir os "Créditos" gerais
   const [totalScansCount, setTotalScansCount] = useState(0);
   
   // --- GATILHO DE CURIOSIDADE (NOVO ESTADO) ---
   const [showCuriosityModal, setShowCuriosityModal] = useState(false);
 
-  // --- 1. CARREGAR DADOS REAIS DO SUPABASE ---
+  // --- 1. CARREGAR DADOS ---
   useEffect(() => {
     const checkUserStatus = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      
       if (authUser) {
         setUser(authUser);
-        
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber, daily_scan_count, total_scans')
+          .select('is_subscriber, daily_scan_count, total_scans') // Nota: para cliente VIP, o banco continua a contar Scans separadamente se você quiser, mas a trava não se aplica a eles.
           .eq('id', authUser.id)
           .single();
           
@@ -98,14 +98,20 @@ export default function ScannerPage() {
           setScanCount(profile.daily_scan_count || 0);
           setTotalScansCount(profile.total_scans || 0); 
         }
+      } else {
+        // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS
+        const localUsage = localStorage.getItem('primalbase_free_credits');
+        if (localUsage) {
+          setScanCount(parseInt(localUsage, 10));
+        }
       }
     };
     checkUserStatus();
   }, []);
 
-  // --- 2. TRAVA DA CÂMERA ---
+  // --- 2. TRAVA DA CÂMERA (LIMITE DE 5 CRÉDITOS GLOBAIS) ---
   const handleCaptureClick = () => {
-    if (!isSubscriber && scanCount >= 3) {
+    if (!isSubscriber && scanCount >= 5) {
       setShowPaywall(true);
       return;
     }
@@ -148,19 +154,19 @@ export default function ScannerPage() {
       const data = await response.json();
       setResult(data);
 
-      // 👇 GATILHO DE DOPAMINA: Dispara som e vibração baseado no resultado
       if (data.verdict === 'ALLOWED') {
         triggerFeedback('success');
       } else {
         triggerFeedback('error');
       }
 
-      // --- 3. ATUALIZA CONTADOR NO SUPABASE APÓS SUCESSO ---
-      if (user) {
-        const nextCount = scanCount + 1;
-        const nextTotal = totalScansCount + 1; 
+      // --- 3. ATUALIZA CONTADOR ---
+      const nextCount = scanCount + 1;
+      setScanCount(nextCount); // Atualiza na hora para o visitante
 
-        setScanCount(nextCount); 
+      if (user) {
+        // Se logado, atualiza as estatísticas dele no banco
+        const nextTotal = totalScansCount + 1; 
         setTotalScansCount(nextTotal); 
         
         await supabase
@@ -170,6 +176,9 @@ export default function ScannerPage() {
             total_scans: nextTotal
           })
           .eq('id', user.id);
+      } else {
+        // 👇 SE VISITANTE: Grava a contagem de CRÉDITOS GLOBAIS unificada
+        localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
     } catch (error) {
@@ -252,11 +261,12 @@ export default function ScannerPage() {
                       Capturar Foto
                     </button>
                     
+                    {/* 👇 BARRA DE CRÉDITOS GLOBAIS NO SCANNER */}
                     {!isSubscriber && (
-                      <p className="text-center text-gray-500 text-sm font-medium mt-2">
-                        {scanCount >= 3 
+                      <p className="text-center text-gray-500 text-sm font-bold mt-3 tracking-widest uppercase">
+                        {scanCount >= 5 
                           ? 'Limite de testes grátis atingido 🔒' 
-                          : `Testes grátis restantes: ${Math.max(3 - scanCount, 0)}/3`}
+                          : `Créditos Gratuitos: ${Math.max(5 - scanCount, 0)}/5`}
                       </p>
                     )}
                   </div>

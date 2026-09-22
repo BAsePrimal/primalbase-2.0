@@ -46,12 +46,13 @@ export default function ChefIAPage() {
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
-    // Carrega dados do usuário
+    // Carrega dados do usuário ou do Visitante
     async function loadChefData() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      
       if (authUser) {
+        // CLIENTE VIP OU LOGADO: Puxa do Supabase
         setUser(authUser);
-        
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_subscriber, daily_recipe_count, total_recipes')
@@ -62,6 +63,12 @@ export default function ChefIAPage() {
           setIsSubscriber(profile.is_subscriber || false);
           setUsageCount(profile.daily_recipe_count || 0);
           setTotalRecipesCount(profile.total_recipes || 0); 
+        }
+      } else {
+        // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS da memória do telemóvel
+        const localUsage = localStorage.getItem('primalbase_free_credits');
+        if (localUsage) {
+          setUsageCount(parseInt(localUsage, 10));
         }
       }
     }
@@ -130,13 +137,13 @@ export default function ChefIAPage() {
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
 
-    // Se estiver gravando, para o microfone antes de enviar
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
     }
 
-    if (!isSubscriber && usageCount >= 3) {
+    // 👇 TRAVA GLOBAL: Sobe o Paywall quando atinge 5 usos
+    if (!isSubscriber && usageCount >= 5) {
       setShowPaywall(true);
       return;
     }
@@ -166,12 +173,13 @@ export default function ChefIAPage() {
         throw new Error('Formato estruturado não reconhecido.');
       }
 
-      // Atualiza banco de dados
-      if (user) {
-        const nextCount = usageCount + 1;
-        const nextTotal = totalRecipesCount + 1; 
+      // 👇 ATUALIZA A CONTAGEM
+      const nextCount = usageCount + 1;
+      setUsageCount(nextCount);
 
-        setUsageCount(nextCount); 
+      if (user) {
+        // Se for logado, grava no banco de dados
+        const nextTotal = totalRecipesCount + 1; 
         setTotalRecipesCount(nextTotal); 
         
         await supabase
@@ -181,6 +189,9 @@ export default function ChefIAPage() {
             total_recipes: nextTotal
           })
           .eq('id', user.id);
+      } else {
+        // 👇 SE FOR VISITANTE: Grava a contagem de CRÉDITOS GLOBAIS
+        localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
     } catch (err: any) {
@@ -191,7 +202,7 @@ export default function ChefIAPage() {
   };
 
   const formatRecipeText = (recipe: RecipeData) => {
-    return `*${recipe.title}* 🥩\n⏱️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
+    return `*${recipe.title}* 🥩\n⏱️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}.${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
   };
 
   const handleCopy = async () => {
@@ -275,17 +286,17 @@ export default function ChefIAPage() {
             {loading ? 'Gerando Receita...' : 'Gerar Receita Ancestral'}
           </button>
 
-          {/* BARRA DE CRÉDITOS DO CHEF */}
+          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AJUSTADA PARA 5) */}
           {!isSubscriber && (
             <div className="pt-2 flex flex-col items-center gap-2">
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-700" 
-                  style={{ width: `${Math.min((usageCount / 3) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((usageCount / 5) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
-                Receitas Gratuitas: {Math.max(3 - usageCount, 0)} / 3
+                Créditos Gratuitos: {Math.max(5 - usageCount, 0)} / 5
               </p>
             </div>
           )}
