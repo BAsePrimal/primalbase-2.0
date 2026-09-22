@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
-// Separamos o conteúdo num componente interno para o Next.js não dar erro de build com a leitura de URL
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id'); // 🎫 CAPTURANDO O TICKET DOURADO!
+  const sessionId = searchParams.get('session_id'); 
 
-  const [mode, setMode] = useState<'login' | 'signup'>('signup');
+  // 👇 O Estado inicializa vazio para podermos definir dinamicamente abaixo
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,9 +23,17 @@ function LoginContent() {
   const [gender, setGender] = useState<'Masculino' | 'Feminino' | ''>('');
   const [goal, setGoal] = useState('');
   
-  // 👇 Novos estados para Peso e Altura
   const [currentWeight, setCurrentWeight] = useState('');
   const [height, setHeight] = useState('');
+
+  // 👇 NOVA INTELIGÊNCIA DE UX: Se for pagante novo abre Cadastro, senão abre Login.
+  useEffect(() => {
+    if (sessionId) {
+      setMode('signup');
+    } else {
+      setMode('login');
+    }
+  }, [sessionId]);
 
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, ''); 
@@ -50,9 +58,8 @@ function LoginContent() {
     }
   };
 
-  // 🔥 FUNÇÃO NOVA: A Ponte que avisa o Stripe e o Supabase que a assinatura tem dono
   const vincularAssinatura = async (userId: string) => {
-    if (!sessionId) return; // Se não tiver ticket na URL, não faz nada (cadastro grátis normal)
+    if (!sessionId) return; 
     try {
       await fetch('/api/link-subscription', {
         method: 'POST',
@@ -78,7 +85,7 @@ function LoginContent() {
       if (error) throw error;
 
       if (data.user) {
-        await vincularAssinatura(data.user.id); // 🔗 Vincula se for cliente logando
+        await vincularAssinatura(data.user.id); 
         router.replace('/');
       }
     } catch (err: any) {
@@ -93,7 +100,6 @@ function LoginContent() {
     setLoading(true);
     setError('');
 
-    // 👇 Validação atualizada para exigir Peso e Altura
     if (!fullName || !email || !password || !whatsapp || !gender || !goal || !currentWeight || !height) {
       setError('Por favor, preencha todos os campos');
       setLoading(false);
@@ -124,8 +130,8 @@ function LoginContent() {
             whatsapp: whatsapp, 
             gender: gender,
             goal: goal,
-            current_weight: parseFloat(currentWeight), // 👇 Salva o peso no banco
-            height: parseInt(height, 10), // 👇 Salva a altura no banco
+            current_weight: parseFloat(currentWeight), 
+            height: parseInt(height, 10), 
             level: 1,
           });
 
@@ -144,7 +150,7 @@ function LoginContent() {
 
         if (signInError) throw signInError;
 
-        await vincularAssinatura(data.user.id); // 🔗 Vincula a compra a esta nova conta!
+        await vincularAssinatura(data.user.id); 
 
         router.replace('/');
       }
@@ -367,7 +373,6 @@ function LoginContent() {
                   </div>
                 </div>
 
-                {/* 👇 NOVOS CAMPOS LADO A LADO: PESO E ALTURA */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-zinc-300 mb-2">Peso Atual (kg)</label>
@@ -428,7 +433,6 @@ function LoginContent() {
   );
 }
 
-// O Next.js exige que leitura de URL fique dentro de um "Suspense"
 export default function LoginPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-amber-500" /></div>}>
