@@ -1,25 +1,27 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, CheckCircle, Skull, Loader2, RotateCcw, X } from 'lucide-react';
+import { Camera, CheckCircle, Skull, Loader2, RotateCcw, X, TriangleAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
 interface ScanResult {
-  verdict: 'ALLOWED' | 'BANNED';
+  verdict: 'ALLOWED' | 'BANNED' | 'WARNING';
   title: string;
   explanation: string;
   curiosity_fact?: string;
 }
 
 // --- ARMAS DE RETENÇÃO: MOTOR TÁTIL E SONORO NATIVO ---
-const triggerFeedback = (type: 'success' | 'error') => {
+const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
   if (typeof window === 'undefined') return;
 
   // 1. O Motor Tátil (Vibração - Funciona no Android)
   if ('vibrate' in navigator) {
     if (type === 'error') {
       navigator.vibrate([200, 100, 300, 100, 400]); // Choque pesado e longo
+    } else if (type === 'warning') {
+      navigator.vibrate([100, 50, 100]); // Dois toques curtos (Atenção)
     } else {
       navigator.vibrate([50, 50, 50]); // Clique curto e crocante
     }
@@ -46,6 +48,18 @@ const triggerFeedback = (type: 'success' | 'error') => {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
+    } else if (type === 'warning') {
+      // Som de "Alerta" (Bipe Duplo Médio)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(350, ctx.currentTime);
+      osc.frequency.setValueAtTime(400, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
     } else {
       // Som de "Level Up" (Plim Agudo)
       osc.type = 'sine';
@@ -70,17 +84,14 @@ export default function ScannerPage() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- ESTADOS DE CONTROLE DO PAYWALL E BANCO ---
   const [user, setUser] = useState<any>(null);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [scanCount, setScanCount] = useState(0); // Este agora vai refletir os "Créditos" gerais
+  const [scanCount, setScanCount] = useState(0); 
   const [totalScansCount, setTotalScansCount] = useState(0);
   
-  // --- GATILHO DE CURIOSIDADE (NOVO ESTADO) ---
   const [showCuriosityModal, setShowCuriosityModal] = useState(false);
 
-  // --- 1. CARREGAR DADOS ---
   useEffect(() => {
     const checkUserStatus = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -89,7 +100,7 @@ export default function ScannerPage() {
         setUser(authUser);
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber, daily_scan_count, total_scans') // Nota: para cliente VIP, o banco continua a contar Scans separadamente se você quiser, mas a trava não se aplica a eles.
+          .select('is_subscriber, daily_scan_count, total_scans')
           .eq('id', authUser.id)
           .single();
           
@@ -99,7 +110,6 @@ export default function ScannerPage() {
           setTotalScansCount(profile.total_scans || 0); 
         }
       } else {
-        // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS
         const localUsage = localStorage.getItem('primalbase_free_credits');
         if (localUsage) {
           setScanCount(parseInt(localUsage, 10));
@@ -109,7 +119,6 @@ export default function ScannerPage() {
     checkUserStatus();
   }, []);
 
-  // --- 2. TRAVA DA CÂMERA (LIMITE DE 5 CRÉDITOS GLOBAIS) ---
   const handleCaptureClick = () => {
     if (!isSubscriber && scanCount >= 5) {
       setShowPaywall(true);
@@ -156,16 +165,16 @@ export default function ScannerPage() {
 
       if (data.verdict === 'ALLOWED') {
         triggerFeedback('success');
+      } else if (data.verdict === 'WARNING') {
+        triggerFeedback('warning');
       } else {
         triggerFeedback('error');
       }
 
-      // --- 3. ATUALIZA CONTADOR ---
       const nextCount = scanCount + 1;
-      setScanCount(nextCount); // Atualiza na hora para o visitante
+      setScanCount(nextCount);
 
       if (user) {
-        // Se logado, atualiza as estatísticas dele no banco
         const nextTotal = totalScansCount + 1; 
         setTotalScansCount(nextTotal); 
         
@@ -177,7 +186,6 @@ export default function ScannerPage() {
           })
           .eq('id', user.id);
       } else {
-        // 👇 SE VISITANTE: Grava a contagem de CRÉDITOS GLOBAIS unificada
         localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
@@ -200,21 +208,18 @@ export default function ScannerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black pb-32">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {/* Header Moderno */}
         <div className="text-center mb-8 pt-6">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-white bg-clip-text text-transparent mb-3">
             Scanner IA
           </h1>
           <p className="text-gray-400 text-lg">
-            Valide produtos no Protocolo Ancestral em segundos.
+          Valide alimentos em segundos.
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="flex items-center justify-center">
           {!result ? (
             <div className="w-full">
-              {/* Área da Câmera */}
               {image ? (
                 <div className="mb-6 relative">
                   <img
@@ -261,7 +266,6 @@ export default function ScannerPage() {
                       Capturar Foto
                     </button>
                     
-                    {/* 👇 BARRA DE CRÉDITOS GLOBAIS NO SCANNER */}
                     {!isSubscriber && (
                       <p className="text-center text-gray-500 text-sm font-bold mt-3 tracking-widest uppercase">
                         {scanCount >= 5 
@@ -302,18 +306,25 @@ export default function ScannerPage() {
               className={`w-full rounded-3xl p-8 backdrop-blur-xl bg-gradient-to-br from-gray-900/90 to-black/90 border-4 shadow-2xl ${
                 result.verdict === 'ALLOWED'
                   ? 'border-green-500 shadow-green-500/20'
+                  : result.verdict === 'WARNING'
+                  ? 'border-yellow-500 shadow-yellow-500/20'
                   : 'border-red-500 shadow-red-500/20'
               }`}
             >
               <div className="text-center mb-8">
                 {result.verdict === 'ALLOWED' ? (
                   <CheckCircle
-                    className={`w-32 h-32 mx-auto drop-shadow-2xl text-green-500 animate-pulse`}
+                    className="w-32 h-32 mx-auto drop-shadow-2xl text-green-500 animate-pulse"
                     style={{ filter: 'drop-shadow(0 0 20px rgb(34 197 94 / 0.6))' }}
+                  />
+                ) : result.verdict === 'WARNING' ? (
+                  <TriangleAlert
+                    className="w-32 h-32 mx-auto drop-shadow-2xl text-yellow-500 animate-pulse"
+                    style={{ filter: 'drop-shadow(0 0 20px rgb(234 179 8 / 0.6))' }}
                   />
                 ) : (
                   <Skull
-                    className={`w-32 h-32 mx-auto drop-shadow-2xl text-red-500 animate-pulse`}
+                    className="w-32 h-32 mx-auto drop-shadow-2xl text-red-500 animate-pulse"
                     style={{ filter: 'drop-shadow(0 0 20px rgb(239 68 68 / 0.6))' }}
                   />
                 )}
@@ -322,16 +333,22 @@ export default function ScannerPage() {
               <div className="text-center mb-6">
                 <h2
                   className={`text-4xl md:text-6xl font-black mb-3 ${
-                    result.verdict === 'ALLOWED' ? 'text-green-500' : 'text-red-500'
+                    result.verdict === 'ALLOWED' 
+                      ? 'text-green-500' 
+                      : result.verdict === 'WARNING'
+                      ? 'text-yellow-500'
+                      : 'text-red-500'
                   }`}
                   style={{
                     textShadow:
                       result.verdict === 'ALLOWED'
                         ? '0 0 30px rgb(34 197 94 / 0.5)'
+                        : result.verdict === 'WARNING'
+                        ? '0 0 30px rgb(234 179 8 / 0.5)'
                         : '0 0 30px rgb(239 68 68 / 0.5)',
                   }}
                 >
-                  {result.verdict === 'ALLOWED' ? 'APROVADO' : 'REPROVADO'}
+                  {result.verdict === 'ALLOWED' ? 'APROVADO' : result.verdict === 'WARNING' ? 'ATENÇÃO' : 'REPROVADO'}
                 </h2>
                 <p className="text-2xl md:text-3xl font-bold text-white">
                   {result.title}
@@ -344,21 +361,22 @@ export default function ScannerPage() {
                 </p>
               </div>
 
-              {/* O Botão Fantasma (Gatilho de Curiosidade) */}
               {result.curiosity_fact && (
                 <div className="flex justify-center mb-8">
                   <button
                     onClick={() => setShowCuriosityModal(true)}
                     className={`flex items-center gap-2 text-sm font-bold tracking-widest uppercase transition-all duration-300 active:scale-95 bg-transparent border-none outline-none ${
-                      result.verdict === 'BANNED' 
-                        ? 'text-red-400/70 hover:text-red-400' 
-                        : 'text-green-400/70 hover:text-green-400'
+                      result.verdict === 'ALLOWED' 
+                        ? 'text-green-400/70 hover:text-green-400' 
+                        : result.verdict === 'WARNING'
+                        ? 'text-yellow-400/70 hover:text-yellow-400'
+                        : 'text-red-400/70 hover:text-red-400'
                     }`}
                   >
                     <span className="text-lg">
-                      {result.verdict === 'BANNED' ? '👁️' : '🧬'}
+                      {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠️' : '👁️'}
                     </span>
-                    {result.verdict === 'BANNED' ? 'Segredo da Indústria' : 'Impacto Metabólico'}
+                    {result.verdict === 'ALLOWED' ? 'Biologia Aplicada' : result.verdict === 'WARNING' ? 'Ajuste Prático' : 'Segredo da Indústria'}
                   </button>
                 </div>
               )}
@@ -381,11 +399,14 @@ export default function ScannerPage() {
         userId={user?.id || ''} 
       />
 
-      {/* Modal de Curiosidade (O Segredo Revelado) */}
       {showCuriosityModal && result?.curiosity_fact && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center p-4 bg-zinc-950/90 backdrop-blur-sm animate-in fade-in duration-300">
           <div className={`relative w-full max-w-md border-t-2 sm:border-2 rounded-t-[2rem] sm:rounded-[2rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 ${
-            result.verdict === 'BANNED' ? 'bg-zinc-900 border-red-500/50' : 'bg-zinc-900 border-green-500/50'
+            result.verdict === 'ALLOWED' 
+              ? 'bg-zinc-900 border-green-500/50' 
+              : result.verdict === 'WARNING'
+              ? 'bg-zinc-900 border-yellow-500/50'
+              : 'bg-zinc-900 border-red-500/50'
           }`}>
             
             <button
@@ -397,12 +418,16 @@ export default function ScannerPage() {
 
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">
-                {result.verdict === 'BANNED' ? '👁️' : '🧬'}
+                {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠️' : '👁️'}
               </span>
               <h3 className={`text-xl font-black uppercase tracking-tight ${
-                result.verdict === 'BANNED' ? 'text-red-400' : 'text-green-400'
+                result.verdict === 'ALLOWED' 
+                  ? 'text-green-400' 
+                  : result.verdict === 'WARNING'
+                  ? 'text-yellow-400'
+                  : 'text-red-400'
               }`}>
-                {result.verdict === 'BANNED' ? 'Arquivo Confidencial' : 'Biologia Aplicada'}
+                {result.verdict === 'ALLOWED' ? 'Biologia Aplicada' : result.verdict === 'WARNING' ? 'Ponto de Atenção' : 'Arquivo Confidencial'}
               </h3>
             </div>
 

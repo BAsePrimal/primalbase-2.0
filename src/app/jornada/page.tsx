@@ -2,25 +2,234 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { JOURNEY_DATA } from '@/lib/journeyData';
-import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Trophy, Sparkles, AlertTriangle, Clock, Activity, Flame, Shield, Zap} from 'lucide-react';
+import { CheckCircle2, Circle, Lock, ChevronDown, ChevronUp, Info, X, Shield, Zap, Flame, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 import Confetti from 'react-confetti';
 
-type Protocol = 'male' | 'female' | null;
-
-interface FastingTimer {
-  startTime: number;
-  goalHours: number;
-}
+// --- JORNADA ÚNICA DOS 21 DIAS ---
+const JOURNEY_DATA = {
+  days: [
+    {
+      day: 1,
+      title: "Choque Biológico ⚡",
+      lesson: "A vida moderna e o conforto constante deixaram seu corpo preguiçoso. Hoje damos um choque no sistema. A luz do sol da manhã nos olhos regula seu relógio biológico. O frio forja resiliência na mente, enquanto o corte imediato do açúcar inicia a desinflamação do seu organismo.",
+      tasks: [
+        { id: "1", label: "Foto de Registro (Rosto e corpo - Marco Zero)" },
+        { id: "2", label: "Choque Térmico (30s de água 100% gelada no fim do banho)" },
+        { id: "3", label: "20 min de Sol Matinal (Sem óculos de sol)" },
+        { id: "4", label: "Zero Açúcar (Corte absoluto hoje)" }
+      ]
+    },
+    {
+      day: 2,
+      title: "Combustível Primordial 🛡️",
+      lesson: "Seus hormônios de energia e foco são fabricados a partir de gorduras naturais. Fugir da gordura e viver de carboidratos é o que destrói sua disposição e gera aquele cansaço à tarde. Além disso, passar o dia sentado atrofia sua estrutura física. Hoje resgatamos sua postura e seu metabolismo.",
+      tasks: [
+        { id: "1", label: "Café Ancestral (Café preto puro + óleo de coco ou manteiga)" },
+        { id: "2", label: "3 min de Cócoras Profundo" },
+        { id: "3", label: "20 min de Sol Matinal" }
+      ]
+    },
+    {
+      day: 3,
+      title: "Domínio de Foco e Energia 🛡️",
+      lesson: "Olhar o celular logo ao acordar destrói seu foco pelo resto do dia. Aquela fome matinal costuma ser apenas o corpo pedindo rotina, e não comida real. Beba água, segure a primeira hora do dia e assuma o controle da sua mente.",
+      tasks: [
+        { id: "1", label: "1h em Modo Avião ao acordar" },
+        { id: "2", label: "Nutrição Ancestral (Foco 100% em carne, ovos e frutas)" },
+        { id: "3", label: "Hidratação com Sal Integral (Para energia imediata)" }
+      ]
+    },
+    {
+      day: 4,
+      title: "Força Real e Postura ⚡",
+      lesson: "Sustentar o próprio peso na barra faz mais do que alinhar a coluna: constrói força de verdade e melhora sua postura instantaneamente. Uma postura forte envia um sinal de autoconfiança direto para o seu cérebro. Use seu corpo todos os dias.",
+      tasks: [
+        { id: "1", label: "Dead Hang (Sustentação na barra até o seu limite)" },
+        { id: "2", label: "20 min de Sol (Perto do meio-dia)" },
+        { id: "3", label: "10 min de Leitura" }
+      ]
+    },
+    {
+      day: 5,
+      title: "Recuperação Biológica 🛡️",
+      lesson: "O sono profundo é o momento em que seu corpo realmente se reconstrói e regula os hormônios de energia. A luz das telas à noite destrói a sua melatonina, travando a recuperação. Blindar sua noite é o único jeito de acordar com disposição real amanhã.",
+      tasks: [
+        { id: "1", label: "Zero Telas após as 21h (Bloquear luz azul)" },
+        { id: "2", label: "Sem cafeína após as 14h" },
+        { id: "3", label: "5 min de Respiração Profunda antes de deitar" }
+      ]
+    },
+    {
+      day: 6,
+      title: "Resiliência e Foco ⚡",
+      lesson: "O banho gelado faz muito mais do que acelerar o metabolismo: ele treina a sua mente a não fugir do desconforto. Seu cérebro vai mandar você sair da água na hora, mas você fica. Aproveite para preparar seu corpo para o jejum de amanhã com a hidratação certa.",
+      tasks: [
+        { id: "1", label: "Água + Sal Integral" },
+        { id: "2", label: "Banho Gelado (45 segundos ininterruptos)" },
+        { id: "3", label: "10 min de Grounding (Pés descalços na terra ou grama)" }
+      ]
+    },
+    {
+      day: 7,
+      title: "Limpeza Metabólica 🛡️",
+      lesson: "O jejum é o descanso perfeito que seu sistema digestivo precisa para desinflamar e baixar a insulina naturalmente. O objetivo não é apenas queimar gordura, mas aprender a sentir a onda da fome bater e passar sem desespero. Você no controle total das suas decisões.",
+      tasks: [
+        { id: "1", label: "Jejum de 12h a 16h", type: "timer", goal: 16 },
+        { id: "2", label: "Luz Solar direta durante o Jejum" },
+        { id: "3", label: "10 min de Silêncio Total (Sem celular)" }
+      ]
+    },
+    {
+      day: 8,
+      title: "Resiliência Matinal ⚡",
+      lesson: "A primeira semana adaptou seu corpo, agora treinamos a sua mente. O banho gelado logo cedo força seu cérebro a lidar com o desconforto e ativa o metabolismo na hora. Vencer essa barreira física nos primeiros minutos do dia blinda seu foco para qualquer outro desafio.",
+      tasks: [
+        { id: "1", label: "Ativação Muscular Rápida (Flexões ou agachamentos)" },
+        { id: "2", label: "Banho Gelado (1 minuto ininterrupto)" },
+        { id: "3", label: "Café Puro e Água" }
+      ]
+    },
+    {
+      day: 9,
+      title: "Regulação de Cortisol 🛡️",
+      lesson: "Estresse constante e luzes artificiais mantêm seu cortisol alto, bloqueando o descanso real. O contato físico com a terra e o sol da manhã não são misticismo, são sinalizadores biológicos. Eles regulam seu relógio interno, desinflamam o corpo e preparam seu sistema para a alta performance.",
+      tasks: [
+        { id: "1", label: "15 min de Contato com a Natureza" },
+        { id: "2", label: "20 min de Sol Matinal" },
+        { id: "3", label: "Nutrição Densa (Proteína animal e gordura natural)" }
+      ]
+    },
+    {
+      day: 10,
+      title: "Estímulo Metabólico Curto ⚡",
+      lesson: "O corpo responde melhor à intensidade do que à duração prolongada. Tiros curtos de velocidade máxima ativam fibras musculares rápidas e otimizam hormônios naturais de recuperação. É o caminho eficiente para sinalizar força sem o desgaste crônico de horas de aeróbico.",
+      tasks: [
+        { id: "1", label: "Sprints de Alta Intensidade (4 a 6 tiros curtos)" },
+        { id: "2", label: "Banho Frio Pós-Treino" },
+        { id: "3", label: "Hidratação com Sal Integral" }
+      ]
+    },
+    {
+      day: 11,
+      title: "Foco Profundo ⚡",
+      lesson: "Alternar constantemente entre telas fragmenta sua atenção e esgota sua energia cognitiva. A capacidade de sustentar foco contínuo sem estímulos artificiais de dopamina é o que consolida a alta performance. Assuma o controle do seu ambiente.",
+      tasks: [
+        { id: "1", label: "90 min de Trabalho Profundo (Foco total)" },
+        { id: "2", label: "30 min de Sol UVB (Horário de pico)" },
+        { id: "3", label: "Limite Máximo: 15 min de Redes Sociais no dia" }
+      ]
+    },
+    {
+      day: 12,
+      title: "Descanso Neural 🛡️",
+      lesson: "O excesso de informações digitais sobrecarrega o sistema nervoso central. Interromper a entrada de novos estímulos permite que o cérebro descanse e recalibre os receptores de dopamina. O silêncio intencional é a ferramenta mais eficiente contra a fadiga mental.",
+      tasks: [
+        { id: "1", label: "15 min de Silêncio Visual (Sem telas ou música)" },
+        { id: "2", label: "Jejum de Estímulos (Apenas água e café preto)" },
+        { id: "3", label: "2 min de Dead Hang (Tempo acumulado)" }
+      ]
+    },
+    {
+      day: 13,
+      title: "Preparação Metabólica 🛡️",
+      lesson: "Amanhã seu corpo entrará em um jejum de 24 horas. Para evitar estresse no sistema, o corpo exige nutrição densa hoje. Abastecer a máquina com proteína animal e gordura sinaliza segurança biológica, preparando sua fisiologia para operar apenas com as próprias reservas.",
+      tasks: [
+        { id: "1", label: "Jantar de Alta Densidade (Carne, ovos e gorduras naturais)" },
+        { id: "2", label: "Fechamento da Janela (Definir horário exato de término)" },
+        { id: "3", label: "Dormir Cedo" }
+      ]
+    },
+    {
+      day: 14,
+      title: "Autofagia e Renovação 🛡️",
+      lesson: "Com a insulina estabilizada no jejum estendido, o corpo ativa a autofagia, reciclando células danificadas para gerar energia. Esse processo varre a inflamação do sistema, otimiza hormônios vitais e clareia o foco. A restrição intencional é o mecanismo biológico definitivo de regeneração.",
+      tasks: [
+        { id: "1", label: "Janela de Jejum Estendido (16h a 24h)", type: "timer", goal: 24 },
+        { id: "2", label: "Exposição Solar Direta (20 min ao meio-dia)" },
+        { id: "3", label: "Reposição Mineral (Água + sal integral a cada 3h)" }
+      ]
+    },
+    {
+      day: 15,
+      title: "Blindagem Dopaminérgica ⚡",
+      lesson: "O açúcar refinado e as notificações do celular competem pelos mesmos circuitos neurais de recompensa. Ceder a esses microestímulos reduz sua energia de execução para desafios reais. Cortar a dopamina barata recalibra sua motivação biológica direto na base.",
+      tasks: [
+        { id: "1", label: "Tolerância Zero a Estímulos Rápidos (Sem açúcar e telas à toa)" },
+        { id: "2", label: "Exposição ao Frio (Banho 100% gelado por 2 min)" },
+        { id: "3", label: "Café Preto Puro" }
+      ]
+    },
+    {
+      day: 16,
+      title: "Nutrição e Estrutura 🛡️",
+      lesson: "Comer com pressa olhando para telas sabota a saciedade e eleva o cortisol, travando a digestão. Associar uma refeição densa a uma caminhada com sobrecarga (Rucking) otimiza a absorção e estimula força estrutural sem destruir as articulações.",
+      tasks: [
+        { id: "1", label: "Refeição sem Estímulos (Sem celular/TV)" },
+        { id: "2", label: "Rucking / Caminhada Tática (20 min com mochila pesada)" },
+        { id: "3", label: "20 min de Sol (Após a digestão)" }
+      ]
+    },
+    {
+      day: 17,
+      title: "Clareza Mental ⚡",
+      lesson: "Quando você corta os carboidratos, o seu cérebro muda a fonte de combustível. É por isso que aquela sensação de lentidão desaparece. Sem picos de insulina, você ganha horas de foco profundo. Use essa energia limpa hoje para resolver o problema mais difícil da sua semana.",
+      tasks: [
+        { id: "1", label: "Foco Absoluto (Executar a tarefa mais importante do dia)" },
+        { id: "2", label: "Dead Hang (Até o limite físico)" },
+        { id: "3", label: "Hidratação com Sal Integral" }
+      ]
+    },
+    {
+      day: 18,
+      title: "Força e Longevidade 🛡️",
+      lesson: "Músculo não é estética, é o escudo de proteção do seu corpo contra o envelhecimento. Quando você treina até o seu limite físico, envia um sinal direto para o organismo de que ele precisa se tornar mais forte e resistente hoje.",
+      tasks: [
+        { id: "1", label: "Treino de Força (Pesos ou calistenia pesada)" },
+        { id: "2", label: "Reforço na Proteína (Aumentar carne no pós-treino)" },
+        { id: "3", label: "30 min de Sol (Horário mais forte)" }
+      ]
+    },
+    {
+      day: 19,
+      title: "Blindagem do Ambiente 🛡️",
+      lesson: "Um corpo sem inflamação sustenta uma mente que não se distrai. Sem o vício diário no açúcar, você volta a ter controle de si mesmo. O segredo para não errar no protocolo a longo prazo é simplesmente não ter o alimento ruim perto de você.",
+      tasks: [
+        { id: "1", label: "Limpeza Total (Jogar fora ultraprocessados em casa)" },
+        { id: "2", label: "Silêncio Digital (Tarde em Modo Avião)" },
+        { id: "3", label: "20 min de Contato com a Natureza" }
+      ]
+    },
+    {
+      day: 20,
+      title: "Controle de Ambiente 🛡️",
+      lesson: "Muita luz artificial e ambientes fechados bagunçam seu relógio biológico e mantêm o estresse sempre alto. O contato direto com a natureza força a queda do cortisol e acalma a mente na hora, preparando seu corpo para fechar esse ciclo de adaptação.",
+      tasks: [
+        { id: "1", label: "Tempo na Natureza (Caminhada ou pés descalços)" },
+        { id: "2", label: "Planejamento Focado (Sem celular)" },
+        { id: "3", label: "Banho Gelado (Tempo máximo suportado)" }
+      ]
+    },
+    {
+      day: 21,
+      title: "O Novo Padrão ⚡",
+      lesson: "O ciclo está completo. Você dominou o estresse, baixou a insulina e blindou sua mente contra distrações. O jejum consolida essa adaptação e garante a queima de gordura no automático. O protocolo de 21 dias termina, mas o seu novo padrão biológico é permanente.",
+      tasks: [
+        { id: "1", label: "Jejum de Consolidação (16h contínuas)", type: "timer", goal: 16 },
+        { id: "2", label: "30 min de Sol (Perto do meio-dia)" },
+        { id: "3", label: "Registro de Evolução (Foto para comparar com Dia 1)" }
+      ]
+    }
+  ]
+};
 
 export default function JornadaPage() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
-  const [protocol, setProtocol] = useState<Protocol>(null);
+  
   const [currentDay, setCurrentDay] = useState(1);
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
@@ -32,7 +241,6 @@ export default function JornadaPage() {
   const [showClaimButton, setShowClaimButton] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [showIntro, setShowIntro] = useState(false);
-  const [userGender, setUserGender] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showPunishmentModal, setShowPunishmentModal] = useState(false);
@@ -51,6 +259,7 @@ export default function JornadaPage() {
     try {
       setIsLoadingProfile(true);
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      
       if (authUser) {
         setUser(authUser);
         const { data: profile } = await supabase
@@ -59,91 +268,69 @@ export default function JornadaPage() {
           .eq('id', authUser.id)
           .single();
         setIsSubscriber(profile?.is_subscriber || false);
-      }
-    
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        // 👇 PERFIL FANTASMA: Injeta os dados para a vitrine não quebrar!
-        setProtocol('male'); // Carrega o protocolo base
-        setUserGender('Masculino');
-        setCurrentDay(1); // Trava no dia 1
-        setCompletedDays([]); // Começa zerado
-        setShowIntro(true); // Mostra a introdução bonitona
+        setUserId(authUser.id);
+      } else {
+        // Visitante Anônimo
+        setCurrentDay(1);
+        setCompletedDays([]);
+        setShowIntro(true);
         setLoading(false);
         setIsLoadingProfile(false);
         return;
       }
 
-      setUserId(user.id);
+      setIsLoadingProfile(false);
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('gender')
-        .eq('id', user.id)
-        .single();
+      const { data: logsData } = await supabase
+        .from('jornada_logs')
+        .select('day_number, completed_at')
+        .eq('user_id', authUser.id)
+        .order('day_number', { ascending: true });
 
-      if (profileData) {
-        const genderLower = profileData.gender?.toLowerCase() || '';
-        const isMale = genderLower.includes('masculino') || genderLower.includes('leão');
-        const userProtocol = isMale ? 'male' : 'female';
-        
-        setProtocol(userProtocol);
-        setUserGender(profileData.gender);
-        setIsLoadingProfile(false);
+      localStorage.setItem('primal_progress_days', (logsData?.length || 0).toString());
 
-        const { data: logsData } = await supabase
-          .from('jornada_logs')
-          .select('day_number, completed_at')
-          .eq('user_id', user.id)
-          .order('day_number', { ascending: true });
+      if (!logsData || logsData.length === 0) {
+        setShowIntro(true);
+        setCompletedDays([]);
+        setCurrentDay(1);
+      } else {
+        const lastLog = logsData[logsData.length - 1];
+        if (lastLog && lastLog.completed_at) {
+          const lastCheckIn = new Date(lastLog.completed_at).getTime();
+          const now = new Date().getTime();
+          const hoursSinceLastCheckin = (now - lastCheckIn) / (1000 * 60 * 60);
 
-        localStorage.setItem('primal_progress_days', (logsData?.length || 0).toString());
-
-        if (!logsData || logsData.length === 0) {
-          setShowIntro(true);
-          setCompletedDays([]);
-          setCurrentDay(1);
-        } else {
-          const lastLog = logsData[logsData.length - 1];
-          if (lastLog && lastLog.completed_at) {
-            const lastCheckIn = new Date(lastLog.completed_at).getTime();
-            const now = new Date().getTime();
-            const hoursSinceLastCheckin = (now - lastCheckIn) / (1000 * 60 * 60);
-
-            if (hoursSinceLastCheckin > 48) {
-              setShowPunishmentModal(true);
-              setLoading(false);
-              return; 
-            }
+          if (hoursSinceLastCheckin > 48) {
+            setShowPunishmentModal(true);
+            setLoading(false);
+            return; 
           }
-
-          const completedDayNumbers = logsData.map((log: any) => log.day_number);
-          setCompletedDays(completedDayNumbers);
-
-          const maxCompletedDay = Math.max(...completedDayNumbers);
-          if (maxCompletedDay < 21) {
-            setCurrentDay(maxCompletedDay + 1);
-          } else {
-            setCurrentDay(21);
-            setShowClaimButton(true);
-          }
-
-          const newCompletedTasks: Record<string, boolean> = {};
-          const protocolData = JOURNEY_DATA[userProtocol];
-          
-          completedDayNumbers.forEach((dayNum: number) => {
-            const dayData = protocolData.days.find((d: any) => d.day === dayNum);
-            if (dayData) {
-              dayData.tasks.forEach((task: any) => {
-                newCompletedTasks[`day${dayNum}_${task.id}`] = true;
-              });
-            }
-          });
-
-          setCompletedTasks(newCompletedTasks);
-          setShowIntro(false); 
         }
+
+        const completedDayNumbers = logsData.map((log: any) => log.day_number);
+        setCompletedDays(completedDayNumbers);
+
+        const maxCompletedDay = Math.max(...completedDayNumbers);
+        if (maxCompletedDay < 21) {
+          setCurrentDay(maxCompletedDay + 1);
+        } else {
+          setCurrentDay(21);
+          setShowClaimButton(true);
+        }
+
+        const newCompletedTasks: Record<string, boolean> = {};
+        
+        completedDayNumbers.forEach((dayNum: number) => {
+          const dayData = JOURNEY_DATA.days.find((d: any) => d.day === dayNum);
+          if (dayData) {
+            dayData.tasks.forEach((task: any) => {
+              newCompletedTasks[`day${dayNum}_${task.id}`] = true;
+            });
+          }
+        });
+
+        setCompletedTasks(newCompletedTasks);
+        setShowIntro(false); 
       }
     } catch (error) {
       console.error('Erro ao carregar jornada:', error);
@@ -151,27 +338,6 @@ export default function JornadaPage() {
       setLoading(false);
     }
   }
-
-  const handleSelectProtocol = async (protocolType: 'male' | 'female') => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const gender = protocolType === 'male' ? 'Masculino' : 'Feminino';
-      await supabase
-        .from('profiles')
-        .update({ gender })
-        .eq('id', userId);
-
-      setProtocol(protocolType);
-      setUserGender(gender);
-    } catch (error) {
-      console.error('Erro ao salvar protocolo:', error);
-      alert('Erro ao salvar protocolo. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResetProtocol = async () => {
     if (!userId) return;
@@ -184,7 +350,7 @@ export default function JornadaPage() {
 
       if (error) {
         console.error('Erro ao resetar:', error);
-        alert('Erro ao reiniciar. Verifique se você tem permissão para deletar registros ou contate o suporte.');
+        alert('Erro ao reiniciar. Verifique se você tem permissão ou contate o suporte.');
         return;
       }
 
@@ -197,7 +363,6 @@ export default function JornadaPage() {
       window.location.reload();
     } catch (error) {
       console.error('Erro ao resetar protocolo:', error);
-      alert('Erro ao resetar protocolo. Tente novamente.');
     }
   };
 
@@ -214,10 +379,7 @@ export default function JornadaPage() {
     const newCompleted = { ...completedTasks, [taskKey]: !isCurrentlyCompleted };
     setCompletedTasks(newCompleted);
 
-    const protocolData = protocol ? JOURNEY_DATA[protocol] : null;
-    if (!protocolData) return;
-
-    const currentDayData = protocolData.days.find((d: any) => d.day === dayNum);
+    const currentDayData = JOURNEY_DATA.days.find((d: any) => d.day === dayNum);
     if (!currentDayData) return;
 
     const allTasksCompleted = currentDayData.tasks.every((task: any) => {
@@ -226,7 +388,6 @@ export default function JornadaPage() {
     });
 
     if (allTasksCompleted && !completedDays.includes(dayNum)) {
-      // 1. Atualiza a tela primeiro (Liberado para visitantes)
       const newCompletedDays = [...completedDays, dayNum];
       setCompletedDays(newCompletedDays);
 
@@ -238,7 +399,6 @@ export default function JornadaPage() {
         setExpandedDay(newCurrentDay);
       }
 
-      // 2. Salva no banco (Protegido só para quem tem conta)
       if (userId) {
         try {
           await supabase
@@ -254,7 +414,6 @@ export default function JornadaPage() {
         }
       }
     } else if (!allTasksCompleted && completedDays.includes(dayNum)) {
-      // 1. Atualiza a tela primeiro (Liberado para visitantes)
       const newCompletedDays = completedDays.filter(d => d !== dayNum);
       setCompletedDays(newCompletedDays);
 
@@ -262,7 +421,6 @@ export default function JornadaPage() {
         setShowClaimButton(false);
       }
 
-      // 2. Remove do banco (Protegido só para quem tem conta)
       if (userId) {
         try {
           await supabase
@@ -299,7 +457,7 @@ export default function JornadaPage() {
         ring: goalHours,
         timeline: [
           { icon: '🟢', time: '12h', label: 'Fim do Glicogênio' },
-          { icon: '🟠', time: '14h', label: 'Pico de GH (Hormônio do Crescimento)' },
+          { icon: '🟠', time: '14h', label: 'Pico de GH (Crescimento)' },
           { icon: '🔥', time: '16h', label: 'Queima de Gordura Máxima (Cetose)' }
         ]
       };
@@ -310,9 +468,9 @@ export default function JornadaPage() {
         timeline: [
           { icon: '🟢', time: '12h', label: 'Digestão Encerrada' },
           { icon: '🟠', time: '14h', label: 'GH no Teto (Proteção Muscular)' },
-          { icon: '🔥', time: '16h', label: 'Queima Intensa de Gordura' },
-          { icon: '✨', time: '18h', label: 'Início da Autofagia (Limpeza)' },
-          { icon: '🧬', time: '24h', label: 'Reset Imunológico & Células Tronco' }
+          { icon: '🔥', time: '16h', label: 'Queima Intensa' },
+          { icon: '✨', time: '18h', label: 'Início da Autofagia' },
+          { icon: '🧬', time: '24h', label: 'Reset Imunológico' }
         ]
       };
     }
@@ -338,124 +496,61 @@ export default function JornadaPage() {
     );
   }
 
-  if (!protocol) {
+  if (showIntro) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center p-4">
-        <div className="max-w-4xl w-full">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Escolha Seu Protocolo
-            </h1>
-            <p className="text-lg text-gray-600">
-              Selecione o protocolo que melhor se adapta ao seu objetivo
-            </p>
-          </div>
+      <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950">
+        <div className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-black to-zinc-950 pointer-events-none"></div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <button
-              onClick={() => handleSelectProtocol('male')}
-              disabled={loading}
-              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <div className="mb-6 flex justify-start">
-                <Zap className="w-16 h-16 text-amber-500 group-hover:scale-110 transition-transform duration-300" />
+        <div className="relative z-10 max-w-3xl w-full my-auto py-10">
+          <div className="relative bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] p-8 md:p-14 text-center overflow-hidden flex flex-col justify-center min-h-[50vh]">
+            
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 pointer-events-none"></div>
+            
+            <div className="relative z-10">
+              
+              <div className="flex justify-center mb-8 md:mb-12">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+                  <Zap className="relative z-10 w-24 h-24 md:w-32 md:h-32 text-amber-500 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Protocolo Masculino
-              </h2>
-              <p className="text-gray-600 text-lg mb-6">
-                Performance e Domínio Mental.
-              </p>
-              <div className="space-y-2 text-sm text-gray-500">
-                <p>✓ 21 dias de transformação</p>
-                <p>✓ Foco em força e energia</p>
-                <p>✓ Otimização hormonal</p>
-              </div>
-            </button>
 
-            <button
-              onClick={() => handleSelectProtocol('female')}
-              disabled={loading}
-              className="bg-white rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-left border-4 border-transparent hover:border-rose-500 disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <div className="mb-6 flex justify-start">
-                <Sparkles className="w-16 h-16 text-rose-500 group-hover:scale-110 transition-transform duration-300" />
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight leading-tight">
+                <span className="text-white">O DESPERTAR </span>
+                <span className="text-amber-500 block sm:inline">BIOLÓGICO</span>
+              </h1>
+              
+              {isLoadingProfile ? (
+                <div className="flex flex-col items-center gap-3 mb-10">
+                  <div className="h-6 w-3/4 bg-zinc-800 rounded-md animate-pulse"></div>
+                </div>
+              ) : (
+                <p className="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-400 mb-10">
+                  Você está pronto para assumir o controle?
+                </p>
+              )}
+
+              <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mb-10 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div> 
+                <p className="text-gray-300 leading-relaxed text-base md:text-lg pl-4">
+                  Nos próximos 21 dias, você executará um protocolo prático de restrição intencional, nutrição ancestral e regulação hormonal. Nós vamos remover a inflamação, dominar o cortisol e <strong className="text-amber-400 font-medium">transformar o seu corpo em uma máquina de alta performance.</strong>
+                </p>
               </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Protocolo Feminino
-              </h2>
-              <p className="text-gray-600 text-lg mb-6">
-                Equilíbrio e Vitalidade.
-              </p>
-              <div className="space-y-2 text-sm text-gray-500">
-                <p>✓ 21 dias de renovação</p>
-                <p>✓ Equilíbrio e regulação</p>
-                <p>✓ Energia constante</p>
-              </div>
-            </button>
+
+              <button
+                onClick={handleStartChallenge}
+                disabled={isLoadingProfile}
+                className="w-full max-w-md mx-auto bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 md:py-6 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest relative z-10 outline-none border-none"
+              >
+                {isLoadingProfile ? 'CARREGANDO...' : 'INICIAR PROTOCOLO'}
+              </button>
+
+            </div>
           </div>
         </div>
       </div>
     );
   }
-
-  const protocolData = JOURNEY_DATA[protocol];
-
-if (showIntro) {
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950">
-      <div className="fixed inset-0 bg-gradient-to-br from-zinc-950 via-black to-zinc-950 pointer-events-none"></div>
-
-      <div className="relative z-10 max-w-3xl w-full my-auto py-10">
-        <div className="relative bg-zinc-900/80 backdrop-blur-xl border border-zinc-700/50 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.6)] p-8 md:p-14 text-center overflow-hidden flex flex-col justify-center min-h-[50vh]">
-          
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-orange-500/5 pointer-events-none"></div>
-          
-          <div className="relative z-10">
-            
-            <div className="flex justify-center mb-8 md:mb-12">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
-                <Zap className="relative z-10 w-24 h-24 md:w-32 md:h-32 text-amber-500 filter drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
-              </div>
-            </div>
-
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 tracking-tight leading-tight">
-              <span className="text-white">O DESPERTAR </span>
-              <span className="text-amber-500 block sm:inline">BIOLÓGICO</span>
-            </h1>
-            
-            {isLoadingProfile ? (
-              <div className="flex flex-col items-center gap-3 mb-10">
-                <div className="h-6 w-3/4 bg-zinc-800 rounded-md animate-pulse"></div>
-              </div>
-            ) : (
-              <p className="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-400 mb-10">
-                Você está {userGender?.toLowerCase().includes('masculino') ? 'pronto' : 'pronta'} para assumir o controle?
-              </p>
-            )}
-
-            <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mb-10 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div> 
-              <p className="text-gray-300 leading-relaxed text-base md:text-lg pl-4">
-                Nos próximos 21 dias, você executará um protocolo prático de restrição intencional, nutrição ancestral e regulação hormonal. Nós vamos remover a inflamação, dominar o cortisol e <strong className="text-amber-400 font-medium">transformar o seu corpo em uma máquina de alta performance.</strong>
-              </p>
-            </div>
-
-            <button
-              onClick={handleStartChallenge}
-              disabled={isLoadingProfile}
-              className="w-full max-w-md mx-auto bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 md:py-6 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] hover:shadow-[0_0_30px_rgba(251,191,36,0.5)] transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest relative z-10 outline-none border-none"
-            >
-              {isLoadingProfile ? 'CARREGANDO...' : 'INICIAR PROTOCOLO'}
-            </button>
-
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
   return (
     <div className="min-h-screen bg-zinc-950 py-8 px-4 pb-40">
@@ -503,7 +598,7 @@ if (showIntro) {
         </div>
 
         <div className="space-y-4">
-        {protocolData.days.map((day) => {
+        {JOURNEY_DATA.days.map((day) => {
             const prevDayCompleted = day.day === 1 || completedDays.includes(day.day - 1);
             const isDayCompleted = completedDays.includes(day.day);
             
@@ -635,7 +730,7 @@ if (showIntro) {
                                 className="flex items-center gap-2 px-4 py-4 border-2 border-orange-500/60 bg-transparent hover:bg-orange-500/10 text-orange-400 hover:text-orange-300 rounded-lg transition-all font-medium backdrop-blur-md"
                               >
                                 <Info className="w-5 h-5" />
-                                Benefícios do Jejum
+                                Benefícios
                               </button>
                             </div>
                           );

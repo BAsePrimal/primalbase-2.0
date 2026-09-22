@@ -195,7 +195,7 @@ export default function ChatIAPage() {
             <span>Voltar</span>
           </button>
         </Link>
-        <h1 className="text-lg font-semibold text-amber-500">Mentor Animal-Based</h1>
+        <h1 className="text-lg font-semibold text-amber-500">Mentor de Alimentação</h1>
         <div className="w-20"></div>
       </header>
 
@@ -209,7 +209,7 @@ export default function ChatIAPage() {
               </div>
               <h2 className="text-xl font-bold text-amber-500">Mentor Animal-Based</h2>
               <p className="text-zinc-400 max-w-md mx-auto italic">
-                Sua IA especialista em dieta da selva e performance.
+              Tire suas dúvidas sobre o que comer e sua rotina diária.
               </p>
             </div>
           )}
