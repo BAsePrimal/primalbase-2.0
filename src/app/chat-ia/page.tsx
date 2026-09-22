@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Send, Loader2, Mic } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Mic, Brain } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
@@ -119,7 +119,6 @@ export default function ChatIAPage() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Se estiver gravando, desliga o microfone antes de enviar
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
@@ -156,7 +155,7 @@ export default function ChatIAPage() {
 
       // 👇 ATUALIZA O CONTADOR (Supabase ou LocalStorage)
       const nextCount = usageCount + 1;
-      setUsageCount(nextCount); // Atualiza visualmente a barra na hora
+      setUsageCount(nextCount);
 
       if (user) {
         const nextTotal = totalChatsCount + 1; 
@@ -170,7 +169,6 @@ export default function ChatIAPage() {
           })
           .eq('id', user.id);
       } else {
-        // 👇 SE FOR VISITANTE: Grava a contagem unificada na memória do telemóvel!
         localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
@@ -187,30 +185,36 @@ export default function ChatIAPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col pb-40">
-      {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
+      {/* Header Minimalista */}
+      <header className="flex items-center px-6 py-4 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
         <Link href="/">
-          <button className="flex items-center gap-2 text-zinc-400 hover:text-amber-500 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Voltar</span>
+          <button className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors font-medium">
+            <ArrowLeft className="w-6 h-6" />
+            <span className="text-lg">Voltar</span>
           </button>
         </Link>
-        <h1 className="text-lg font-semibold text-amber-500">Mentor de Alimentação</h1>
-        <div className="w-20"></div>
       </header>
 
       {/* Chat Messages */}
       <main className="flex-1 overflow-y-auto px-4 py-6">
         <div className="max-w-3xl mx-auto space-y-4">
+          
+          {/* 👇 ESTADO VAZIO (UI PREMIUM E PROFISSIONAL) */}
           {messages.length === 0 && (
-            <div className="text-center py-12 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-                <span className="text-3xl">🥩</span>
+            <div className="text-center py-16 space-y-6">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700 shadow-[0_0_30px_rgba(251,191,36,0.15)] flex items-center justify-center mx-auto relative overflow-hidden">
+                <div className="absolute inset-0 bg-amber-500/5 animate-pulse"></div>
+                <Brain className="w-12 h-12 text-amber-500 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] relative z-10" />
               </div>
-              <h2 className="text-xl font-bold text-amber-500">Mentor Animal-Based</h2>
-              <p className="text-zinc-400 max-w-md mx-auto italic">
-              Tire suas dúvidas sobre o que comer e sua rotina diária.
-              </p>
+              
+              <div>
+                <h2 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent mb-3 tracking-tight">
+                  Mentor de Alimentação
+                </h2>
+                <p className="text-zinc-300 max-w-sm mx-auto font-medium text-base md:text-lg leading-relaxed">
+                  Tire suas dúvidas sobre o que comer e como otimizar sua rotina diária.
+                </p>
+              </div>
             </div>
           )}
 
@@ -234,7 +238,7 @@ export default function ChatIAPage() {
             <div className="flex justify-start">
               <div className="bg-zinc-800 border border-zinc-700/50 rounded-2xl px-4 py-3 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                <span className="text-zinc-400 text-sm">Consultando ancestrais...</span>
+                <span className="text-zinc-400 text-sm">Consultando...</span>
               </div>
             </div>
           )}
@@ -285,7 +289,7 @@ export default function ChatIAPage() {
             </button>
           </div>
           
-          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (Ajustada para 5) */}
+          {/* 👇 BARRA DE CRÉDITOS GLOBAIS */}
           {!isSubscriber && (
             <div className="mt-3 flex flex-col items-center gap-1">
               <div className="w-full max-w-[200px] h-1 bg-zinc-800 rounded-full overflow-hidden">

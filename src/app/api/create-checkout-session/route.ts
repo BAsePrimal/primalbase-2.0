@@ -20,8 +20,12 @@ export async function POST(req: NextRequest) {
       selectedPriceId = 'price_1U9ovJCf4oilBdJAwsmy1Hnf';
     }
 
-    // 👇 A MÁGICA DOS CONFETES VOLTOU: Todo mundo vai para a Home.
-    const successUrl = `${req.headers.get('origin')}/?success=true&session_id={CHECKOUT_SESSION_ID}`;
+    // 👇 ROTEAMENTO INTELIGENTE DE UX
+    // Se tem userId (já é cadastrado), vai pra Home ver confetes.
+    // Se NÃO tem userId (Visitante), vai pro Onboarding VIP criar o perfil.
+    const successUrl = userId
+      ? `${req.headers.get('origin')}/?success=true&session_id={CHECKOUT_SESSION_ID}`
+      : `${req.headers.get('origin')}/finalizar-cadastro?session_id={CHECKOUT_SESSION_ID}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -31,7 +35,6 @@ export async function POST(req: NextRequest) {
       cancel_url: `${req.headers.get('origin')}/`,
       customer_email: email || undefined,
       metadata: {
-        // 👇 Vazio se for visitante, para não dar erro de UUID no Supabase!
         userId: userId || '', 
       },
       subscription_data: {
