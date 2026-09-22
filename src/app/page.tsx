@@ -49,9 +49,7 @@ function HomeContent() {
         origin: { y: 0.6 },
       });
       
-      const url = new URL(window.location.href);
-      url.searchParams.delete('success');
-      window.history.replaceState({}, '', url.toString());
+      
     }
   }, [searchParams]);
   
