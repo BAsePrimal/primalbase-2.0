@@ -20,12 +20,8 @@ export async function POST(req: NextRequest) {
       selectedPriceId = 'price_1U9ovJCf4oilBdJAwsmy1Hnf';
     }
 
-    // 👇 ROTEAMENTO INTELIGENTE DE UX
-    // Se tem userId (já é cadastrado), vai pra Home ver confetes.
-    // Se NÃO tem userId (Visitante), vai pro Onboarding VIP criar o perfil.
-    const successUrl = userId
-      ? `${req.headers.get('origin')}/?success=true&session_id={CHECKOUT_SESSION_ID}`
-      : `${req.headers.get('origin')}/finalizar-cadastro?session_id={CHECKOUT_SESSION_ID}`;
+    // 👇 Manda TODO MUNDO de volta para a Home para ver os confetes!
+    const successUrl = `${req.headers.get('origin')}/?success=true&session_id={CHECKOUT_SESSION_ID}`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

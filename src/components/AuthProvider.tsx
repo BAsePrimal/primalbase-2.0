@@ -25,7 +25,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   '/scanner',
   '/jornada',
   '/nutricao',
+  '/finalizar-cadastro',
   '/recipes'
+  
 ];
 
   useEffect(() => {

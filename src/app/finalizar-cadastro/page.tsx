@@ -116,16 +116,13 @@ function OnboardingContent() {
 
       <div className="w-full max-w-lg relative z-10">
         
-        {/* Cabeçalho VIP */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.3)] mb-6">
-            <ShieldCheck className="w-10 h-10 text-zinc-950" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent mb-3 uppercase tracking-tight">
-            Acesso Desbloqueado
+        {/* Cabeçalho Limpo e Premium */}
+        <div className="text-center mb-10">
+          <h1 className="text-3xl md:text-4xl font-black text-white mb-3 tracking-tight">
+            Complete o seu Perfil
           </h1>
-          <p className="text-zinc-400 text-lg font-medium">
-            Último passo: Complete seu perfil VIP para personalizar sua experiência.
+          <p className="text-zinc-400 text-base font-medium">
+            Assinatura confirmada. Preencha os dados abaixo para criar o seu acesso.
           </p>
         </div>
 

@@ -398,8 +398,8 @@ function HomeContent() {
               O seu período de teste no <strong className="text-white">Primal Base</strong> foi ativado. Você agora tem acesso sem restrições a todas as ferramentas VIP.
             </p>
             <div className="mt-8">
-              <button 
-                onClick={() => router.push(ticketDourado ? `/login?session_id=${ticketDourado}` : '/login')}
+            <button 
+                onClick={() => router.push(ticketDourado ? `/finalizar-cadastro?session_id=${ticketDourado}` : '/finalizar-cadastro')}
                 className="w-full py-4 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-zinc-950 font-black uppercase tracking-widest text-sm rounded-xl transition-all transform active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.3)]"
               >
                 CRIAR CONTA PREMIUM
