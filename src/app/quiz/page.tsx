@@ -100,11 +100,11 @@ export default function QuizPage() {
     switch (step) {
       case 0:
         return (
-          <div className="space-y-10 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center pb-8">
+          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center pb-8 px-4">
             
             {/* Importação das Fontes: Bebas Neue e Montserrat (pesos 700 e 900) */}
             <style dangerouslySetInnerHTML={{__html: `
-              @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@700;900&display=swap');
+              @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;700;900&display=swap');
             `}} />
             
             <div className="flex justify-center items-center mb-2 relative w-24 h-24">
@@ -112,40 +112,34 @@ export default function QuizPage() {
               <Flame className="w-16 h-16 text-amber-500 relative z-10" />
             </div>
             
-            {/* TÍTULO */}
+            {/* NOVO TÍTULO */}
             <h1 
-              className="uppercase text-center text-white w-full"
+              className="uppercase text-center text-white w-full max-w-2xl"
               style={{ 
                 fontFamily: "'Bebas Neue', sans-serif", 
-                fontSize: "clamp(3rem, 12vw, 4.5rem)", 
+                fontSize: "clamp(2.5rem, 10vw, 4rem)", 
                 lineHeight: "1.1",
                 letterSpacing: "0.5px"
               }}
             >
-              O QUE VOCÊ <span className="text-amber-500">COME</span>
-              <br className="md:hidden" />
-              <span className="hidden md:inline"> </span>
-              DITA COMO O SEU
-              <br className="md:hidden" />
-              <span className="hidden md:inline"> </span>
-              <span className="text-amber-500">CORPO FUNCIONA.</span>
+              O QUE VOCÊ COME DEFINE<br className="hidden md:block" /> SE VOCÊ TEM <span className="text-amber-500">ENERGIA</span><br className="md:hidden" /> OU VIVE <span className="text-amber-500">CANSADO.</span>
             </h1>
             
-            {/* SUBTÍTULO: Base inteira Grossa (700) + Palavras em Laranja Extrapesado (900) */}
+            {/* NOVO SUBTÍTULO */}
             <p 
-              className="text-center text-zinc-300 mx-auto text-lg"
+              className="text-center text-zinc-300 mx-auto text-lg md:text-xl"
               style={{ 
                 fontFamily: "'Montserrat', sans-serif", 
-                fontWeight: 700, /* Base encorpada como o seu print antigo */
-                lineHeight: "1.6",
+                fontWeight: 700, 
+                lineHeight: "1.5",
                 maxWidth: "90%"
               }}
             >
-              As escolhas erradas na sua rotina roubam a sua <span className="text-amber-500" style={{ fontWeight: 900 }}>energia e saúde</span>. Preencha o seu perfil e acesse o <span className="text-amber-500" style={{ fontWeight: 900 }}>mapa exato</span> para ajustar a sua alimentação.
+              Responda a 5 perguntas rápidas e veja como ajustar a sua rotina com <span className="text-amber-500" style={{ fontWeight: 900 }}>comida de verdade</span>.
             </p>
             
-            {/* BOTÃO */}
-            <div className="w-full max-w-md mt-12 px-4">
+            {/* BOTÃO E MICRO-TEXTO */}
+            <div className="w-full max-w-md mt-10">
               <button
                 onClick={() => setStep(1)}
                 className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none"
@@ -155,8 +149,14 @@ export default function QuizPage() {
                   fontSize: "1.25rem" 
                 }}
               >
-                INICIAR MAPEAMENTO
+                COMEÇAR AGORA
               </button>
+              
+              {/* MICRO-TEXTO DE CONVERSÃO */}
+              <p className="text-zinc-500 text-sm mt-4 text-center font-medium flex items-center justify-center gap-1.5"
+                 style={{ fontFamily: "'Montserrat', sans-serif" }}>
+                <span className="text-lg">⏱️</span> Leva menos de 30 segundos.
+              </p>
             </div>
           </div>
         )
