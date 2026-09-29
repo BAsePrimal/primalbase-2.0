@@ -12,11 +12,21 @@ export default function LegalFooter() {
           Rua Inspetor Jaime Caldeira, 101 - Betim, MG | suporte@primalbase.com.br
         </p>
         <div className="flex justify-center gap-3 mt-2 font-medium">
-          <Link href="/politica-privacidade" className="hover:text-zinc-400 transition-colors">
+          <Link 
+            href="/politica-privacidade" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-zinc-400 transition-colors"
+          >
             Políticas de Privacidade
           </Link>
           <span>|</span>
-          <Link href="/politica-termos-uso" className="hover:text-zinc-400 transition-colors">
+          <Link 
+            href="/politica-termos-uso" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-zinc-400 transition-colors"
+          >
             Termos de Uso
           </Link>
         </div>
