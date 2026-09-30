@@ -5,6 +5,9 @@ import { Camera, CheckCircle, Skull, Loader2, RotateCcw, X, TriangleAlert } from
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
+// 👇 VARIÁVEL MESTRE DO FREEMIUM (Mude aqui e a tela inteira se ajusta)
+const LIMITE_USOS_FREE = 3;
+
 interface ScanResult {
   verdict: 'ALLOWED' | 'BANNED' | 'WARNING';
   title: string;
@@ -120,7 +123,8 @@ export default function ScannerPage() {
   }, []);
 
   const handleCaptureClick = () => {
-    if (!isSubscriber && scanCount >= 5) {
+    // 👇 TRAVA GLOBAL LENDO A VARIÁVEL MESTRE
+    if (!isSubscriber && scanCount >= LIMITE_USOS_FREE) {
       setShowPaywall(true);
       return;
     }
@@ -266,11 +270,12 @@ export default function ScannerPage() {
                       Capturar Foto
                     </button>
                     
+                    {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AGORA DINÂMICA) */}
                     {!isSubscriber && (
                       <p className="text-center text-gray-500 text-sm font-bold mt-3 tracking-widest uppercase">
-                        {scanCount >= 3 
+                        {scanCount >= LIMITE_USOS_FREE 
                           ? 'Limite de testes grátis atingido 🔒' 
-                          : `Créditos Gratuitos: ${Math.max(5 - scanCount, 0)}/5`}
+                          : `Créditos Gratuitos: ${Math.max(LIMITE_USOS_FREE - scanCount, 0)}/${LIMITE_USOS_FREE}`}
                       </p>
                     )}
                   </div>
@@ -418,7 +423,7 @@ export default function ScannerPage() {
 
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">
-                {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠️' : '👁️'}
+                {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠️️' : '👁️'}
               </span>
               <h3 className={`text-xl font-black uppercase tracking-tight ${
                 result.verdict === 'ALLOWED' 

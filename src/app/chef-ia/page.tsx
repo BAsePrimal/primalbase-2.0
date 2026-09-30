@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
+// 👇 VARIÁVEL MESTRE DO FREEMIUM (Mude aqui e a tela inteira se ajusta)
+const LIMITE_USOS_FREE = 3;
+
 interface RecipeData {
   title: string;
   prep_time: string;
@@ -142,8 +145,8 @@ export default function ChefIAPage() {
       setIsListening(false);
     }
 
-    // 👇 TRAVA GLOBAL: Sobe o Paywall quando atinge 5 usos
-    if (!isSubscriber && usageCount >= 3) {
+    // 👇 TRAVA GLOBAL: Sobe o Paywall lendo a variável mestre
+    if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
       setShowPaywall(true);
       return;
     }
@@ -202,7 +205,7 @@ export default function ChefIAPage() {
   };
 
   const formatRecipeText = (recipe: RecipeData) => {
-    return `*${recipe.title}* 🥩\n⏱️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}.${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
+    return `*${recipe.title}* 🥩\n⏱️️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}.${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
   };
 
   const handleCopy = async () => {
@@ -286,17 +289,17 @@ export default function ChefIAPage() {
             {loading ? 'Gerando Receita...' : 'Gerar Receita'}
           </button>
 
-          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AJUSTADA PARA 5) */}
+          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AGORA DINÂMICA) */}
           {!isSubscriber && (
             <div className="pt-2 flex flex-col items-center gap-2">
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-700" 
-                  style={{ width: `${Math.min((usageCount / 5) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((usageCount / LIMITE_USOS_FREE) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
-                Créditos Gratuitos: {Math.max(5 - usageCount, 0)} / 5
+                Créditos Gratuitos: {Math.max(LIMITE_USOS_FREE - usageCount, 0)} / {LIMITE_USOS_FREE}
               </p>
             </div>
           )}

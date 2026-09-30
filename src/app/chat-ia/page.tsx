@@ -7,6 +7,9 @@ import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
+// 👇 VARIÁVEL MESTRE DO FREEMIUM (Mude aqui e tudo se ajusta)
+const LIMITE_USOS_FREE = 3;
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -124,8 +127,8 @@ export default function ChatIAPage() {
       setIsListening(false);
     }
 
-    // 👇 TRAVA DE SEGURANÇA GLOBAL (Limite de 5 usos no total)
-    if (!isSubscriber && usageCount >= 3) {
+    // 👇 TRAVA DE SEGURANÇA GLOBAL LENDO A VARIÁVEL MESTRE
+    if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
       setShowPaywall(true);
       return;
     }
@@ -289,17 +292,17 @@ export default function ChatIAPage() {
             </button>
           </div>
           
-          {/* 👇 BARRA DE CRÉDITOS GLOBAIS */}
+          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (Agora usando a variável dinâmica) */}
           {!isSubscriber && (
             <div className="mt-3 flex flex-col items-center gap-1">
               <div className="w-full max-w-[200px] h-1 bg-zinc-800 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-500 transition-all duration-500" 
-                  style={{ width: `${Math.min((usageCount / 5) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((usageCount / LIMITE_USOS_FREE) * 100, 100)}%` }}
                 />
               </div>
               <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-black">
-                Créditos Gratuitos: {Math.max(5 - usageCount, 0)} / 5
+                Créditos Gratuitos: {Math.max(LIMITE_USOS_FREE - usageCount, 0)} / {LIMITE_USOS_FREE}
               </p>
             </div>
           )}

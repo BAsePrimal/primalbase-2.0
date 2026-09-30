@@ -49,13 +49,11 @@ const TourGuiado = ({ onComplete }: { onComplete: () => void }) => {
 
   const step = TOUR_STEPS[currentStep];
   const isLast = currentStep === TOUR_STEPS.length - 1;
-
   const isBottomHalf = rect ? rect.top > windowSize.h / 2 : false;
 
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden pointer-events-auto">
       
-      {/* 1. O Recorte Iluminado (Lanterna) */}
       {rect && (
         <div
           className="absolute transition-all duration-500 ease-in-out pointer-events-none rounded-2xl bg-transparent"
@@ -70,35 +68,33 @@ const TourGuiado = ({ onComplete }: { onComplete: () => void }) => {
         />
       )}
 
-      {/* 2. A Seta Rastreadora 100% Dinâmica (Mirando o Alvo) */}
       {rect && (
         <div
           className="absolute z-[202] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent transition-all duration-500 pointer-events-none"
           style={{
-            left: rect.left + rect.width / 2, // Segue exatamente o eixo X do botão
+            left: rect.left + rect.width / 2,
             transform: 'translateX(-50%)',
             ...(isBottomHalf
               ? {
                   bottom: windowSize.h - rect.top + 4,
-                  borderTop: '12px solid rgb(245, 158, 11)' // Laranja sólido apontando para baixo
+                  borderTop: '12px solid rgb(245, 158, 11)'
                 }
               : {
                   top: rect.bottom + 4,
-                  borderBottom: '12px solid rgb(245, 158, 11)' // Laranja sólido apontando para cima
+                  borderBottom: '12px solid rgb(245, 158, 11)'
                 }
             )
           }}
         />
       )}
 
-      {/* 3. Balão de Texto Centralizado */}
       {rect && (
         <div
           className="absolute z-[201] w-[90%] max-w-sm bg-zinc-900 border border-amber-500/50 p-5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-500"
           style={{
             ...(isBottomHalf
-              ? { bottom: windowSize.h - rect.top + 16 } // Fica acima da lanterna
-              : { top: rect.bottom + 16 } // Fica abaixo da lanterna
+              ? { bottom: windowSize.h - rect.top + 16 }
+              : { top: rect.bottom + 16 }
             ),
             left: '50%',
             transform: 'translateX(-50%)'
@@ -128,7 +124,6 @@ const TourGuiado = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-// --- PÁGINA PRINCIPAL ---
 interface Profile {
   full_name: string;
   gender: string;
@@ -181,16 +176,20 @@ function HomeContent() {
 
     if (tourParam === 'start') {
       setShowTour(true);
-      window.history.replaceState(null, '', '/?visitante=true');
     } else if (successParam !== 'true') {
       const visits = parseInt(localStorage.getItem('primalbase_visits') || '0');
       const newVisits = visits + 1;
       localStorage.setItem('primalbase_visits', newVisits.toString());
       
       const hasSeenTour = localStorage.getItem('primalbase_has_seen_tour') === 'true';
+      const alreadyPromptedSession = sessionStorage.getItem('pwa_prompted') === 'true';
 
-      if (hasSeenTour && newVisits >= 3 && !isPWA) {
-        setTimeout(() => setShowInstallModal(true), 3000);
+      // 👇 A SOLUÇÃO CIRÚRGICA: Aparece EXATAMENTE na 3ª visita (=== 3) e só se não foi mostrado na sessão atual
+      if (hasSeenTour && newVisits === 3 && !isPWA && !alreadyPromptedSession) {
+        setTimeout(() => {
+          setShowInstallModal(true);
+          sessionStorage.setItem('pwa_prompted', 'true');
+        }, 3000);
       }
     }
   }, []);
@@ -258,8 +257,14 @@ function HomeContent() {
   const handleTourComplete = () => {
     setShowTour(false);
     localStorage.setItem('primalbase_has_seen_tour', 'true');
+    window.history.replaceState(null, '', '/?visitante=true');
+    
+    // Mostra o pop-up logo após o tour e marca na sessão para não mostrar de novo
     if (!isStandalone) {
-      setTimeout(() => setShowInstallModal(true), 500);
+      setTimeout(() => {
+        setShowInstallModal(true);
+        sessionStorage.setItem('pwa_prompted', 'true');
+      }, 500);
     }
   };
 
