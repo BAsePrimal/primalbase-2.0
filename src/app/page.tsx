@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
-import { Sun, Moon, ChefHat, Brain, User, Flame, Droplet, X, Trophy, Smartphone, Share, PlusSquare, Monitor, Download } from 'lucide-react';
+import { Sun, Moon, ChefHat, Brain, User, Flame, Droplet, X, Trophy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import CompleteProfileGate from '@/components/CompleteProfileGate';
 import Rastreador from '@/components/Rastreador';
@@ -137,9 +137,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // 👇 INJEÇÃO DIRETA: O app já nasce sabendo se o tour está ativado ou não (acaba com o atraso)
   const [showTour, setShowTour] = useState(() => searchParams.get('tour') === 'start');
-  
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [diasFeitos, setDiasFeitos] = useState(0);
@@ -147,9 +145,6 @@ function HomeContent() {
   const [showOtimizacao, setShowOtimizacao] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
-  const [isStandalone, setIsStandalone] = useState(true); 
-  const [showInstallModal, setShowInstallModal] = useState(false);
-  const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
 
   // Bloqueador do prompt nativo de instalação do navegador durante o tour
   useEffect(() => {
@@ -161,18 +156,6 @@ function HomeContent() {
   }, [showTour]);
 
   useEffect(() => {
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    setIsStandalone(!!isPWA);
-
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (/iphone|ipad|ipod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-      setDeviceType('ios');
-    } else if (/android/.test(userAgent)) {
-      setDeviceType('android');
-    } else {
-      setDeviceType('desktop');
-    }
-
     const successParam = searchParams.get('success');
     const sessionId = searchParams.get('session_id');
 
@@ -189,10 +172,12 @@ function HomeContent() {
       
       const hasSeenTour = localStorage.getItem('primalbase_has_seen_tour') === 'true';
       const alreadyPromptedSession = sessionStorage.getItem('pwa_prompted') === 'true';
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
 
+      // 👇 GATILHO NA 3ª VISITA EXATA
       if (hasSeenTour && newVisits === 3 && !isPWA && !alreadyPromptedSession) {
         setTimeout(() => {
-          setShowInstallModal(true);
+          window.dispatchEvent(new Event('forceInstallModal'));
           sessionStorage.setItem('pwa_prompted', 'true');
         }, 3000);
       }
@@ -264,9 +249,12 @@ function HomeContent() {
     localStorage.setItem('primalbase_has_seen_tour', 'true');
     window.history.replaceState(null, '', '/?visitante=true');
     
-    if (!isStandalone) {
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    
+    // 👇 GATILHO IMEDIATO APÓS O FIM DO TOUR
+    if (!isPWA) {
       setTimeout(() => {
-        setShowInstallModal(true);
+        window.dispatchEvent(new Event('forceInstallModal'));
         sessionStorage.setItem('pwa_prompted', 'true');
       }, 500);
     }
@@ -435,76 +423,6 @@ function HomeContent() {
           </div>
         )}
       </main>
-
-      {/* MODAL PWA INTELIGENTE BLINDADO */}
-      {showInstallModal && !showTour && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="relative w-full max-w-sm bg-[#1a1a1c] border border-zinc-800 rounded-3xl p-6 shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300">
-            <button onClick={() => setShowInstallModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex flex-col items-center mt-2">
-              <div className="w-16 h-16 bg-amber-500/10 rounded-2xl flex items-center justify-center mb-4 border border-amber-500/20">
-                {deviceType === 'desktop' ? (
-                  <Monitor className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                ) : (
-                  <Smartphone className="w-8 h-8 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                )}
-              </div>
-              <h2 className="text-xl font-black text-white text-center uppercase leading-tight mb-2">
-                LEVE O PRIMAL BASE<br /><span className="text-amber-500">NO BOLSO</span>
-              </h2>
-              <p className="text-sm text-zinc-400 text-center mb-6 font-medium px-2">
-                Adicione o aplicativo à tela inicial para ativar os alertas do seu cardápio e acessar tudo com 1 clique.
-              </p>
-
-              <div className="w-full bg-zinc-950 rounded-2xl p-4 space-y-4 mb-6 border border-zinc-800/50">
-                {deviceType === 'ios' && (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <Share className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">1.</strong> Toque em <strong className="text-white">Compartilhar</strong> na barra inferior.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <PlusSquare className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">2.</strong> Selecione <strong className="text-white">Adicionar à Tela de Início</strong>.</p>
-                    </div>
-                  </>
-                )}
-                {deviceType === 'android' && (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">1.</strong> Toque nos <strong className="text-white">3 pontinhos</strong> no canto superior do Chrome.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Download className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">2.</strong> Selecione <strong className="text-white">Adicionar à Tela Inicial</strong>.</p>
-                    </div>
-                  </>
-                )}
-                {deviceType === 'desktop' && (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <Download className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">1.</strong> Clique no ícone de <strong className="text-white">Instalar</strong> na barra de endereços (ao lado da estrela de favoritos).</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Monitor className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                      <p className="text-sm text-zinc-300"><strong className="text-amber-500 font-bold">2.</strong> Confirme para adicionar aos seus aplicativos.</p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <button onClick={() => setShowInstallModal(false)} className="w-full bg-amber-500 hover:bg-amber-600 transition-colors text-zinc-950 font-bold py-4 rounded-xl text-sm uppercase tracking-wide">
-                ENTENDI, VOU INSTALAR
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* MODAL DE SUCESSO */}
       {showSuccessModal && (

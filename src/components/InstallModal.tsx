@@ -9,51 +9,25 @@ export default function InstallModal() {
   const [deviceInfo, setDeviceInfo] = useState<'ios-safari' | 'ios-other' | 'android' | 'desktop' | null>(null);
   const pathname = usePathname();
 
-  useEffect(() => {
-    // 1. Bloqueia na tela de Login e no Quiz
-    if (pathname === '/login' || pathname === '/quiz') {
-      return;
-    }
-
-    // 2. Verifica se o app já está instalado (PWA Standalone)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isStandalone) return;
-
-    // 3. Cooldown de 2 horas
-    const lastDismissed = localStorage.getItem('primalbase_install_cooldown');
-    if (lastDismissed) {
-      const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
-      const duasHoras = 2 * 60 * 60 * 1000;
-      
-      if (tempoPassado < duasHoras) {
-        return; 
-      }
-    }
-
-    // 4. Detecção do dispositivo
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    const isAndroid = /android/.test(ua);
-    const isSafari = /safari/.test(ua) && !/chrome|crios|fxios/.test(ua);
-    const isDesktop = !isIOS && !isAndroid;
-
-    if (isIOS && isSafari) {
-      setDeviceInfo('ios-safari');
-      setShowModal(true);
-    } else if (isIOS && !isSafari) {
-      setDeviceInfo('ios-other');
-      setShowModal(true);
-    } else if (isAndroid) {
-      setDeviceInfo('android');
-      setShowModal(true);
-    } else if (isDesktop) {
-      setDeviceInfo('desktop');
-      setShowModal(true); // Mostra também no PC
-    }
-  }, [pathname]);
-
+  // 👇 O MODAL AGORA É "MUDO". ELE SÓ APARECE SE RECEBER A ORDEM 'forceInstallModal'
   useEffect(() => {
     const handleForceShow = () => {
+      // 1. Bloqueia na tela de Login e no Quiz
+      if (pathname === '/login' || pathname === '/quiz') return;
+
+      // 2. Verifica se o app já está instalado (PWA Standalone)
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      if (isStandalone) return;
+
+      // 3. Cooldown de 2 horas (Não enche o saco se ele já fechou)
+      const lastDismissed = localStorage.getItem('primalbase_install_cooldown');
+      if (lastDismissed) {
+        const tempoPassado = Date.now() - parseInt(lastDismissed, 10);
+        const duasHoras = 2 * 60 * 60 * 1000;
+        if (tempoPassado < duasHoras) return; 
+      }
+
+      // 4. Detecção do dispositivo
       const ua = window.navigator.userAgent.toLowerCase();
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isAndroid = /android/.test(ua);
@@ -73,9 +47,10 @@ export default function InstallModal() {
       setShowModal(true);
     };
 
+    // Fica escutando a ordem da página principal
     window.addEventListener('forceInstallModal', handleForceShow);
     return () => window.removeEventListener('forceInstallModal', handleForceShow);
-  }, []);
+  }, [pathname]);
 
   const handleDismiss = () => {
     localStorage.setItem('primalbase_install_cooldown', Date.now().toString());
@@ -170,7 +145,6 @@ export default function InstallModal() {
               </div>
             )}
 
-            {/* 🔥 NOVO: INSTRUÇÃO PARA COMPUTADOR (PC) */}
             {deviceInfo === 'desktop' && (
               <div className="flex flex-col items-center gap-3 text-center">
                 <Download className="w-8 h-8 text-amber-500 mb-2" />
