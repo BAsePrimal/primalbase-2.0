@@ -134,21 +134,31 @@ interface Profile {
 }
 
 function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // 👇 INJEÇÃO DIRETA: O app já nasce sabendo se o tour está ativado ou não (acaba com o atraso)
+  const [showTour, setShowTour] = useState(() => searchParams.get('tour') === 'start');
+  
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [diasFeitos, setDiasFeitos] = useState(0);
   const [aguaConsumida, setAguaConsumida] = useState(0);
   const [showOtimizacao, setShowOtimizacao] = useState(false);
-  
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
-
   const [isStandalone, setIsStandalone] = useState(true); 
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
-  const [showTour, setShowTour] = useState(false);
+
+  // Bloqueador do prompt nativo de instalação do navegador durante o tour
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      if (showTour) e.preventDefault();
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, [showTour]);
 
   useEffect(() => {
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
@@ -163,10 +173,8 @@ function HomeContent() {
       setDeviceType('desktop');
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const tourParam = urlParams.get('tour');
-    const successParam = urlParams.get('success');
-    const sessionId = urlParams.get('session_id');
+    const successParam = searchParams.get('success');
+    const sessionId = searchParams.get('session_id');
 
     if (successParam === 'true') {
       setShowSuccessModal(true);
@@ -174,9 +182,7 @@ function HomeContent() {
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
 
-    if (tourParam === 'start') {
-      setShowTour(true);
-    } else if (successParam !== 'true') {
+    if (!showTour && successParam !== 'true') {
       const visits = parseInt(localStorage.getItem('primalbase_visits') || '0');
       const newVisits = visits + 1;
       localStorage.setItem('primalbase_visits', newVisits.toString());
@@ -184,7 +190,6 @@ function HomeContent() {
       const hasSeenTour = localStorage.getItem('primalbase_has_seen_tour') === 'true';
       const alreadyPromptedSession = sessionStorage.getItem('pwa_prompted') === 'true';
 
-      // 👇 A SOLUÇÃO CIRÚRGICA: Aparece EXATAMENTE na 3ª visita (=== 3) e só se não foi mostrado na sessão atual
       if (hasSeenTour && newVisits === 3 && !isPWA && !alreadyPromptedSession) {
         setTimeout(() => {
           setShowInstallModal(true);
@@ -192,7 +197,7 @@ function HomeContent() {
         }, 3000);
       }
     }
-  }, []);
+  }, [showTour, searchParams]);
 
   useEffect(() => {
     fetchUserData();
@@ -259,7 +264,6 @@ function HomeContent() {
     localStorage.setItem('primalbase_has_seen_tour', 'true');
     window.history.replaceState(null, '', '/?visitante=true');
     
-    // Mostra o pop-up logo após o tour e marca na sessão para não mostrar de novo
     if (!isStandalone) {
       setTimeout(() => {
         setShowInstallModal(true);
