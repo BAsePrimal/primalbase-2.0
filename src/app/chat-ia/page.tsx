@@ -125,7 +125,7 @@ export default function ChatIAPage() {
     }
 
     // 👇 TRAVA DE SEGURANÇA GLOBAL (Limite de 5 usos no total)
-    if (!isSubscriber && usageCount >= 5) {
+    if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
       return;
     }

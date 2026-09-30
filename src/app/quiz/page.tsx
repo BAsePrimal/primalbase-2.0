@@ -1,17 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Flame, Activity, Target, Zap } from 'lucide-react'
+import { useState } from 'react'
+import { Flame, Target, Droplets, MessageSquare, Search, Utensils } from 'lucide-react'
 import LegalFooter from '@/components/LegalFooter';
 
-type QuizStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
+type QuizStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 
 interface QuizAnswers {
-  biology?: string
-  energy?: string
-  weight?: string
-  fasting?: string
-  goal?: string
+  nutricao?: string
+  chef?: string
+  scanner?: string
+  agua?: string
+  especialista?: string
+  jornada?: string
 }
 
 export default function QuizPage() {
@@ -23,7 +24,7 @@ export default function QuizPage() {
   const handleAnswer = (key: keyof QuizAnswers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
 
-    if (step === 5) {
+    if (step === 6) {
       startLoading()
     } else {
       setTimeout(() => {
@@ -33,14 +34,14 @@ export default function QuizPage() {
   }
 
   const startLoading = () => {
-    setStep(6)
+    setStep(7)
     setProgress(0)
 
     const texts = [
-      'Analisando biologia...',
-      'Calculando resistência à insulina...',
-      'Mapeando níveis inflamatórios...',
-      'Montando Protocolo Ancestral...',
+      'Analisando padrões de rotina...',
+      'Mapeando deficiências nutricionais...',
+      'Processando ferramentas necessárias...',
+      'Montando o seu plano de ação...',
     ]
 
     let textIndex = 0
@@ -66,7 +67,7 @@ export default function QuizPage() {
       clearInterval(textInterval)
       clearInterval(progressInterval)
       setProgress(100)
-      setStep(7)
+      setStep(8)
     }, 4000)
   }
 
@@ -90,7 +91,7 @@ export default function QuizPage() {
   }) => (
     <button
       onClick={onClick}
-      className="w-full h-20 px-6 text-left text-lg md:text-xl font-medium rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-800 text-zinc-200 transition-all duration-200 flex items-center shadow-sm"
+      className="w-full min-h-[5rem] py-4 px-6 text-left text-base md:text-lg font-medium rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 hover:bg-zinc-800 text-zinc-200 transition-all duration-200 flex items-center shadow-sm leading-snug"
     >
       {children}
     </button>
@@ -101,8 +102,6 @@ export default function QuizPage() {
       case 0:
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center pb-8 px-4">
-            
-            {/* Importação das Fontes: Bebas Neue e Montserrat (pesos 700 e 900) */}
             <style dangerouslySetInnerHTML={{__html: `
               @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;700;900&display=swap');
             `}} />
@@ -112,7 +111,6 @@ export default function QuizPage() {
               <Flame className="w-16 h-16 text-amber-500 relative z-10" />
             </div>
             
-            {/* NOVO TÍTULO */}
             <h1 
               className="uppercase text-center text-white w-full max-w-2xl"
               style={{ 
@@ -125,7 +123,6 @@ export default function QuizPage() {
               O QUE VOCÊ COME DEFINE<br className="hidden md:block" /> SE VOCÊ TEM <span className="text-amber-500">ENERGIA</span><br className="md:hidden" /> OU VIVE <span className="text-amber-500">CANSADO.</span>
             </h1>
             
-            {/* NOVO SUBTÍTULO */}
             <p 
               className="text-center text-zinc-300 mx-auto text-lg md:text-xl"
               style={{ 
@@ -138,7 +135,6 @@ export default function QuizPage() {
               Responda a 5 perguntas rápidas e veja como ajustar a sua rotina com <span className="text-amber-500" style={{ fontWeight: 900 }}>comida de verdade</span>.
             </p>
             
-            {/* BOTÃO E MICRO-TEXTO */}
             <div className="w-full max-w-md mt-10">
               <button
                 onClick={() => setStep(1)}
@@ -152,7 +148,6 @@ export default function QuizPage() {
                 COMEÇAR AGORA
               </button>
               
-              {/* MICRO-TEXTO DE CONVERSÃO */}
               <p className="text-zinc-500 text-sm mt-4 text-center font-medium flex items-center justify-center gap-1.5"
                  style={{ fontFamily: "'Montserrat', sans-serif" }}>
                 <span className="text-lg">⏱️</span> Leva menos de 30 segundos.
@@ -165,18 +160,16 @@ export default function QuizPage() {
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
             <div className="flex justify-center mb-6">
-              <Activity className="w-12 h-12 text-amber-500" />
+              <Utensils className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-center text-white tracking-tight px-4">
-              Qual é a sua biologia base?
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Como organiza a sua alimentação durante a semana?
             </h2>
-            <div className="flex flex-col gap-4 mt-12 px-4">
-              <OptionButton onClick={() => handleAnswer('biology', 'masculine')}>
-                <span className="text-2xl mr-4">🦁</span> Masculina
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('biology', 'feminine')}>
-                <span className="text-2xl mr-4">🐆</span> Feminina
-              </OptionButton>
+            <div className="flex flex-col gap-3 mt-10 px-4">
+              <OptionButton onClick={() => handleAnswer('nutricao', 'A')}>Sigo dietas restritivas, mas acabo sempre por desistir.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('nutricao', 'B')}>Como o que tiver à frente, não tenho muito tempo.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('nutricao', 'C')}>Tento comer bem, mas falta-me organização diária.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('nutricao', 'D')}>Precisava de um cardápio limpo e prático que se adaptasse à minha rotina.</OptionButton>
             </div>
           </div>
         )
@@ -185,24 +178,16 @@ export default function QuizPage() {
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
             <div className="flex justify-center mb-6">
-              <Zap className="w-12 h-12 text-amber-500" />
+              <Flame className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-center text-white tracking-tight px-4">
-              Como estão os seus níveis de energia ao longo do dia?
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Chega a casa cansado e não sabe o que fazer para o jantar. Qual é o padrão?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('energy', 'afternoon-crash')}>
-                Sinto quedas bruscas à tarde
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('energy', 'wake-tired')}>
-                Acordo cansado sempre
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('energy', 'coffee-dependent')}>
-                Dependo de café o tempo todo
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('energy', 'constant')}>
-                Energia constante
-              </OptionButton>
+              <OptionButton onClick={() => handleAnswer('chef', 'A')}>Acabo a pedir delivery e gasto dinheiro à toa.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('chef', 'B')}>Como qualquer alimento ultraprocessado que seja rápido.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('chef', 'C')}>Repito sempre a mesma refeição sem graça.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('chef', 'D')}>Queria que alguém me desse uma receita rápida só com o que sobrou na geladeira.</OptionButton>
             </div>
           </div>
         )
@@ -211,24 +196,16 @@ export default function QuizPage() {
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
             <div className="flex justify-center mb-6">
-              <Target className="w-12 h-12 text-amber-500" />
+              <Search className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-center text-white tracking-tight px-4">
-              Quando você ganha peso, onde a gordura se concentra mais?
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Quando vai ao supermercado comprar produtos "saudáveis", como escolhe?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('weight', 'belly')}>
-                <span>Na barriga <span className="text-zinc-500 text-sm ml-2 font-normal">(Resistência à insulina)</span></span>
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('weight', 'hips-thighs')}>
-                Nos quadris / Coxas
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('weight', 'face-neck')}>
-                <span>No rosto e pescoço <span className="text-zinc-500 text-sm ml-2 font-normal">(Inchaço)</span></span>
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('weight', 'overall')}>
-                No corpo todo
-              </OptionButton>
+              <OptionButton onClick={() => handleAnswer('scanner', 'A')}>Confio no que está escrito na frente da embalagem (Zero, Fit, Light).</OptionButton>
+              <OptionButton onClick={() => handleAnswer('scanner', 'B')}>Tento ler os ingredientes, mas não entendo os nomes difíceis.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('scanner', 'C')}>Sei que a indústria esconde açúcar, mas acabo por comprar na mesma.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('scanner', 'D')}>Precisava de um raio-x rápido para desmascarar o que é lixo e o que é comida real.</OptionButton>
             </div>
           </div>
         )
@@ -237,24 +214,16 @@ export default function QuizPage() {
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
             <div className="flex justify-center mb-6">
-              <Activity className="w-12 h-12 text-amber-500" />
+              <Droplets className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-center text-white tracking-tight px-4">
-              Como você reage com mais de 4 horas sem comer?
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Como é o seu consumo de água?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('fasting', 'stomach-pain')}>
-                Estômago dói e fico irritado
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('fasting', 'weakness')}>
-                Sinto fraqueza e tremores
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('fasting', 'sugar-craving')}>
-                Vontade absurda de doces
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('fasting', 'calm')}>
-                Fico tranquilo, uso minha gordura
-              </OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'A')}>Bebo muito pouco, acabo por me esquecer durante o trabalho.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'B')}>Bebo só quando sinto muita sede.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'C')}>Substituto muita água por café para tentar ter energia.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'D')}>Queria um sistema simples que me lembrasse e calculasse o ideal para mim.</OptionButton>
             </div>
           </div>
         )
@@ -263,34 +232,44 @@ export default function QuizPage() {
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
             <div className="flex justify-center mb-6">
-              <Target className="w-12 h-12 text-amber-500" />
+              <MessageSquare className="w-12 h-12 text-amber-500" />
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-center text-white tracking-tight px-4">
-              Qual é o seu principal objetivo?
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Quando tem dúvidas sobre o que pode ou não comer na dieta, o que costuma fazer?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('goal', 'fat-loss')}>
-                <span className="mr-3">🔥</span> Derreter gordura teimosa
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('goal', 'mental-clarity')}>
-                <span className="mr-3">🧠</span> Clareza mental e foco
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('goal', 'reduce-inflammation')}>
-                <span className="mr-3">⚡</span> Desinflamar e zerar inchaço
-              </OptionButton>
-              <OptionButton onClick={() => handleAnswer('goal', 'longevity')}>
-                <span className="mr-3">🧬</span> Longevidade e Autofagia
-              </OptionButton>
+              <OptionButton onClick={() => handleAnswer('especialista', 'A')}>Fico perdido e acabo comendo errado.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('especialista', 'B')}>Pesquiso na internet, mas acho a informação muito confusa.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('especialista', 'C')}>Acabo quebrando a dieta por não ter quem me oriente.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('especialista', 'D')}>Queria poder tirar dúvidas na hora com um especialista.</OptionButton>
             </div>
           </div>
         )
 
       case 6:
         return (
+          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
+            <div className="flex justify-center mb-6">
+              <Target className="w-12 h-12 text-amber-500" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+              Qual é o seu maior obstáculo para manter a consistência e não voltar a engordar?
+            </h2>
+            <div className="flex flex-col gap-3 mt-10 px-4">
+              <OptionButton onClick={() => handleAnswer('jornada', 'A')}>A falta de disciplina quando não vejo resultados rápidos.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('jornada', 'B')}>A ansiedade e os picos de stress no dia a dia.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('jornada', 'C')}>Ficar perdido sem saber se estou a fazer as coisas certas.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('jornada', 'D')}>Falta-me um mapa visual claro para acompanhar o meu progresso diário.</OptionButton>
+            </div>
+          </div>
+        )
+
+      case 7:
+        return (
           <div className="space-y-8 flex flex-col items-center justify-center animate-[fade-in_0.5s_ease-out_forwards]">
             <div className="relative mb-6">
                <div className="absolute inset-0 bg-amber-500/20 blur-[30px] rounded-full animate-pulse"></div>
-               <Flame className="w-20 h-20 text-amber-500 relative z-10" />
+               <Search className="w-20 h-20 text-amber-500 relative z-10 animate-pulse" />
             </div>
             <h2 className="text-2xl font-black text-white text-center tracking-tight">Processando</h2>
             <div className="w-full max-w-sm px-6 mt-4">
@@ -302,70 +281,59 @@ export default function QuizPage() {
           </div>
         )
 
-        case 7:
-          const isFeminine = answers.biology === 'feminine';
-          
-          let painPointText = "gerando inflamação. Esse é o verdadeiro motivo do seu cansaço e dificuldade em derreter gordura.";
-          
-          if (answers.goal === 'mental-clarity') {
-            painPointText = "causando picos de insulina. Esse é o verdadeiro motivo do seu cansaço e da sua névoa cerebral.";
-          } else if (answers.goal === 'reduce-inflammation') {
-            painPointText = "gerando estresse celular. Esse é o verdadeiro motivo do seu cansaço e do seu inchaço corporal.";
-          } else if (answers.goal === 'longevity') {
-            painPointText = "acelerando a oxidação celular. Esse é o verdadeiro motivo do seu cansaço e da sua falta de energia vital.";
-          }
-
-          return (
-            <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
-              <div className="flex justify-center mb-6">
-                <Flame className="w-16 h-16 text-amber-500" />
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
-                PROTOCOLO ENCONTRADO
-              </h1>
-              
-              <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
-                 <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                
-                <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
-                  O seu resultado mostra que a sua biologia {isFeminine ? "feminina" : "masculina"} está travada no açúcar e {painPointText}
-                  <br /><br />
-                  <span className="text-white font-semibold">A boa notícia? É que isso tem conserto rápido.</span>
-                  <br /><br />
-                  Nós mapeamos o seu <strong className="text-amber-500 font-medium">Protocolo de 21 Dias</strong>. Ele é o único atalho que você precisa para limpar o seu corpo de forma prática, sem ter que ficar adivinhando o que comer. Clique abaixo para descobrir como nós vamos fazer isso por você.
-                </p>
-              </div>
-  
-              <div className="w-full max-w-md mx-auto mt-10">
-              <button 
-  onClick={() => window.location.href = '/?visitante=true'}
-  className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-xl py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce"
->
-  ACESSAR MEU PROTOCOLO (GRÁTIS)
-</button>
-              </div>
+      case 8:
+        return (
+          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
+            <div className="flex justify-center mb-6">
+              <Target className="w-16 h-16 text-amber-500" />
             </div>
-          )
-        }
+            
+            <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
+              ANÁLISE CONCLUÍDA
+            </h1>
+            
+            <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
+               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+              
+              <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
+                O problema não é a sua disciplina. O motivo pelo qual vive cansado e não consegue manter a rotina é a falta das ferramentas certas para lidar com a pressa do dia a dia e com as armadilhas da indústria alimentar.
+                <br /><br />
+                <span className="text-white font-semibold">Nós resolvemos isso.</span>
+                <br /><br />
+                O PrimalBase tem as ferramentas práticas para organizar o seu cardápio, gerar as suas refeições, escanear os seus rótulos, tirar as suas dúvidas e mapear a sua evolução diária.
+                <br /><br />
+                Está na hora de ver como isto funciona na prática.
+              </p>
+            </div>
+
+            <div className="w-full max-w-md mx-auto mt-10">
+              <button 
+                onClick={() => window.location.href = '/?visitante=true&tour=start'}
+                className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-base md:text-lg py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce px-2"
+              >
+                INICIAR O MEU TOUR GUIADO (GRÁTIS)
+              </button>
+            </div>
+          </div>
+        )
       }
+    }
 
   return (
     <div className="min-h-[100dvh] w-full bg-zinc-950 flex flex-col justify-center items-center py-8">
       <div className="w-full max-w-3xl flex flex-col justify-center">
         
-      {step > 0 && step < 6 && (
+      {step > 0 && step < 7 && (
           <div className="mb-10 w-full max-w-xl mx-auto px-6">
-            <ProgressBar value={(step / 5) * 100} />
+            <ProgressBar value={(step / 6) * 100} />
           </div>
         )}
 
-{renderStep()}
+        {renderStep()}
         
       </div>
 
-      {/* 👇 RODAPÉ CONDICIONAL (Aparece APENAS no Início [0] e na Tela de Resultado [6]) 👇 */}
-      {(step === 0 || step === 7) && (
+      {(step === 0 || step === 8) && (
         <LegalFooter />
       )}
 

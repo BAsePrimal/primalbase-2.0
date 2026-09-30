@@ -23,12 +23,14 @@ export default function BottomNav() {
           <span className="text-[10px] font-medium">Início</span>
         </Link>
 
-        <Link href="/nutricao" className={getItemClass('/nutricao')}>
+        {/* 🟢 ÂNCORA 4: NUTRIÇÃO (O Holofote vai achar isso aqui!) */}
+        <Link href="/nutricao" id="tour-nutricao" className={getItemClass('/nutricao')}>
           <Utensils size={22} />
           <span className="text-[10px] font-medium">Nutrição</span>
         </Link>
 
-        <Link href="/scanner" className={getItemClass('/scanner')}>
+        {/* 🟢 ÂNCORA 5: SCANNER */}
+        <Link href="/scanner" id="tour-scanner" className={getItemClass('/scanner')}>
           <ScanBarcode size={22} />
           <span className="text-[10px] font-medium">Scanner</span>
         </Link>
@@ -38,7 +40,8 @@ export default function BottomNav() {
           <span className="text-[10px] font-medium">Guia</span>
         </Link>
 
-        <Link href="/jornada" className={getItemClass('/jornada')}>
+        {/* 🟢 ÂNCORA 6: JORNADA */}
+        <Link href="/jornada" id="tour-jornada" className={getItemClass('/jornada')}>
           <Map size={22} />
           <span className="text-[10px] font-medium">Jornada</span>
         </Link>

@@ -143,7 +143,7 @@ export default function ChefIAPage() {
     }
 
     // 👇 TRAVA GLOBAL: Sobe o Paywall quando atinge 5 usos
-    if (!isSubscriber && usageCount >= 5) {
+    if (!isSubscriber && usageCount >= 3) {
       setShowPaywall(true);
       return;
     }

@@ -11,6 +11,124 @@ import Rastreador from '@/components/Rastreador';
 import BannerRadar from '@/components/BannerRadar';
 import WaterTracker from '@/components/WaterTracker';
 
+const TOUR_STEPS = [
+  { id: 'tour-agua', title: 'Hidratação', text: 'Registre o seu consumo. O app vai calcular a sua meta e enviar lembretes para você não esquecer de beber água.' },
+  { id: 'tour-chef', title: 'Chef IA', text: 'Sem ideias para o jantar? Diga o que tem na geladeira e o Chef monta o seu prato na hora.' },
+  { id: 'tour-especialista', title: 'Especialista', text: 'Sem adivinhações. Ficou com alguma dúvida sobre a dieta? O especialista responde na hora.' },
+  { id: 'tour-nutricao', title: 'Sua Base', text: 'O seu cardápio da semana, check-list diário e controle de suplementos ficam aqui.' },
+  { id: 'tour-scanner', title: 'Raio-X', text: 'Aponte a câmera para qualquer alimento ou rótulo e descubra na hora se é lixo ou comida de verdade.' },
+  { id: 'tour-jornada', title: 'Progresso', text: 'Acompanhe a sua evolução diária para manter a consistência. Tudo pronto?' }
+];
+
+const TourGuiado = ({ onComplete }: { onComplete: () => void }) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [windowSize, setWindowSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    let mounted = true;
+    
+    const updateRect = () => {
+      const el = document.getElementById(TOUR_STEPS[currentStep].id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+          if (mounted) setRect(el.getBoundingClientRect());
+        }, 300); 
+      }
+    };
+    
+    updateRect();
+    window.addEventListener('resize', updateRect);
+    return () => {
+      mounted = false;
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [currentStep]);
+
+  const step = TOUR_STEPS[currentStep];
+  const isLast = currentStep === TOUR_STEPS.length - 1;
+
+  const isBottomHalf = rect ? rect.top > windowSize.h / 2 : false;
+
+  return (
+    <div className="fixed inset-0 z-[200] overflow-hidden pointer-events-auto">
+      
+      {/* 1. O Recorte Iluminado (Lanterna) */}
+      {rect && (
+        <div
+          className="absolute transition-all duration-500 ease-in-out pointer-events-none rounded-2xl bg-transparent"
+          style={{
+            top: rect.top - 8,
+            left: rect.left - 8,
+            width: rect.width + 16,
+            height: rect.height + 16,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.85), 0 0 30px 5px rgba(245,158,11,0.3)',
+            border: '2px solid rgba(245,158,11,0.8)',
+          }}
+        />
+      )}
+
+      {/* 2. A Seta Rastreadora 100% Dinâmica (Mirando o Alvo) */}
+      {rect && (
+        <div
+          className="absolute z-[202] w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent transition-all duration-500 pointer-events-none"
+          style={{
+            left: rect.left + rect.width / 2, // Segue exatamente o eixo X do botão
+            transform: 'translateX(-50%)',
+            ...(isBottomHalf
+              ? {
+                  bottom: windowSize.h - rect.top + 4,
+                  borderTop: '12px solid rgb(245, 158, 11)' // Laranja sólido apontando para baixo
+                }
+              : {
+                  top: rect.bottom + 4,
+                  borderBottom: '12px solid rgb(245, 158, 11)' // Laranja sólido apontando para cima
+                }
+            )
+          }}
+        />
+      )}
+
+      {/* 3. Balão de Texto Centralizado */}
+      {rect && (
+        <div
+          className="absolute z-[201] w-[90%] max-w-sm bg-zinc-900 border border-amber-500/50 p-5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] transition-all duration-500"
+          style={{
+            ...(isBottomHalf
+              ? { bottom: windowSize.h - rect.top + 16 } // Fica acima da lanterna
+              : { top: rect.bottom + 16 } // Fica abaixo da lanterna
+            ),
+            left: '50%',
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-7 h-7 rounded-full bg-amber-500 text-zinc-950 flex items-center justify-center font-black text-xs shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.4)]">
+              {currentStep + 1}/6
+            </div>
+            <h3 className="text-amber-500 font-black text-lg uppercase tracking-tight">{step.title}</h3>
+          </div>
+          
+          <p className="text-zinc-300 text-sm leading-relaxed mb-5 font-medium">{step.text}</p>
+          
+          <button
+            onClick={() => {
+              if (isLast) onComplete();
+              else setCurrentStep(s => s + 1);
+            }}
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black py-3.5 rounded-xl uppercase text-sm tracking-widest active:scale-95 transition-transform"
+          >
+            {isLast ? 'FINALIZAR TOUR' : 'Próximo Passo'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- PÁGINA PRINCIPAL ---
 interface Profile {
   full_name: string;
   gender: string;
@@ -32,17 +150,15 @@ function HomeContent() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [ticketDourado, setTicketDourado] = useState<string | null>(null);
 
-  // Estados para o Banner e Modal de Instalação
   const [isStandalone, setIsStandalone] = useState(true); 
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
-    // 1. Verifica se está instalado (PWA) ou no Navegador
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     setIsStandalone(!!isPWA);
 
-    // 2. Deteta qual é o dispositivo para exibir o modal correto (como você já tinha!)
     const userAgent = window.navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
       setDeviceType('ios');
@@ -51,17 +167,34 @@ function HomeContent() {
     } else {
       setDeviceType('desktop');
     }
-  }, []);
 
-  useEffect(() => {
-    if (searchParams.get('success') === 'true') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tourParam = urlParams.get('tour');
+    const successParam = urlParams.get('success');
+    const sessionId = urlParams.get('session_id');
+
+    if (successParam === 'true') {
       setShowSuccessModal(true);
-      const sid = searchParams.get('session_id');
-      if (sid) setTicketDourado(sid);
+      if (sessionId) setTicketDourado(sessionId);
       confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
     }
-  }, [searchParams]);
-  
+
+    if (tourParam === 'start') {
+      setShowTour(true);
+      window.history.replaceState(null, '', '/?visitante=true');
+    } else if (successParam !== 'true') {
+      const visits = parseInt(localStorage.getItem('primalbase_visits') || '0');
+      const newVisits = visits + 1;
+      localStorage.setItem('primalbase_visits', newVisits.toString());
+      
+      const hasSeenTour = localStorage.getItem('primalbase_has_seen_tour') === 'true';
+
+      if (hasSeenTour && newVisits >= 3 && !isPWA) {
+        setTimeout(() => setShowInstallModal(true), 3000);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -70,30 +203,25 @@ function HomeContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
-      // 👇 A PORTA FECHADA (AGORA COM MEMÓRIA)
       if (!session) {
-        const isVisitorQuery = searchParams.get('visitante') === 'true';
+        const isVisitorQuery = searchParams.get('visitante') === 'true' || window.location.search.includes('visitante=true');
         const isSuccess = searchParams.get('success') === 'true';
         const isVisitorLocal = localStorage.getItem('primalbase_visitor') === 'true';
 
-        // Se veio pelo Quiz, carimba o passe de visitante na memória do telemóvel
         if (isVisitorQuery) {
           localStorage.setItem('primalbase_visitor', 'true');
         }
 
-        // É visitante se tem a tag na URL OU se já tem o carimbo na memória
         const isVisitor = isVisitorQuery || isVisitorLocal;
 
         if (!isVisitor && !isSuccess) {
           router.replace('/login');
           return; 
         }
-
         setLoading(false);
         return; 
       }
 
-      // Se passou daqui, é cliente logado
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       if (profileData) setProfile(profileData);
 
@@ -127,6 +255,14 @@ function HomeContent() {
     await supabase.from('historico_habitos').update({ agua_ml: novoValor }).eq('user_id', session.user.id).eq('data_registro', today);
   };
 
+  const handleTourComplete = () => {
+    setShowTour(false);
+    localStorage.setItem('primalbase_has_seen_tour', 'true');
+    if (!isStandalone) {
+      setTimeout(() => setShowInstallModal(true), 500);
+    }
+  };
+
   function getGreeting() {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'Bom dia';
@@ -157,6 +293,9 @@ function HomeContent() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col pb-20">
+      
+      {showTour && <TourGuiado onComplete={handleTourComplete} />}
+      
       <CompleteProfileGate />
       <Rastreador />
 
@@ -169,29 +308,7 @@ function HomeContent() {
         </Link>
       </header>
 
-      <main className="flex-1 px-6 py-6 space-y-5">
-        
-        {/* 👇 BANNER INTELIGENTE (Só aparece no Navegador) */}
-        {!isStandalone && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-lg mb-2">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20">
-                <Smartphone className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <h3 className="font-bold text-zinc-50 text-sm uppercase">Instalar Aplicativo</h3>
-                <p className="text-xs text-zinc-400 mt-0.5">Adicione à tela inicial para a melhor experiência.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowInstallModal(true)}
-              className="w-full bg-amber-500 hover:bg-amber-600 transition-colors text-zinc-950 font-bold py-3.5 rounded-xl text-sm uppercase"
-            >
-              INSTALAR AGORA
-            </button>
-          </div>
-        )}
-
+      <main className="flex-1 px-6 py-6 space-y-5 relative">
         <BannerRadar />
 
         <div className="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 rounded-2xl p-5 shadow-lg">
@@ -206,9 +323,9 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* CARD DE ÁGUA */}
         {!showOtimizacao ? (
           <div 
+            id="tour-agua"
             onClick={() => setShowOtimizacao(true)}
             className={`bg-zinc-900 border rounded-2xl p-5 cursor-pointer transition-all duration-300 ${
               isWaterGoalReached ? 'border-blue-900/50 shadow-[0_0_20px_rgba(59,130,246,0.1)] flex justify-center items-center gap-3' : 'border-zinc-800 hover:border-blue-500/50 flex items-center gap-4'
@@ -244,7 +361,7 @@ function HomeContent() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link href="/chef-ia">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/50 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer group">
+            <div id="tour-chef" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/50 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer group h-full">
               <div className="flex flex-col items-center text-center space-y-3">
                 <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
                   <ChefHat className="w-7 h-7 text-amber-500" />
@@ -257,7 +374,7 @@ function HomeContent() {
             </div>
           </Link>
           <Link href="/chat-ia">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/50 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer group">
+            <div id="tour-especialista" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 hover:border-amber-500/50 hover:bg-zinc-800/50 transition-all duration-300 cursor-pointer group h-full">
               <div className="flex flex-col items-center text-center space-y-3">
                 <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
                   <Brain className="w-7 h-7 text-amber-500" />
@@ -310,8 +427,8 @@ function HomeContent() {
         )}
       </main>
 
-      {/* 👇 MODAL DINÂMICO (iOS, Android, PC) */}
-      {showInstallModal && (
+      {/* MODAL PWA INTELIGENTE BLINDADO */}
+      {showInstallModal && !showTour && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="relative w-full max-w-sm bg-[#1a1a1c] border border-zinc-800 rounded-3xl p-6 shadow-2xl transform scale-100 animate-in zoom-in-95 duration-300">
             <button onClick={() => setShowInstallModal(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
@@ -334,7 +451,6 @@ function HomeContent() {
               </p>
 
               <div className="w-full bg-zinc-950 rounded-2xl p-4 space-y-4 mb-6 border border-zinc-800/50">
-                
                 {deviceType === 'ios' && (
                   <>
                     <div className="flex items-start gap-3">
@@ -347,7 +463,6 @@ function HomeContent() {
                     </div>
                   </>
                 )}
-
                 {deviceType === 'android' && (
                   <>
                     <div className="flex items-start gap-3">
@@ -360,7 +475,6 @@ function HomeContent() {
                     </div>
                   </>
                 )}
-
                 {deviceType === 'desktop' && (
                   <>
                     <div className="flex items-start gap-3">
@@ -373,7 +487,6 @@ function HomeContent() {
                     </div>
                   </>
                 )}
-
               </div>
 
               <button onClick={() => setShowInstallModal(false)} className="w-full bg-amber-500 hover:bg-amber-600 transition-colors text-zinc-950 font-bold py-4 rounded-xl text-sm uppercase tracking-wide">
@@ -384,7 +497,7 @@ function HomeContent() {
         </div>
       )}
 
-      {/* MODAL DE SUCESSO (Pós-Pagamento) */}
+      {/* MODAL DE SUCESSO */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
           <div className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center shadow-[0_0_50px_rgba(245,158,11,0.15)] transform scale-100 animate-in zoom-in-95 duration-300">

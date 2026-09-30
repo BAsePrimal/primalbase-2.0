@@ -268,7 +268,7 @@ export default function ScannerPage() {
                     
                     {!isSubscriber && (
                       <p className="text-center text-gray-500 text-sm font-bold mt-3 tracking-widest uppercase">
-                        {scanCount >= 5 
+                        {scanCount >= 3 
                           ? 'Limite de testes grátis atingido 🔒' 
                           : `Créditos Gratuitos: ${Math.max(5 - scanCount, 0)}/5`}
                       </p>
