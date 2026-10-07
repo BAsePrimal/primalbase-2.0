@@ -16,7 +16,8 @@ interface QuizAnswers {
 }
 
 export default function QuizPage() {
-  const [step, setStep] = useState<QuizStep>(0)
+  // 👇 INICIA NO PASSO 1 (Pula a introdução). Para voltar com a tela, basta mudar para 0.
+  const [step, setStep] = useState<QuizStep>(1)
   const [answers, setAnswers] = useState<QuizAnswers>({})
   const [loadingText, setLoadingText] = useState('')
   const [progress, setProgress] = useState(0)
@@ -99,13 +100,9 @@ export default function QuizPage() {
 
   const renderStep = () => {
     switch (step) {
-      case 0:
+      case 0: // MANTIDO PARA CASO VOCÊ QUEIRA USAR NO FUTURO (TESTE A/B)
         return (
           <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] flex flex-col items-center pb-8 px-4">
-            <style dangerouslySetInnerHTML={{__html: `
-              @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;700;900&display=swap');
-            `}} />
-            
             <div className="flex justify-center items-center mb-2 relative w-24 h-24">
               <div className="absolute inset-0 bg-amber-500/20 blur-[25px] rounded-full"></div>
               <Flame className="w-16 h-16 text-amber-500 relative z-10" />
@@ -158,14 +155,30 @@ export default function QuizPage() {
 
       case 1:
         return (
-          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto">
-            <div className="flex justify-center mb-6">
-              <Utensils className="w-12 h-12 text-amber-500" />
+          <div className="space-y-6 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
+            <div className="flex justify-center mb-2">
+              <Utensils className="w-10 h-10 text-amber-500" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
+            
+            {/* 👇 TÍTULO PRINCIPAL IMPORTADO DA TELA ANTIGA */}
+            <h1 
+              className="uppercase text-center text-white w-full"
+              style={{ 
+                fontFamily: "'Bebas Neue', sans-serif", 
+                fontSize: "clamp(2rem, 8vw, 3rem)", // Ligeiramente menor para caber com as opções
+                lineHeight: "1.1",
+                letterSpacing: "0.5px"
+              }}
+            >
+              O QUE VOCÊ COME DEFINE<br className="hidden md:block" /> SE VOCÊ TEM <span className="text-amber-500">ENERGIA</span><br className="md:hidden" /> OU VIVE <span className="text-amber-500">CANSADO.</span>
+            </h1>
+
+            {/* 👇 PERGUNTA AGORA FUNCIONANDO COMO SUBTÍTULO */}
+            <h2 className="text-lg md:text-xl font-medium text-center text-zinc-300 tracking-tight leading-relaxed mt-2">
               Como organiza a sua alimentação durante a semana?
             </h2>
-            <div className="flex flex-col gap-3 mt-10 px-4">
+
+            <div className="flex flex-col gap-3 mt-6">
               <OptionButton onClick={() => handleAnswer('nutricao', 'A')}>Sigo dietas restritivas, mas acabo sempre por desistir.</OptionButton>
               <OptionButton onClick={() => handleAnswer('nutricao', 'B')}>Como o que tiver à frente, não tenho muito tempo.</OptionButton>
               <OptionButton onClick={() => handleAnswer('nutricao', 'C')}>Tento comer bem, mas falta-me organização diária.</OptionButton>
@@ -321,6 +334,11 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-zinc-950 flex flex-col justify-center items-center py-8">
+      {/* Importação global da fonte garante que carregue independentemente do passo inicial */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;700;900&display=swap');
+      `}} />
+      
       <div className="w-full max-w-3xl flex flex-col justify-center">
         
       {step > 0 && step < 7 && (
@@ -333,7 +351,8 @@ export default function QuizPage() {
         
       </div>
 
-      {(step === 0 || step === 8) && (
+      {/* Adicionado o step 1 para garantir o rodapé legal na nova entrada */}
+      {(step === 0 || step === 1 || step === 8) && (
         <LegalFooter />
       )}
 

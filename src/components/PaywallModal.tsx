@@ -10,7 +10,7 @@ interface PaywallModalProps {
 }
 
 export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'mensal' | 'semestral' | 'anual'>('anual');
+  const [selectedPlan, setSelectedPlan] = useState<'mensal' | 'semestral' | 'anual'>('mensal');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -47,165 +47,155 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
   };
 
   return (
-    // No mobile, o modal gruda embaixo (items-end) para parecer um aplicativo nativo. No PC, centraliza.
     <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center p-0 md:p-4 bg-zinc-950/95 backdrop-blur-md animate-in fade-in duration-300">
       
-      {/* Container Principal: Transformado em flex-col para separar rolagem do rodapé fixo */}
-      <div className="relative w-full max-h-[92vh] md:max-h-[90vh] max-w-4xl bg-zinc-900 rounded-t-[2rem] md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border-t md:border border-zinc-800">
+      <div className="relative w-full max-h-[92vh] md:max-h-[90vh] max-w-lg bg-zinc-900 rounded-t-[2rem] md:rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border-t md:border border-zinc-800">
         
-        {/* Botão Fechar - Fixo no topo direito */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 z-50 bg-zinc-800/80 backdrop-blur-md p-2 rounded-full text-zinc-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 z-50 bg-zinc-800/80 backdrop-blur-md p-2 rounded-full text-zinc-400 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* ÁREA DE ROLAGEM (Header, Benefícios e Cards) */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-5 md:p-10 pt-10">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-5 md:p-8 pt-8">
           
-          {/* Header Premium */}
-          <div className="text-center mb-6 max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
-              Desbloqueie o <br className="md:hidden" />
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Protocolo Completo</span>
+          <div className="text-center mb-5 max-w-sm mx-auto">
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight leading-tight">
+              Desbloqueie o <br />
+              <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Acesso VIP</span>
             </h2>
-            <p className="text-zinc-400 text-base md:text-xl font-medium">
-              Ferramentas de alta performance. Sem restrições.
-            </p>
           </div>
 
-          {/* 🔥 LISTA DE BENEFÍCIOS (Mais alinhada e compacta) */}
-          <div className="max-w-xl mx-auto mb-8">
-            <div className="bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-5 flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <p className="text-zinc-200 text-sm font-medium">Nutricionista IA 24h no seu bolso</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <p className="text-zinc-200 text-sm font-medium">Scanner IA: Analise qualquer alimento por foto</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <p className="text-zinc-200 text-sm font-medium">Acesso total ao Protocolo de 21 Dias</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                <p className="text-zinc-200 text-sm font-medium">Cardápios e listas de compras automáticas</p>
-              </div>
+          <div className="bg-zinc-950/40 border border-zinc-800/50 rounded-2xl p-4 flex flex-col gap-3 mb-6">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+              <p className="text-zinc-300 text-sm font-medium leading-snug"><strong className="text-white">Pare de errar</strong> na dieta por falta de tempo ou ideias.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+              <p className="text-zinc-300 text-sm font-medium leading-snug"><strong className="text-white">Saiba exatamente</strong> o que comer com cardápios automáticos.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+              <p className="text-zinc-300 text-sm font-medium leading-snug"><strong className="text-white">Analise a composição</strong> real de qualquer alimento por foto.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+              <p className="text-zinc-300 text-sm font-medium leading-snug"><strong className="text-white">Tenha um especialista</strong> no bolso para qualquer dúvida.</p>
             </div>
           </div>
 
-          {/* Grid de Planos - Reduzimos o gap e o padding para caber mais na tela */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="flex flex-col gap-3 mb-2">
             
-            {/* Card 1: Mensal */}
+            {/* MENSAL */}
             <div 
               onClick={() => setSelectedPlan('mensal')}
-              className={`relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
                 selectedPlan === 'mensal' 
-                  ? 'border-orange-500 bg-zinc-800/80 shadow-[0_0_20px_rgba(249,115,22,0.15)]' 
-                  : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
+                  ? 'border-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.1)]' 
+                  : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
               }`}
             >
-              <div className="mb-3">
-                <h3 className="text-lg font-bold text-white mb-0.5">Mensal</h3>
-                <p className="text-zinc-500 text-xs font-medium">Cobrado mensalmente</p>
-              </div>
-              <div className="my-2 flex items-baseline gap-1">
-                <span className="text-base font-bold text-zinc-400">R$</span>
-                <span className="text-3xl font-black text-white">29,90</span>
-              </div>
-              <div className="mt-auto pt-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'mensal' ? 'border-orange-500' : 'border-zinc-700'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedPlan === 'mensal' ? 'border-orange-500' : 'border-zinc-600'}`}>
                   {selectedPlan === 'mensal' && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
                 </div>
+                <div>
+                  <h3 className="text-white font-bold leading-none mb-1">Mensal</h3>
+                  {/* 🔥 Objeção Aniquilada: Sem fidelidade */}
+                  <p className="text-zinc-500 text-[11px] font-medium leading-none">Sem fidelidade</p>
+                </div>
               </div>
-            </div>
-
-            {/* Card 2: Semestral */}
-            <div 
-              onClick={() => setSelectedPlan('semestral')}
-              className={`relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border-2 ${
-                selectedPlan === 'semestral' 
-                  ? 'border-orange-500 bg-zinc-800/80 shadow-[0_0_20px_rgba(249,115,22,0.15)]' 
-                  : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
-              }`}
-            >
-              <div className="mb-3">
-                <h3 className="text-lg font-bold text-white mb-0.5">Semestral</h3>
-                <p className="text-zinc-500 text-xs font-medium">Equivale a R$ 24,90/mês</p>
-              </div>
-              <div className="my-2 flex items-baseline gap-1">
-                <span className="text-base font-bold text-zinc-400">R$</span>
-                <span className="text-3xl font-black text-white">149,90</span>
-                <span className="text-xs font-medium text-zinc-500 ml-1">/sem.</span>
-              </div>
-              <div className="mt-auto pt-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'semestral' ? 'border-orange-500' : 'border-zinc-700'}`}>
-                  {selectedPlan === 'semestral' && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
+              <div className="text-right">
+                <div className="flex items-baseline justify-end gap-1">
+                  <span className="text-zinc-400 text-sm font-bold">R$</span>
+                  <span className="text-white font-black text-xl">29,90</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 3: Anual (Destaque) */}
+            {/* SEMESTRAL */}
             <div 
-              onClick={() => setSelectedPlan('anual')}
-              className={`relative flex flex-col p-5 rounded-2xl cursor-pointer transition-all duration-300 border-2 md:scale-[1.05] z-10 ${
-                selectedPlan === 'anual' 
-                  ? 'border-orange-500 bg-zinc-800 shadow-[0_0_30px_rgba(249,115,22,0.25)]' 
-                  : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
+              onClick={() => setSelectedPlan('semestral')}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                selectedPlan === 'semestral' 
+                  ? 'border-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.1)]' 
+                  : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
               }`}
             >
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded-full shadow-lg whitespace-nowrap">
-                Escolha Inteligente
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedPlan === 'semestral' ? 'border-orange-500' : 'border-zinc-600'}`}>
+                  {selectedPlan === 'semestral' && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
+                </div>
+                <div>
+                  <h3 className="text-white font-bold leading-none mb-1">Semestral</h3>
+                  <p className="text-zinc-500 text-[11px] font-medium leading-none">Equivale a R$ 24,90/mês</p>
+                </div>
               </div>
+              <div className="text-right">
+                <div className="flex items-baseline justify-end gap-1">
+                  <span className="text-zinc-400 text-sm font-bold">R$</span>
+                  <span className="text-white font-black text-xl">149,90</span>
+                </div>
+              </div>
+            </div>
 
-              <div className="mb-3 pt-1">
-                <h3 className="text-lg font-bold text-white mb-0.5">Anual</h3>
-                <p className="text-orange-300/80 text-xs font-medium">Equivale a R$ 16,49/mês</p>
+            {/* ANUAL */}
+            <div 
+              onClick={() => setSelectedPlan('anual')}
+              className={`relative flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
+                selectedPlan === 'anual' 
+                  ? 'border-orange-500 bg-orange-500/10 shadow-[0_0_15px_rgba(249,115,22,0.1)]' 
+                  : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
+              }`}
+            >
+              <div className="absolute -top-2.5 right-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full shadow-lg">
+                O Mais Barato
               </div>
-              <div className="my-2 flex items-baseline gap-1">
-                <span className="text-base font-bold text-orange-400/80">R$</span>
-                <span className="text-4xl font-black text-orange-400">197,90</span>
-                <span className="text-xs font-medium text-zinc-500 ml-1">/ano</span>
-              </div>
-              <div className="mt-auto pt-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan === 'anual' ? 'border-orange-500' : 'border-zinc-700'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedPlan === 'anual' ? 'border-orange-500' : 'border-zinc-600'}`}>
                   {selectedPlan === 'anual' && <div className="w-2.5 h-2.5 bg-orange-500 rounded-full" />}
+                </div>
+                <div>
+                  <h3 className="text-white font-bold leading-none mb-1">Anual</h3>
+                  <p className="text-zinc-500 text-[11px] font-medium leading-none">Equivale a R$ 16,49/mês</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="flex items-baseline justify-end gap-1">
+                  <span className="text-orange-400/80 text-sm font-bold">R$</span>
+                  <span className="text-orange-400 font-black text-xl">197,90</span>
                 </div>
               </div>
             </div>
 
           </div>
 
-          {/* Suporte dentro da área de rolagem para limpar o rodapé fixo */}
-          <div className="pt-6 pb-2 flex justify-center">
+          <div className="pt-4 pb-2 flex justify-center">
             <button 
               onClick={handleSupportClick}
-              className="flex items-center gap-2 text-zinc-500 hover:text-green-500 transition-colors text-sm font-medium group"
+              className="flex items-center gap-2 text-zinc-500 hover:text-green-500 transition-colors text-xs font-medium group"
             >
-              <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+              <MessageCircle className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
               Dúvidas sobre o plano? Fale conosco
             </button>
           </div>
         </div>
 
-        {/* 🔥 RODAPÉ FIXO (Sticky CTA) 🔥 */}
-        <div className="shrink-0 bg-zinc-900/90 backdrop-blur-xl border-t border-zinc-800 p-5 pb-8 md:pb-6 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-20">
+        <div className="shrink-0 bg-zinc-900 border-t border-zinc-800 p-5 pb-8 md:pb-5 z-20">
           <div className="max-w-md mx-auto space-y-3">
             <button
               onClick={handleSubscribe}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-lg md:text-xl py-4 rounded-2xl transition-all duration-300 shadow-[0_0_20px_rgba(249,115,22,0.4)] active:scale-95 tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-lg py-4 rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(249,115,22,0.3)] active:scale-95 tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Processando...' : 'Iniciar Meus 3 Dias Grátis'}
             </button>
             
-            <div className="flex items-start justify-center gap-2 text-zinc-500 text-xs md:text-sm font-medium px-2">
-              <ShieldCheck className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
-              <p className="leading-tight text-center">Cancele quando quiser. Cobrança apenas após o período de teste.</p>
+            <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
+              <p>Cancele direto pelo seu Perfil no app.</p>
             </div>
           </div>
         </div>
