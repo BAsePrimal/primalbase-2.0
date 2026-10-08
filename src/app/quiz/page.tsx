@@ -25,6 +25,13 @@ export default function QuizPage() {
   const handleAnswer = (key: keyof QuizAnswers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
 
+    // 🔥 BLINDAGEM DO TIKTOK PIXEL: Dispara o evento automaticamente no clique da 1ª pergunta
+    if (step === 1) {
+      if (typeof window !== 'undefined' && (window as any).ttq) {
+        (window as any).ttq.track('ViewContent');
+      }
+    }
+
     if (step === 6) {
       startLoading()
     } else {
