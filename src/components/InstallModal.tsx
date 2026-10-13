@@ -80,13 +80,15 @@ export default function InstallModal() {
             <Smartphone className="w-8 h-8 text-amber-500 relative z-10" />
           </div>
 
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-3 leading-tight">
-            LEVE O PRIMAL BASE <br />
-            <span className="text-amber-500">NO BOLSO</span>
+          {/* 👇 TÍTULO ATUALIZADO */}
+          <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight mb-3 leading-tight">
+            ACESSO RÁPIDO AO <br className="md:hidden" />
+            <span className="text-amber-500">PRIMALBASE</span>
           </h2>
           
-          <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-            Adicione o aplicativo à tela inicial para ativar os alertas do seu cardápio e acessar tudo com 1 clique.
+          {/* 👇 COPY CENTRAL ATUALIZADA */}
+          <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-6">
+            Adicione o aplicativo à tela inicial para acessar as suas ferramentas num segundo. Mantenha o seu Scanner, Chef e Especialista IA sempre no bolso, prontos para resolver a sua rotina a qualquer momento do dia.
           </p>
 
           <div className="w-full bg-zinc-950/50 rounded-2xl p-4 border border-zinc-800/50 mb-6">
@@ -161,7 +163,7 @@ export default function InstallModal() {
 
           <button 
             onClick={handleDismiss}
-            className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-wider text-sm"
+            className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black py-4 rounded-xl transition-all active:scale-[0.98] uppercase tracking-wider text-sm md:text-base"
           >
             Entendi, vou instalar
           </button>

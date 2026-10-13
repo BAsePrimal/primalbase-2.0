@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { LogOut, User as UserIcon, Edit3, X, CreditCard, Smartphone, MessageCircle, ShieldAlert, Mars, Venus, Target, Scale, Ruler } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast, Toaster } from 'sonner';
-import confetti from 'canvas-confetti';
 import BotaoAlerta from '@/components/BotaoAlerta';
+import InstallModal from '@/components/InstallModal'; // 🔥 IMPORTAÇÃO DO MODAL DE INSTALAÇÃO
 
 interface Profile {
   full_name: string;
@@ -27,7 +27,6 @@ export default function PerfilPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Estados do formulário de edição atualizados com WhatsApp
   const [editForm, setEditForm] = useState({
@@ -217,6 +216,7 @@ export default function PerfilPage() {
   return (
     <>
       <Toaster position="top-center" theme="dark" />
+      <InstallModal /> {/* 🔥 MODAL RENDERIZADO PARA OUVIR O EVENTO DE CLIQUE */}
       
       <div className="min-h-screen bg-zinc-950 text-zinc-50 flex flex-col pb-24">
         {/* Header */}
