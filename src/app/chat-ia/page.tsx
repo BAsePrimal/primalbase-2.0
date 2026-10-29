@@ -49,16 +49,16 @@ export default function ChatIAPage() {
         setUser(authUser);
         
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_subscriber, daily_chat_count, total_chats')
-          .eq('id', authUser.id)
-          .single();
-          
-        if (profile) {
-          setIsSubscriber(profile.is_subscriber || false);
-          setUsageCount(profile.daily_chat_count || 0);
-          setTotalChatsCount(profile.total_chats || 0);
-        }
+        .from('profiles')
+        .select('is_subscriber, daily_free_usage, total_chats')
+        .eq('id', authUser.id)
+        .single();
+        
+      if (profile) {
+        setIsSubscriber(profile.is_subscriber || false);
+        setUsageCount(profile.daily_free_usage || 0);
+        setTotalChatsCount(profile.total_chats || 0);
+      }
       } else {
         // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS da memória do telemóvel
         const localUsage = localStorage.getItem('primalbase_free_credits');
@@ -167,7 +167,7 @@ export default function ChatIAPage() {
         await supabase
           .from('profiles')
           .update({ 
-            daily_chat_count: nextCount,
+            daily_free_usage: nextCount,
             total_chats: nextTotal 
           })
           .eq('id', user.id);

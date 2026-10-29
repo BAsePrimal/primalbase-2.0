@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Flame, Target, Droplets, MessageSquare, Search, Utensils } from 'lucide-react'
 import LegalFooter from '@/components/LegalFooter';
 
@@ -16,10 +17,20 @@ interface QuizAnswers {
 }
 
 export default function QuizPage() {
+  const router = useRouter()
   const [step, setStep] = useState<QuizStep>(0)
   const [answers, setAnswers] = useState<QuizAnswers>({})
   const [loadingText, setLoadingText] = useState('')
   const [progress, setProgress] = useState(0)
+
+  // 👇 TRAVA DE SEGURANÇA CONTRA O "BUG DO RESET" (Botão Voltar)
+  useEffect(() => {
+    const isDone = localStorage.getItem('onboarding_done')
+    if (isDone === 'true') {
+      // Usa replace em vez de push para não acumular no histórico do navegador
+      router.replace('/?visitante=true') 
+    }
+  }, [router])
 
   const handleAnswer = (key: keyof QuizAnswers, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }))
@@ -120,7 +131,6 @@ export default function QuizPage() {
               O QUE VOCÊ COME DEFINE<br className="hidden md:block" /> SE VOCÊ TEM <span className="text-amber-500">ENERGIA</span><br className="md:hidden" /> OU VIVE <span className="text-amber-500">CANSADO.</span>
             </h1>
             
-            {/* 👇 Nova Copy do Subtítulo */}
             <p 
               className="text-center text-zinc-300 mx-auto text-lg md:text-xl"
               style={{ 
@@ -134,7 +144,6 @@ export default function QuizPage() {
             </p>
             
             <div className="w-full max-w-md mt-10">
-              {/* 👇 Nova Copy do Botão */}
               <button
                 onClick={() => setStep(1)}
                 className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none"
@@ -165,9 +174,9 @@ export default function QuizPage() {
               Como organiza a sua alimentação durante a semana?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('nutricao', 'A')}>Sigo dietas restritivas, mas acabo sempre por desistir.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('nutricao', 'A')}>Sigo dietas restritivas, mas acabo sempre desistindo.</OptionButton>
               <OptionButton onClick={() => handleAnswer('nutricao', 'B')}>Como o que tiver à frente, não tenho muito tempo.</OptionButton>
-              <OptionButton onClick={() => handleAnswer('nutricao', 'C')}>Tento comer bem, mas falta-me organização diária.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('nutricao', 'C')}>Tento comer bem, mas me falta organização diária.</OptionButton>
               <OptionButton onClick={() => handleAnswer('nutricao', 'D')}>Precisava de um cardápio limpo e prático que se adaptasse à minha rotina.</OptionButton>
             </div>
           </div>
@@ -180,10 +189,10 @@ export default function QuizPage() {
               <Flame className="w-12 h-12 text-amber-500" />
             </div>
             <h2 className="text-2xl md:text-3xl font-black text-center text-white tracking-tight px-4 leading-tight">
-              Chega a casa cansado e não sabe o que fazer para o jantar. Qual é o padrão?
+              Chega em casa cansado e não sabe o que fazer para o jantar. Qual é o padrão?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('chef', 'A')}>Acabo a pedir delivery e gasto dinheiro à toa.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('chef', 'A')}>Acabo pedindo delivery e gasto dinheiro à toa.</OptionButton>
               <OptionButton onClick={() => handleAnswer('chef', 'B')}>Como qualquer alimento ultraprocessado que seja rápido.</OptionButton>
               <OptionButton onClick={() => handleAnswer('chef', 'C')}>Repito sempre a mesma refeição sem graça.</OptionButton>
               <OptionButton onClick={() => handleAnswer('chef', 'D')}>Queria que alguém me desse uma receita rápida só com o que sobrou na geladeira.</OptionButton>
@@ -203,7 +212,7 @@ export default function QuizPage() {
             <div className="flex flex-col gap-3 mt-10 px-4">
               <OptionButton onClick={() => handleAnswer('scanner', 'A')}>Confio no que está escrito na frente da embalagem (Zero, Fit, Light).</OptionButton>
               <OptionButton onClick={() => handleAnswer('scanner', 'B')}>Tento ler os ingredientes, mas não entendo os nomes difíceis.</OptionButton>
-              <OptionButton onClick={() => handleAnswer('scanner', 'C')}>Sei que a indústria esconde açúcar, mas acabo por comprar na mesma.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('scanner', 'C')}>Sei que a indústria esconde açúcar, mas acabo comprando mesmo assim.</OptionButton>
               <OptionButton onClick={() => handleAnswer('scanner', 'D')}>Precisava de um raio-x rápido para desmascarar o que é lixo e o que é comida real.</OptionButton>
             </div>
           </div>
@@ -219,9 +228,9 @@ export default function QuizPage() {
               Como é o seu consumo de água?
             </h2>
             <div className="flex flex-col gap-3 mt-10 px-4">
-              <OptionButton onClick={() => handleAnswer('agua', 'A')}>Bebo muito pouco, acabo por me esquecer durante o trabalho.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'A')}>Bebo muito pouco, acabo esquecendo durante o trabalho.</OptionButton>
               <OptionButton onClick={() => handleAnswer('agua', 'B')}>Bebo só quando sinto muita sede.</OptionButton>
-              <OptionButton onClick={() => handleAnswer('agua', 'C')}>Substituto muita água por café para tentar ter energia.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('agua', 'C')}>Substituo muita água por café para tentar ter energia.</OptionButton>
               <OptionButton onClick={() => handleAnswer('agua', 'D')}>Queria um sistema simples que me lembrasse e calculasse o ideal para mim.</OptionButton>
             </div>
           </div>
@@ -257,8 +266,8 @@ export default function QuizPage() {
             <div className="flex flex-col gap-3 mt-10 px-4">
               <OptionButton onClick={() => handleAnswer('jornada', 'A')}>A falta de disciplina quando não vejo resultados rápidos.</OptionButton>
               <OptionButton onClick={() => handleAnswer('jornada', 'B')}>A ansiedade e os picos de stress no dia a dia.</OptionButton>
-              <OptionButton onClick={() => handleAnswer('jornada', 'C')}>Ficar perdido sem saber se estou a fazer as coisas certas.</OptionButton>
-              <OptionButton onClick={() => handleAnswer('jornada', 'D')}>Falta-me um mapa visual claro para acompanhar o meu progresso diário.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('jornada', 'C')}>Ficar perdido sem saber se estou fazendo as coisas certas.</OptionButton>
+              <OptionButton onClick={() => handleAnswer('jornada', 'D')}>Me falta um mapa visual claro para acompanhar o meu progresso diário.</OptionButton>
             </div>
           </div>
         )
@@ -280,41 +289,50 @@ export default function QuizPage() {
           </div>
         )
 
-      case 8:
-        return (
-          <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
-            <div className="flex justify-center mb-6">
-              <Target className="w-16 h-16 text-amber-500" />
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
-              ANÁLISE CONCLUÍDA
-            </h1>
-            
-            {/* 👇 Nova Copy do Texto Central */}
-            <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
-               <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+        case 8:
+          return (
+            <div className="space-y-8 animate-[fade-in_0.5s_ease-out_forwards] w-full max-w-xl mx-auto px-4">
+              <div className="flex justify-center mb-6">
+                <Target className="w-16 h-16 text-amber-500" />
+              </div>
               
-              <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
-                O problema não é a sua disciplina. Você vive cansado por causa dos ingredientes ruins escondidos na comida que consome todo dia.
-                <br /><br />
-                <span className="text-white font-semibold">Nós resolvemos isso.</span>
-                <br /><br />
-                Você não precisa mais tentar entender nomes difíceis nas embalagens ou quebrar a cabeça com dietas prontas. O aplicativo faz o trabalho por você: basta apontar a câmera para ele ler os ingredientes e avisar se é lixo, ou apertar um botão para ele montar a sua refeição com o que você já tem na geladeira.
-              </p>
+              <h1 className="text-4xl md:text-5xl font-black text-center text-amber-500 tracking-tight uppercase leading-none">
+                ANÁLISE CONCLUÍDA
+              </h1>
+              
+              <div className="bg-zinc-950/60 rounded-2xl p-6 md:p-8 mt-8 text-left relative overflow-hidden shadow-inner border border-zinc-800/50">
+                 <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                
+                <p className="text-zinc-300 leading-relaxed text-base md:text-lg pl-2">
+                  O problema não é a sua disciplina. Você vive cansado por causa dos ingredientes ruins escondidos na comida que consome todo dia.
+                  <br /><br />
+                  <span className="text-white font-semibold">Nós resolvemos isso.</span>
+                  <br /><br />
+                  Você não precisa mais tentar entender nomes difíceis nas embalagens ou quebrar a cabeça com dietas prontas. O aplicativo faz o trabalho por você: basta apontar a câmera para ele ler os ingredientes e avisar se é lixo, ou apertar um botão para ele montar a sua refeição com o que você já tem na geladeira.
+                </p>
+              </div>
+  
+              <div className="w-full max-w-md mx-auto mt-10">
+                <button 
+                  onClick={() => {
+                    localStorage.setItem('onboarding_done', 'true')
+                    window.location.href = '/?visitante=true&tour=start'
+                  }}
+                  className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-base md:text-lg py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce px-2"
+                >
+                  LIBERAR MEU APLICATIVO
+                </button>
+                
+                {/* 👇 NOVA TAG DE CONFIANÇA (Redutor de atrito) */}
+                <p 
+                  className="text-center text-zinc-400/90 text-sm font-medium mt-3.5 tracking-wide"
+                  style={{ fontFamily: "'Montserrat', sans-serif" }}
+                >
+                  🔓 Acesso imediato • 3 testes grátis no aplicativo (Sem cartão)
+                </p>
+              </div>
             </div>
-
-            <div className="w-full max-w-md mx-auto mt-10">
-              {/* 👇 Nova Copy do Botão Final */}
-              <button 
-                onClick={() => window.location.href = '/?visitante=true&tour=start'}
-                className="w-full bg-amber-500 text-zinc-950 hover:bg-amber-400 font-black text-base md:text-lg py-5 rounded-2xl shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300 transform active:scale-[0.98] uppercase tracking-widest outline-none border-none animate-bounce px-2"
-              >
-                LIBERAR MEU APLICATIVO
-              </button>
-            </div>
-          </div>
-        )
+          )
       }
     }
 

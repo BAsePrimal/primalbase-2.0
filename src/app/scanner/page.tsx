@@ -19,18 +19,16 @@ interface ScanResult {
 const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
   if (typeof window === 'undefined') return;
 
-  // 1. O Motor Tátil (Vibração - Funciona no Android)
   if ('vibrate' in navigator) {
     if (type === 'error') {
-      navigator.vibrate([200, 100, 300, 100, 400]); // Choque pesado e longo
+      navigator.vibrate([200, 100, 300, 100, 400]); 
     } else if (type === 'warning') {
-      navigator.vibrate([100, 50, 100]); // Dois toques curtos (Atenção)
+      navigator.vibrate([100, 50, 100]); 
     } else {
-      navigator.vibrate([50, 50, 50]); // Clique curto e crocante
+      navigator.vibrate([50, 50, 50]); 
     }
   }
 
-  // 2. O Motor Sonoro (Sintetizador Web Audio API - Funciona em iOS e Android)
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -40,7 +38,6 @@ const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
     const gain = ctx.createGain();
 
     if (type === 'error') {
-      // Som de "Acesso Negado" (Buzzer Grave)
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(150, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.5);
@@ -52,7 +49,6 @@ const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
     } else if (type === 'warning') {
-      // Som de "Alerta" (Bipe Duplo Médio)
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(350, ctx.currentTime);
       osc.frequency.setValueAtTime(400, ctx.currentTime + 0.15);
@@ -64,10 +60,9 @@ const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
       osc.start();
       osc.stop(ctx.currentTime + 0.4);
     } else {
-      // Som de "Level Up" (Plim Agudo)
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // Nota Dó (C5)
-      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // Pula para Mi (E5)
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); 
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
       
@@ -101,15 +96,16 @@ export default function ScannerPage() {
       
       if (authUser) {
         setUser(authUser);
+        // 👇 Já com a trava global "daily_free_usage" implementada
         const { data: profile } = await supabase
           .from('profiles')
-          .select('is_subscriber, daily_scan_count, total_scans')
+          .select('is_subscriber, daily_free_usage, total_scans')
           .eq('id', authUser.id)
           .single();
           
         if (profile) {
           setIsSubscriber(profile.is_subscriber || false);
-          setScanCount(profile.daily_scan_count || 0);
+          setScanCount(profile.daily_free_usage || 0);
           setTotalScansCount(profile.total_scans || 0); 
         }
       } else {
@@ -123,7 +119,6 @@ export default function ScannerPage() {
   }, []);
 
   const handleCaptureClick = () => {
-    // 👇 TRAVA GLOBAL LENDO A VARIÁVEL MESTRE
     if (!isSubscriber && scanCount >= LIMITE_USOS_FREE) {
       setShowPaywall(true);
       return;
@@ -182,10 +177,11 @@ export default function ScannerPage() {
         const nextTotal = totalScansCount + 1; 
         setTotalScansCount(nextTotal); 
         
+        // 👇 Atualizando a trava global e o contador total
         await supabase
           .from('profiles')
           .update({ 
-            daily_scan_count: nextCount,
+            daily_free_usage: nextCount,
             total_scans: nextTotal
           })
           .eq('id', user.id);
@@ -216,8 +212,9 @@ export default function ScannerPage() {
           <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-white bg-clip-text text-transparent mb-3">
             Scanner IA
           </h1>
+          {/* 👇 NOVA COPY APLICADA AQUI */}
           <p className="text-gray-400 text-lg">
-          Valide alimentos em segundos.
+          Aponte para alimentos, pratos prontos ou cardápios.
           </p>
         </div>
 
@@ -270,7 +267,6 @@ export default function ScannerPage() {
                       Capturar Foto
                     </button>
                     
-                    {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AGORA DINÂMICA) */}
                     {!isSubscriber && (
                       <p className="text-center text-gray-500 text-sm font-bold mt-3 tracking-widest uppercase">
                         {scanCount >= LIMITE_USOS_FREE 
@@ -423,7 +419,7 @@ export default function ScannerPage() {
 
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">
-                {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠️️' : '👁️'}
+                {result.verdict === 'ALLOWED' ? '🧬' : result.verdict === 'WARNING' ? '⚠' : '👁️'}
               </span>
               <h3 className={`text-xl font-black uppercase tracking-tight ${
                 result.verdict === 'ALLOWED' 

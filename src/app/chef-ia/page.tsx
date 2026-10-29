@@ -57,16 +57,16 @@ export default function ChefIAPage() {
         // CLIENTE VIP OU LOGADO: Puxa do Supabase
         setUser(authUser);
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_subscriber, daily_recipe_count, total_recipes')
-          .eq('id', authUser.id)
-          .single();
-          
-        if (profile) {
-          setIsSubscriber(profile.is_subscriber || false);
-          setUsageCount(profile.daily_recipe_count || 0);
-          setTotalRecipesCount(profile.total_recipes || 0); 
-        }
+        .from('profiles')
+        .select('is_subscriber, daily_free_usage, total_recipes')
+        .eq('id', authUser.id)
+        .single();
+        
+      if (profile) {
+        setIsSubscriber(profile.is_subscriber || false);
+        setUsageCount(profile.daily_free_usage || 0);
+        setTotalRecipesCount(profile.total_recipes || 0); 
+      }
       } else {
         // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS da memória do telemóvel
         const localUsage = localStorage.getItem('primalbase_free_credits');
@@ -188,7 +188,7 @@ export default function ChefIAPage() {
         await supabase
           .from('profiles')
           .update({ 
-            daily_recipe_count: nextCount,
+            daily_free_usage: nextCount,
             total_recipes: nextTotal
           })
           .eq('id', user.id);

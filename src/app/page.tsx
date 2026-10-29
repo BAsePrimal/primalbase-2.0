@@ -174,7 +174,6 @@ function HomeContent() {
       const alreadyPromptedSession = sessionStorage.getItem('pwa_prompted') === 'true';
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
 
-      // 👇 GATILHO NA 3ª VISITA EXATA
       if (hasSeenTour && newVisits === 3 && !isPWA && !alreadyPromptedSession) {
         setTimeout(() => {
           window.dispatchEvent(new Event('forceInstallModal'));
@@ -196,6 +195,9 @@ function HomeContent() {
         const isVisitorQuery = searchParams.get('visitante') === 'true' || window.location.search.includes('visitante=true');
         const isSuccess = searchParams.get('success') === 'true';
         const isVisitorLocal = localStorage.getItem('primalbase_visitor') === 'true';
+        
+        // 👇 VERIFICAÇÃO DO CARIMBO DO QUIZ (TRAVA O REDIRECIONAMENTO DE REFRESH)
+        const quizDone = localStorage.getItem('onboarding_done') === 'true';
 
         if (isVisitorQuery) {
           localStorage.setItem('primalbase_visitor', 'true');
@@ -203,10 +205,13 @@ function HomeContent() {
 
         const isVisitor = isVisitorQuery || isVisitorLocal;
 
-        if (!isVisitor && !isSuccess) {
+        // Se o usuário não tem sessão, não é visitante e não terminou o quiz, redireciona pro Quiz (Login). 
+        // Mas se ele tem o carimbo (quizDone), ele permanece na página.
+        if (!isVisitor && !isSuccess && !quizDone) {
           router.replace('/login');
           return; 
         }
+        
         setLoading(false);
         return; 
       }
@@ -251,7 +256,6 @@ function HomeContent() {
     
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     
-    // 👇 GATILHO IMEDIATO APÓS O FIM DO TOUR
     if (!isPWA) {
       setTimeout(() => {
         window.dispatchEvent(new Event('forceInstallModal'));
@@ -450,17 +454,5 @@ function HomeContent() {
       )}
 
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
-      </div>
-    }>
-      <HomeContent />
-    </Suspense>
   );
 }

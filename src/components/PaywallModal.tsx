@@ -103,8 +103,8 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
                 </div>
                 <div>
                   <h3 className="text-white font-bold leading-none mb-1">Mensal</h3>
-                  {/* 🔥 Objeção Aniquilada: Sem fidelidade */}
-                  <p className="text-zinc-500 text-[11px] font-medium leading-none">Sem fidelidade</p>
+                  {/* 👇 COPY ATUALIZADA: Menos de R$ 1,00 por dia */}
+                  <p className="text-zinc-500 text-[11px] font-medium leading-none">Menos de R$ 1,00 por dia</p>
                 </div>
               </div>
               <div className="text-right">
@@ -195,7 +195,8 @@ export default function PaywallModal({ isOpen, onClose, userId }: PaywallModalPr
             
             <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs font-medium">
               <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
-              <p>Cancele direto pelo seu Perfil no app.</p>
+              {/* 👇 COPY ATUALIZADA: Zero cobrança hoje */}
+              <p>🛡️ R$ 0,00 cobrados hoje. Cancele com 1 clique pelo Perfil.</p>
             </div>
           </div>
         </div>
