@@ -456,3 +456,14 @@ function HomeContent() {
     </div>
   );
 }
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  );
+}
