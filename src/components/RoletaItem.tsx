@@ -70,7 +70,10 @@ export default function RoletaItem({ nomeInicial, categoria, tipoRefeicao = 'any
         const partes = nome.split(' (');
         const novaString = partes.length > 1 ? `${novoNomeBase} (${partes[1]}` : novoNomeBase;
         
-        setNome(novaString);
+        // 👇 A SOLUÇÃO DO BUG:
+        // A linha "setNome(novaString)" foi removida daqui!
+        // Agora, o componente passa a bola para a página de Nutrição. 
+        // Se bater no Paywall, a página de Nutrição aborta a missão e o texto da tela não muda!
         if (onTroca) onTroca(novaString);
       }
     } catch(error) {

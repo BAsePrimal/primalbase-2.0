@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
-// 👇 VARIÁVEL MESTRE DO FREEMIUM (Mude aqui e a tela inteira se ajusta)
+// 👇 VARIÁVEL MESTRE DO FREEMIUM
 const LIMITE_USOS_FREE = 3;
 
 interface ScanResult {
@@ -14,21 +14,16 @@ interface ScanResult {
   title: string;
   explanation: string;
   curiosity_fact?: string;
-  clean_swap?: string; // 👇 Novo campo vindo da API
+  clean_swap?: string; 
 }
 
-// --- ARMAS DE RETENÇÃO: MOTOR TÁTIL E SONORO NATIVO ---
 const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
   if (typeof window === 'undefined') return;
 
   if ('vibrate' in navigator) {
-    if (type === 'error') {
-      navigator.vibrate([200, 100, 300, 100, 400]); 
-    } else if (type === 'warning') {
-      navigator.vibrate([100, 50, 100]); 
-    } else {
-      navigator.vibrate([50, 50, 50]); 
-    }
+    if (type === 'error') navigator.vibrate([200, 100, 300, 100, 400]); 
+    else if (type === 'warning') navigator.vibrate([100, 50, 100]); 
+    else navigator.vibrate([50, 50, 50]); 
   }
 
   try {
@@ -45,41 +40,31 @@ const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
       osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.5);
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
     } else if (type === 'warning') {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(350, ctx.currentTime);
       osc.frequency.setValueAtTime(400, ctx.currentTime + 0.15);
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.4);
     } else {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
       osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); 
       gain.gain.setValueAtTime(0.1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
     }
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
   } catch (e) {
     console.error('Radar sonoro inativo:', e);
   }
 };
 
 export default function ScannerPage() {
-  const router = useRouter(); // 👇 Para a Ponte do Chef
+  const router = useRouter(); 
   const [image, setImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -92,9 +77,8 @@ export default function ScannerPage() {
   const [totalScansCount, setTotalScansCount] = useState(0);
   
   const [showCuriosityModal, setShowCuriosityModal] = useState(false);
-  const [showTrocaLimpa, setShowTrocaLimpa] = useState(false); // 👇 Controle do botão Troca Limpa
+  const [showTrocaLimpa, setShowTrocaLimpa] = useState(false); 
 
-  // 👇 Estados do Loader Dinâmico
   const [loadingStep, setLoadingStep] = useState(0);
   const [loadingPhrases, setLoadingPhrases] = useState<string[]>([]);
 
@@ -125,34 +109,43 @@ export default function ScannerPage() {
     checkUserStatus();
   }, []);
 
-  // 👇 Lógica do Checklist Dinâmico
+  // 👇 LÓGICA DO CHECKLIST DINÂMICO (Banco de Sorteio com 5 Passos)
   useEffect(() => {
     if (!isScanning) {
       setLoadingStep(0);
       return;
     }
     
+    // O banco central com 6 opções de inspecção
     const pool = [
       "Rastreando açúcares ocultos e adoçantes artificiais...",
       "Analisando óleos de sementes e gorduras inflamatórias...",
       "Verificando conservantes, corantes e químicos industriais...",
-      "Calculando o impacto no seu metabolismo e digestão..."
+      "Calculando o impacto no seu metabolismo e digestão...",
+      "Cruzando dados com a base de ultraprocessados...",
+      "Investigando a presença de emulsificantes e espessantes..."
     ];
+    
+    // Sorteamos a lista e pegamos as 3 primeiras
     const shuffled = pool.sort(() => 0.5 - Math.random());
     
     setLoadingPhrases([
       "Extraindo a lista de ingredientes e tabela nutricional...",
       shuffled[0],
       shuffled[1],
+      shuffled[2],
       "Buscando opções limpas e Troca Segura..."
     ]);
 
     setLoadingStep(1);
-    const t1 = setTimeout(() => setLoadingStep(2), 1500);
-    const t2 = setTimeout(() => setLoadingStep(3), 3000);
-    const t3 = setTimeout(() => setLoadingStep(4), 4500);
+    
+    // Tempos compassados para dar a sensação de varredura profunda (5 passos no total)
+    const t1 = setTimeout(() => setLoadingStep(2), 1200);
+    const t2 = setTimeout(() => setLoadingStep(3), 2400);
+    const t3 = setTimeout(() => setLoadingStep(4), 3600);
+    const t4 = setTimeout(() => setLoadingStep(5), 4800);
 
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [isScanning]);
 
   const handleCaptureClick = () => {
@@ -160,9 +153,7 @@ export default function ScannerPage() {
       setShowPaywall(true);
       return;
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    if (fileInputRef.current) fileInputRef.current.click();
   };
 
   const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +164,7 @@ export default function ScannerPage() {
     reader.onloadend = () => {
       setImage(reader.result as string);
       setResult(null);
-      setShowTrocaLimpa(false); // Reseta o botão ao capturar nova imagem
+      setShowTrocaLimpa(false);
     };
     reader.readAsDataURL(file);
   };
@@ -183,7 +174,7 @@ export default function ScannerPage() {
 
     setIsScanning(true);
     setResult(null);
-    setShowTrocaLimpa(false); // Reseta o botão ao analisar
+    setShowTrocaLimpa(false);
 
     try {
       const response = await fetch('/api/scanner', {
@@ -194,20 +185,14 @@ export default function ScannerPage() {
         body: JSON.stringify({ image }),
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao analisar imagem');
-      }
+      if (!response.ok) throw new Error('Erro ao analisar imagem');
 
       const data = await response.json();
       setResult(data);
 
-      if (data.verdict === 'ALLOWED') {
-        triggerFeedback('success');
-      } else if (data.verdict === 'WARNING') {
-        triggerFeedback('warning');
-      } else {
-        triggerFeedback('error');
-      }
+      if (data.verdict === 'ALLOWED') triggerFeedback('success');
+      else if (data.verdict === 'WARNING') triggerFeedback('warning');
+      else triggerFeedback('error');
 
       const nextCount = scanCount + 1;
       setScanCount(nextCount);
@@ -238,10 +223,8 @@ export default function ScannerPage() {
   const handleReset = () => {
     setImage(null);
     setResult(null);
-    setShowTrocaLimpa(false); // Reseta o botão
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    setShowTrocaLimpa(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -259,9 +242,9 @@ export default function ScannerPage() {
           </div>
         )}
 
-        <div className="flex flex-col items-center justify-center">
+        {/* 👇 Flex-1 e min-h-[60vh] aplicados aqui para centralizar perfeitamente o loader verticalmente */}
+        <div className={`flex flex-col items-center justify-center ${isScanning ? 'min-h-[60vh]' : ''}`}>
           
-          {/* 👇 TELA DE CARREGAMENTO DINÂMICO */}
           {isScanning ? (
             <div className="w-full bg-zinc-950/80 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 shadow-2xl animate-in fade-in duration-500">
               
@@ -270,11 +253,11 @@ export default function ScannerPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent"></div>
                 <div className="absolute bottom-4 left-4 right-4">
                   <h3 className="text-xl font-black text-white mb-2 tracking-tight">Leitura de Rótulo</h3>
-                  {/* Barra de Progresso Dinâmica */}
+                  {/* Barra de Progresso Dinâmica atualizada para 5 passos */}
                   <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-amber-500 transition-all duration-[1500ms] ease-linear"
-                      style={{ width: `${(loadingStep / 4) * 100}%` }}
+                      className="h-full bg-amber-500 transition-all duration-[1200ms] ease-linear"
+                      style={{ width: `${(loadingStep / 5) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -286,7 +269,7 @@ export default function ScannerPage() {
                   const isPast = loadingStep > stepNum;
                   const isCurrent = loadingStep === stepNum;
                   const isFuture = loadingStep < stepNum;
-                  const isLast = idx === 3;
+                  const isLast = idx === loadingPhrases.length - 1;
 
                   return (
                     <div key={idx} className={`flex items-start gap-3 transition-opacity duration-500 ${isFuture ? 'opacity-0' : 'opacity-100'}`}>
@@ -446,11 +429,9 @@ export default function ScannerPage() {
                   {result.explanation}
                 </p>
 
-                {/* 👇 CONTROLE DO GATILHO VIP OU BOTÃO EXPANSÍVEL */}
                 {result.clean_swap && (result.verdict === 'BANNED' || result.verdict === 'WARNING') && (
                   <div className="mt-5 pt-5 border-t border-white/10 flex flex-col items-center">
                     {(!isSubscriber && scanCount >= 2) ? (
-                      // BLOQUEADO: Mantém o Blur agressivo para vender
                       <div className="w-full">
                         <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">🔄 Troca Limpa</h4>
                         <div className="relative group cursor-pointer" onClick={() => setShowPaywall(true)}>
@@ -464,13 +445,11 @@ export default function ScannerPage() {
                         </div>
                       </div>
                     ) : showTrocaLimpa ? (
-                      // LIBERADO (Aberto)
                       <div className="w-full animate-in fade-in zoom-in duration-300">
                         <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">🔄 Troca Limpa</h4>
                         <p className="text-white font-medium text-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 shadow-inner">{result.clean_swap}</p>
                       </div>
                     ) : (
-                      // LIBERADO (Fechado - Economiza tela e fica elegante)
                       <button onClick={() => setShowTrocaLimpa(true)} className="flex items-center justify-center gap-2 w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl border border-zinc-700 transition-colors active:scale-95">
                         <span className="text-lg">🔄</span>
                         <span className="text-zinc-300 font-bold uppercase tracking-widest text-sm">Ver Troca Limpa</span>
@@ -509,7 +488,6 @@ export default function ScannerPage() {
                   Escanear Outro
                 </button>
 
-                {/* 👇 A PONTE PARA O CHEF IA (Somente Aprovados) */}
                 {result.verdict === 'ALLOWED' && (
                   <button 
                     onClick={() => router.push(`/chef-ia?ingredientes=${encodeURIComponent(result.title)}`)}
