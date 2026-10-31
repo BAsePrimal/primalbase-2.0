@@ -92,6 +92,7 @@ export default function ScannerPage() {
   const [totalScansCount, setTotalScansCount] = useState(0);
   
   const [showCuriosityModal, setShowCuriosityModal] = useState(false);
+  const [showTrocaLimpa, setShowTrocaLimpa] = useState(false); // 👇 Controle do botão Troca Limpa
 
   // 👇 Estados do Loader Dinâmico
   const [loadingStep, setLoadingStep] = useState(0);
@@ -172,6 +173,7 @@ export default function ScannerPage() {
     reader.onloadend = () => {
       setImage(reader.result as string);
       setResult(null);
+      setShowTrocaLimpa(false); // Reseta o botão ao capturar nova imagem
     };
     reader.readAsDataURL(file);
   };
@@ -181,6 +183,7 @@ export default function ScannerPage() {
 
     setIsScanning(true);
     setResult(null);
+    setShowTrocaLimpa(false); // Reseta o botão ao analisar
 
     try {
       const response = await fetch('/api/scanner', {
@@ -235,6 +238,7 @@ export default function ScannerPage() {
   const handleReset = () => {
     setImage(null);
     setResult(null);
+    setShowTrocaLimpa(false); // Reseta o botão
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -442,29 +446,35 @@ export default function ScannerPage() {
                   {result.explanation}
                 </p>
 
-                {/* 👇 O GATILHO VIP (BLUR) PARA A TROCA LIMPA */}
+                {/* 👇 CONTROLE DO GATILHO VIP OU BOTÃO EXPANSÍVEL */}
                 {result.clean_swap && (result.verdict === 'BANNED' || result.verdict === 'WARNING') && (
-                  <div className="mt-5 pt-5 border-t border-white/10">
-                    <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
-                      🔄 Troca Limpa
-                    </h4>
-                    
+                  <div className="mt-5 pt-5 border-t border-white/10 flex flex-col items-center">
                     {(!isSubscriber && scanCount >= 2) ? (
-                      <div className="relative group cursor-pointer" onClick={() => setShowPaywall(true)}>
-                        <p className="text-zinc-300 text-center font-medium blur-[6px] select-none opacity-50 px-2">
-                          {result.clean_swap.length > 50 ? result.clean_swap : "Substitua por manteiga, banha de porco ou azeite extra virgem orgânico. Evite inflamação."}
-                        </p>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                          <Lock className="w-8 h-8 text-amber-500 drop-shadow-lg" />
-                          <span className="bg-zinc-900/90 text-amber-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/30">
-                            Exclusivo VIP
-                          </span>
+                      // BLOQUEADO: Mantém o Blur agressivo para vender
+                      <div className="w-full">
+                        <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">🔄 Troca Limpa</h4>
+                        <div className="relative group cursor-pointer" onClick={() => setShowPaywall(true)}>
+                          <p className="text-zinc-300 text-center font-medium blur-[6px] select-none opacity-50 px-2">
+                            {result.clean_swap.length > 50 ? result.clean_swap : "Substitua por manteiga, banha de porco ou azeite extra virgem orgânico. Evite inflamação."}
+                          </p>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                            <Lock className="w-8 h-8 text-amber-500 drop-shadow-lg" />
+                            <span className="bg-zinc-900/90 text-amber-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/30">Exclusivo VIP</span>
+                          </div>
                         </div>
                       </div>
+                    ) : showTrocaLimpa ? (
+                      // LIBERADO (Aberto)
+                      <div className="w-full animate-in fade-in zoom-in duration-300">
+                        <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">🔄 Troca Limpa</h4>
+                        <p className="text-white font-medium text-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 shadow-inner">{result.clean_swap}</p>
+                      </div>
                     ) : (
-                      <p className="text-white font-medium text-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 shadow-inner">
-                        {result.clean_swap}
-                      </p>
+                      // LIBERADO (Fechado - Economiza tela e fica elegante)
+                      <button onClick={() => setShowTrocaLimpa(true)} className="flex items-center justify-center gap-2 w-full py-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl border border-zinc-700 transition-colors active:scale-95">
+                        <span className="text-lg">🔄</span>
+                        <span className="text-zinc-300 font-bold uppercase tracking-widest text-sm">Ver Troca Limpa</span>
+                      </button>
                     )}
                   </div>
                 )}

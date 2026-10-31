@@ -62,6 +62,9 @@ export default function NutritionPage() {
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [activeDay, setActiveDay] = useState(0);
   const [userGoal, setUserGoal] = useState<string>('');
+  
+  // 👇 Estado para controlar o uso gratuito da Roleta
+  const [roletaUses, setRoletaUses] = useState(0);
 
   // --- INICIALIZAÇÃO BLINDADA (USUÁRIO VS VISITANTE) ---
   useEffect(() => {
@@ -70,10 +73,13 @@ export default function NutritionPage() {
     const initializePage = async () => {
       setIsLoading(true);
 
+      // 👇 Carrega a contagem de usos da roleta ao abrir a página
+      const savedRoletaUses = parseInt(localStorage.getItem('primalbase_roleta_free_uses') || '0', 10);
+      setRoletaUses(savedRoletaUses);
+
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        // 1. LÓGICA DO VISITANTE (Geração Dinâmica Real)
         if (!session) {
           const isVisitor = localStorage.getItem('primalbase_visitor') === 'true';
           
@@ -82,14 +88,12 @@ export default function NutritionPage() {
             return;
           }
 
-          // 👇 Chama o gerador inteligente, mas sem passar ID de usuário para não salvar no banco!
           setUser(null);
           setUserGoal('perda');
           await generateAndSaveMenu('perda', null); 
           return;
         }
 
-        // 2. LÓGICA DO USUÁRIO LOGADO / PREMIUM
         setUser(session.user);
         
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
@@ -137,13 +141,10 @@ export default function NutritionPage() {
   // --- 3. GERAÇÃO INTELIGENTE (VERSÃO EQUILÍBRIO DE OVOS - 5 DIAS) ---
   const generateAndSaveMenu = async (goal: string, targetUserId: string | null = null) => {
     setLoading(true);
-    
-    // Fallback de segurança: usa o targetUserId se passado (no load inicial), ou o user do state (nos clicks de reset)
     const activeUserId = targetUserId || user?.id;
 
     try {
       const { data: rawFoods, error } = await supabase.from('foods').select('*').neq('status', 'banned');
-
       if (error || !rawFoods || rawFoods.length === 0) throw new Error('Erro ao buscar alimentos.');
       
       const allFoods = (rawFoods as unknown as Food[]);
@@ -387,7 +388,6 @@ export default function NutritionPage() {
       setMenu(newWeekPlan);
       setShoppingList(newShoppingList);
 
-      // SÓ SALVA NO BANCO SE TIVER CONTA LOGADA
       if (activeUserId) {
         await supabase.from('meal_plans').upsert({
           user_id: activeUserId,
@@ -406,11 +406,21 @@ export default function NutritionPage() {
     }
   };
 
-  // --- LÓGICA DA ROLETA ANCESTRAL ---
+  // --- LÓGICA DA ROLETA ANCESTRAL (COM GATILHO VIP BLINDADO) ---
   const handleTrocaAlimento = async (dayIdx: number, mealType: 'breakfast' | 'lunch' | 'dinner', section: 'main' | 'sides' | 'desserts', itemIdx: number, novoAlimento: any) => {
-    if (!user) {
-      setShowPaywall(true); // Visitante não pode rodar a roleta!
-      return;
+    
+    // 👇 BLINDAGEM DA ROLETA: A Teoria do "Teaser" de Vendas
+    if (!isSubscriber) {
+      if (roletaUses >= 1) {
+        // Bloqueia a troca e sobe o Paywall na cara dele
+        setShowPaywall(true);
+        return; // Esse return é vital, ele impede a troca de acontecer
+      } else {
+        // Se for o primeiro clique, deixa acontecer para dar o gostinho
+        const newUses = roletaUses + 1;
+        setRoletaUses(newUses);
+        localStorage.setItem('primalbase_roleta_free_uses', newUses.toString());
+      }
     }
     
     const newMenu = JSON.parse(JSON.stringify(menu));
@@ -440,7 +450,9 @@ export default function NutritionPage() {
     setMenu(newMenu);
 
     try {
-      await supabase.from('meal_plans').update({ week_plan: newMenu }).eq('user_id', user.id);
+      if (user) {
+        await supabase.from('meal_plans').update({ week_plan: newMenu }).eq('user_id', user.id);
+      }
     } catch (err) {
       console.error("Erro ao atualizar troca na roleta:", err);
     }
@@ -449,13 +461,12 @@ export default function NutritionPage() {
   // --- 4. CHECKLIST E UI ---
   const toggleCheck = async (index: number) => {
     if (!user) {
-      setShowPaywall(true); // Visitante não pode editar compras!
+      setShowPaywall(true);
       return;
     }
     const newList = [...shoppingList];
     newList[index].checked = !newList[index].checked;
     setShoppingList(newList);
-
     await supabase.from('meal_plans').update({ shopping_list: newList }).eq('user_id', user.id);
   };
 

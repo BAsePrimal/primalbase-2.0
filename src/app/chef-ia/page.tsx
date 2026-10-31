@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
-// 👇 VARIÁVEL MESTRE DO FREEMIUM (Mude aqui e a tela inteira se ajusta)
 const LIMITE_USOS_FREE = 3;
 
 interface RecipeData {
@@ -39,24 +38,23 @@ function ChefIAContent() {
   const [copied, setCopied] = useState(false);
   const [phraseIndex, setPhraseIndex] = useState(0);
 
-  // --- ESTADOS DO PAYWALL E MEMÓRIA ---
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
   const [totalRecipesCount, setTotalRecipesCount] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // 👇 Trava de segurança para impedir a "Condição de Corrida"
+  const [authLoaded, setAuthLoaded] = useState(false);
 
-  // --- ESTADOS DO MICROFONE (VOICE-TO-TEXT) ---
   const [isListening, setIsListening] = useState(false);
   const [hasMicSupport, setHasMicSupport] = useState(false);
   const recognitionRef = useRef<any>(null);
   
-  // Ref para controlar se o auto-submit já foi feito
   const autoSubmitDone = useRef(false);
 
   useEffect(() => {
-    // Carrega dados do usuário ou do Visitante
     async function loadChefData() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
@@ -68,17 +66,20 @@ function ChefIAContent() {
         .eq('id', authUser.id)
         .single();
         
-      if (profile) {
-        setIsSubscriber(profile.is_subscriber || false);
-        setUsageCount(profile.daily_free_usage || 0);
-        setTotalRecipesCount(profile.total_recipes || 0); 
-      }
+        if (profile) {
+          setIsSubscriber(profile.is_subscriber || false);
+          setUsageCount(profile.daily_free_usage || 0);
+          setTotalRecipesCount(profile.total_recipes || 0); 
+        }
       } else {
         const localUsage = localStorage.getItem('primalbase_free_credits');
         if (localUsage) {
           setUsageCount(parseInt(localUsage, 10));
         }
       }
+      
+      // Libera a página para disparar a receita automática!
+      setAuthLoaded(true);
     }
     loadChefData();
 
@@ -106,32 +107,27 @@ function ChefIAContent() {
           }
         };
 
-        recognition.onerror = (event: any) => {
-          console.error('Erro na captação de voz:', event.error);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
         recognitionRef.current = recognition;
       }
     }
   }, []);
 
-  // 👇 PONTE MÁGICA: Lê a URL, preenche o campo e dispara a pesquisa sozinho!
+  // 👇 PONTE MÁGICA SEGURA: Só atua quando os dados estiverem carregados (authLoaded)
   useEffect(() => {
-    if (ingredienteDaURL && !autoSubmitDone.current) {
+    if (ingredienteDaURL && !autoSubmitDone.current && authLoaded) {
       setIngredientes(ingredienteDaURL);
-      // Damos um tempo mínimo (ex: 800ms) para os dados do user carregarem antes do auto-submit
+      
       const timer = setTimeout(() => {
-        handleGerarReceitaOverride(ingredienteDaURL);
-      }, 800);
+        // O "true" indica que a ação veio da ponte automática (para aplicar o perdão de limite)
+        processRecipeWithSafety(ingredienteDaURL, true); 
+      }, 500); 
+      
       autoSubmitDone.current = true;
       return () => clearTimeout(timer);
     }
-  }, [ingredienteDaURL]);
+  }, [ingredienteDaURL, authLoaded]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -154,36 +150,40 @@ function ChefIAContent() {
     }
   };
 
-  // Precisamos desta função para o auto-submit, que aceita o parâmetro direto
-  const handleGerarReceitaOverride = async (ingredienteTexto: string) => {
-    if (!ingredienteTexto.trim()) return;
-    
-    // Verificação instantânea do Paywall
-    if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
-      setShowPaywall(true);
-      return;
-    }
-
-    await fetchAndProcessRecipe(ingredienteTexto);
-  };
-
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
-
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
     }
+    await processRecipeWithSafety(ingredientes, false);
+  };
 
-    if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
+  // 👇 NOVA FUNÇÃO UNIFICADA E BLINDADA
+  const processRecipeWithSafety = async (textoInput: string, isAutoBridge = false) => {
+    // 1. Lê os dados em tempo real
+    const currentLocalUsage = parseInt(localStorage.getItem('primalbase_free_credits') || '0', 10);
+    const actualUsage = user ? usageCount : currentLocalUsage;
+
+    // 2. Trava rigorosa com PERDÃO DA PONTE
+    let shouldBlock = false;
+    if (!isSubscriber) {
+      if (actualUsage >= LIMITE_USOS_FREE) {
+        // Se bater no limite exato, mas estiver vindo no embalo do Scanner (ponte), perdoa e deixa gerar!
+        if (isAutoBridge && actualUsage === LIMITE_USOS_FREE) {
+          shouldBlock = false;
+        } else {
+          shouldBlock = true;
+        }
+      }
+    }
+
+    if (shouldBlock) {
       setShowPaywall(true);
       return;
     }
 
-    await fetchAndProcessRecipe(ingredientes);
-  };
-
-  const fetchAndProcessRecipe = async (texto: string) => {
+    // 3. Processa a receita
     setReceita(null);
     setErrorMsg('');
     setLoading(true);
@@ -191,27 +191,22 @@ function ChefIAContent() {
     try {
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ ingredientes: texto }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredientes: textoInput }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao gerar receita');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Erro ao gerar receita');
       if (data.recipe && typeof data.recipe === 'object') {
         setReceita(data.recipe);
       } else {
         throw new Error('Formato estruturado não reconhecido.');
       }
 
-      // Incrementa os créditos
-      const nextCount = usageCount + 1;
-      setUsageCount(nextCount);
+      // 4. Salva a nova contagem
+      const nextCount = actualUsage + 1;
+      setUsageCount(nextCount); // Atualiza barra visual
 
       if (user) {
         const nextTotal = totalRecipesCount + 1; 
@@ -219,10 +214,7 @@ function ChefIAContent() {
         
         await supabase
           .from('profiles')
-          .update({ 
-            daily_free_usage: nextCount,
-            total_recipes: nextTotal
-          })
+          .update({ daily_free_usage: nextCount, total_recipes: nextTotal })
           .eq('id', user.id);
       } else {
         localStorage.setItem('primalbase_free_credits', nextCount.toString());
@@ -245,9 +237,7 @@ function ChefIAContent() {
       await navigator.clipboard.writeText(formatRecipeText(receita));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Erro ao copiar:', err);
-    }
+    } catch (err) {}
   };
 
   const handleShareWhatsApp = () => {
@@ -259,31 +249,20 @@ function ChefIAContent() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white pb-24">
-      {/* Cabeçalho */}
       <div className="sticky top-0 z-10 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link
-            href="/"
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-          >
+          <Link href="/" className="p-2 hover:bg-zinc-800 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="text-2xl font-bold">Chef Criativo</h1>
         </div>
       </div>
 
-      {/* Conteúdo */}
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        
-        {/* Área de Input */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-lg text-zinc-300">
-              Quais ingredientes você tem aí?
-            </label>
-            <p className="text-sm text-zinc-500">
-              Ex: ovos, batata doce, carne, espinafre
-            </p>
+            <label className="text-lg text-zinc-300">Quais ingredientes você tem aí?</label>
+            <p className="text-sm text-zinc-500">Ex: ovos, batata doce, carne, espinafre</p>
           </div>
 
           <div className="relative">
@@ -293,8 +272,6 @@ function ChefIAContent() {
               placeholder="Digite ou fale os ingredientes que você tem..."
               className="w-full h-32 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none pr-14"
             />
-            
-            {/* BOTÃO DO MICROFONE */}
             {hasMicSupport && (
               <button
                 type="button"
@@ -313,14 +290,13 @@ function ChefIAContent() {
 
           <button
             onClick={handleGerarReceita}
-            disabled={loading}
+            disabled={loading || !authLoaded}
             className="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-semibold text-white transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/10 active:scale-95"
           >
             <ChefHat className="w-5 h-5" />
             {loading ? 'Gerando Receita...' : 'Gerar Receita'}
           </button>
 
-          {/* 👇 BARRA DE CRÉDITOS GLOBAIS (AGORA DINÂMICA) */}
           {!isSubscriber && (
             <div className="pt-2 flex flex-col items-center gap-2">
               <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -336,14 +312,12 @@ function ChefIAContent() {
           )}
         </div>
 
-        {/* MENSAGEM DE ERRO */}
         {errorMsg && (
           <div className="p-4 bg-red-900/30 border border-red-500/50 rounded-xl text-red-400 font-medium text-center">
             {errorMsg}
           </div>
         )}
 
-        {/* TELA DE LOADING DINÂMICO */}
         {loading && (
           <div className="bg-gradient-to-br from-zinc-900 to-zinc-900/50 border border-zinc-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
@@ -353,10 +327,8 @@ function ChefIAContent() {
           </div>
         )}
 
-        {/* RESULTADO (A TELA PREMIUM) */}
         {!loading && receita && (
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-500">
-            
             <h2 className="text-3xl md:text-4xl font-black text-white mb-6 tracking-tight leading-tight">
               {receita.title}
             </h2>
@@ -429,11 +401,7 @@ function ChefIAContent() {
         )}
       </div>
 
-      <PaywallModal 
-        isOpen={showPaywall} 
-        onClose={() => setShowPaywall(false)} 
-        userId={user?.id || ''} 
-      />
+      <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} userId={user?.id || ''} />
     </div>
   );
 }
