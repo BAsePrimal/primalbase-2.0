@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Camera, CheckCircle, Skull, Loader2, RotateCcw, X, TriangleAlert } from 'lucide-react';
+import { Camera, CheckCircle, Skull, RotateCcw, X, TriangleAlert, Lock, ChefHat, CheckCircle2, CircleDashed, Hourglass } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
@@ -13,6 +14,7 @@ interface ScanResult {
   title: string;
   explanation: string;
   curiosity_fact?: string;
+  clean_swap?: string; // 👇 Novo campo vindo da API
 }
 
 // --- ARMAS DE RETENÇÃO: MOTOR TÁTIL E SONORO NATIVO ---
@@ -77,6 +79,7 @@ const triggerFeedback = (type: 'success' | 'error' | 'warning') => {
 };
 
 export default function ScannerPage() {
+  const router = useRouter(); // 👇 Para a Ponte do Chef
   const [image, setImage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -90,13 +93,16 @@ export default function ScannerPage() {
   
   const [showCuriosityModal, setShowCuriosityModal] = useState(false);
 
+  // 👇 Estados do Loader Dinâmico
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [loadingPhrases, setLoadingPhrases] = useState<string[]>([]);
+
   useEffect(() => {
     const checkUserStatus = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
       if (authUser) {
         setUser(authUser);
-        // 👇 Já com a trava global "daily_free_usage" implementada
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_subscriber, daily_free_usage, total_scans')
@@ -117,6 +123,36 @@ export default function ScannerPage() {
     };
     checkUserStatus();
   }, []);
+
+  // 👇 Lógica do Checklist Dinâmico
+  useEffect(() => {
+    if (!isScanning) {
+      setLoadingStep(0);
+      return;
+    }
+    
+    const pool = [
+      "Rastreando açúcares ocultos e adoçantes artificiais...",
+      "Analisando óleos de sementes e gorduras inflamatórias...",
+      "Verificando conservantes, corantes e químicos industriais...",
+      "Calculando o impacto no seu metabolismo e digestão..."
+    ];
+    const shuffled = pool.sort(() => 0.5 - Math.random());
+    
+    setLoadingPhrases([
+      "Extraindo a lista de ingredientes e tabela nutricional...",
+      shuffled[0],
+      shuffled[1],
+      "Buscando opções limpas e Troca Segura..."
+    ]);
+
+    setLoadingStep(1);
+    const t1 = setTimeout(() => setLoadingStep(2), 1500);
+    const t2 = setTimeout(() => setLoadingStep(3), 3000);
+    const t3 = setTimeout(() => setLoadingStep(4), 4500);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [isScanning]);
 
   const handleCaptureClick = () => {
     if (!isSubscriber && scanCount >= LIMITE_USOS_FREE) {
@@ -177,7 +213,6 @@ export default function ScannerPage() {
         const nextTotal = totalScansCount + 1; 
         setTotalScansCount(nextTotal); 
         
-        // 👇 Atualizando a trava global e o contador total
         await supabase
           .from('profiles')
           .update({ 
@@ -208,18 +243,67 @@ export default function ScannerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black pb-32">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="text-center mb-8 pt-6">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-white bg-clip-text text-transparent mb-3">
-            Scanner IA
-          </h1>
-          {/* 👇 NOVA COPY APLICADA AQUI */}
-          <p className="text-gray-400 text-lg">
-          Aponte para alimentos, pratos prontos ou cardápios.
-          </p>
-        </div>
+        
+        {!isScanning && !result && (
+          <div className="text-center mb-8 pt-6">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-white bg-clip-text text-transparent mb-3">
+              Scanner IA
+            </h1>
+            <p className="text-gray-400 text-lg">
+            Aponte para alimentos, pratos prontos ou cardápios.
+            </p>
+          </div>
+        )}
 
-        <div className="flex items-center justify-center">
-          {!result ? (
+        <div className="flex flex-col items-center justify-center">
+          
+          {/* 👇 TELA DE CARREGAMENTO DINÂMICO */}
+          {isScanning ? (
+            <div className="w-full bg-zinc-950/80 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 shadow-2xl animate-in fade-in duration-500">
+              
+              <div className="relative mb-6 rounded-2xl overflow-hidden border-2 border-amber-500/30">
+                <img src={image!} alt="Processando" className="w-full h-48 object-cover opacity-60 grayscale-[30%]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent"></div>
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-xl font-black text-white mb-2 tracking-tight">Leitura de Rótulo</h3>
+                  {/* Barra de Progresso Dinâmica */}
+                  <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-amber-500 transition-all duration-[1500ms] ease-linear"
+                      style={{ width: `${(loadingStep / 4) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4 px-2">
+                {loadingPhrases.map((phrase, idx) => {
+                  const stepNum = idx + 1;
+                  const isPast = loadingStep > stepNum;
+                  const isCurrent = loadingStep === stepNum;
+                  const isFuture = loadingStep < stepNum;
+                  const isLast = idx === 3;
+
+                  return (
+                    <div key={idx} className={`flex items-start gap-3 transition-opacity duration-500 ${isFuture ? 'opacity-0' : 'opacity-100'}`}>
+                      <div className="mt-0.5 shrink-0">
+                        {isPast ? (
+                          <CheckCircle2 className="w-5 h-5 text-amber-500" />
+                        ) : isCurrent ? (
+                          isLast ? <Hourglass className="w-5 h-5 text-amber-400 animate-pulse" /> : <CircleDashed className="w-5 h-5 text-amber-400 animate-spin-slow" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-zinc-700" />
+                        )}
+                      </div>
+                      <p className={`text-sm font-medium leading-snug ${isPast ? 'text-zinc-300' : isCurrent ? 'text-amber-400 animate-pulse' : 'text-zinc-600'}`}>
+                        {phrase}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : !result ? (
             <div className="w-full">
               {image ? (
                 <div className="mb-6 relative">
@@ -283,10 +367,7 @@ export default function ScannerPage() {
                       className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-lg shadow-orange-600/30 hover:shadow-orange-600/50 text-lg"
                     >
                       {isScanning ? (
-                        <>
-                          <Loader2 className="w-7 h-7 mr-3 animate-spin" />
-                          Analisando...
-                        </>
+                        'Analisando...'
                       ) : (
                         'Analisar Alimento'
                       )}
@@ -360,6 +441,33 @@ export default function ScannerPage() {
                 <p className="text-white text-lg text-center leading-relaxed">
                   {result.explanation}
                 </p>
+
+                {/* 👇 O GATILHO VIP (BLUR) PARA A TROCA LIMPA */}
+                {result.clean_swap && (result.verdict === 'BANNED' || result.verdict === 'WARNING') && (
+                  <div className="mt-5 pt-5 border-t border-white/10">
+                    <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest mb-3 flex items-center justify-center gap-2">
+                      🔄 Troca Limpa
+                    </h4>
+                    
+                    {(!isSubscriber && scanCount >= 2) ? (
+                      <div className="relative group cursor-pointer" onClick={() => setShowPaywall(true)}>
+                        <p className="text-zinc-300 text-center font-medium blur-[6px] select-none opacity-50 px-2">
+                          {result.clean_swap.length > 50 ? result.clean_swap : "Substitua por manteiga, banha de porco ou azeite extra virgem orgânico. Evite inflamação."}
+                        </p>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                          <Lock className="w-8 h-8 text-amber-500 drop-shadow-lg" />
+                          <span className="bg-zinc-900/90 text-amber-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/30">
+                            Exclusivo VIP
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-white font-medium text-center bg-amber-500/10 p-4 rounded-xl border border-amber-500/20 shadow-inner">
+                        {result.clean_swap}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {result.curiosity_fact && (
@@ -382,13 +490,26 @@ export default function ScannerPage() {
                 </div>
               )}
 
-              <button
-                onClick={handleReset}
-                className="w-full bg-gray-800 hover:bg-gray-700 border-2 border-gray-600 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-lg"
-              >
-                <RotateCcw className="w-6 h-6 mr-3" />
-                Escanear Outro
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={handleReset}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 border-2 border-zinc-700 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-lg active:scale-95"
+                >
+                  <RotateCcw className="w-6 h-6 mr-3" />
+                  Escanear Outro
+                </button>
+
+                {/* 👇 A PONTE PARA O CHEF IA (Somente Aprovados) */}
+                {result.verdict === 'ALLOWED' && (
+                  <button 
+                    onClick={() => router.push(`/chef-ia?ingredientes=${encodeURIComponent(result.title)}`)}
+                    className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center shadow-lg active:scale-95 border border-orange-500/50"
+                  >
+                    <ChefHat className="w-6 h-6 mr-3 shrink-0" />
+                    Gerar Receita com este Ingrediente
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

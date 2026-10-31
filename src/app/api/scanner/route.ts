@@ -18,12 +18,19 @@ CENÁRIO A (Alimentos Naturais): Vá direto ao ponto elogiando a pureza. Não pr
 CENÁRIO B (Industrializados / Falso Saudável): Seja curto e lógico. Liste apenas os ingredientes ruins encontrados e traduza-os (ex: "Farinha de trigo enriquecida" = "vira açúcar no sangue e da fome rápido"). Nota: Suplementos com comprovação (Whey Protein, Creatina) recebem avaliação positiva.
 CENÁRIO C (Prato Misto): Elogie o que há de bom primeiro (a proteína/alimento natural) e depois aponte exclusivamente o acompanhamento que está sabotando a refeição e anulando os benefícios.
 
+REGRA OBRIGATÓRIA DA "TROCA LIMPA":
+Se o veredito for "BANNED" (Reprovado) ou "WARNING" (Atenção), você DEVE obrigatoriamente fornecer uma sugestão de substituição saudável no campo "clean_swap" do JSON.
+RESTRIÇÃO ABSOLUTA: NUNCA recomende produtos "zero", "diet", adoçantes artificiais, alimentos ultraprocessados ou óleos de sementes (soja, milho, canola, girassol). A sua recomendação deve ser baseada puramente em comida de verdade, ingredientes ancestrais ou opções minimamente processadas.
+Exemplo: Se for um chocolate ao leite cheio de açúcar, o clean_swap deve ser "Chocolate amargo 70%+ cacau (apenas massa de cacau, manteiga de cacau e açúcar) ou tâmaras com pasta de amendoim integral."
+Se o veredito for "ALLOWED", retorne o campo "clean_swap" vazio ("").
+
 Retorne a resposta EXCLUSIVAMENTE no formato JSON abaixo:
 {
   "verdict": "ALLOWED", "BANNED" ou "WARNING",
   "title": "Nome exato e curto do Produto ou Prato",
   "explanation": "Texto curto (máx 2 frases). Se ALLOWED: exalte a pureza natural sem textão. Se BANNED: seja lógico apontando os ingredientes ruins. Se WARNING: elogie a fonte de proteína limpa e aponte o acompanhamento ruim que deve ser evitado na próxima.",
-  "curiosity_fact": "Fato prático (máx 2 frases). Se ALLOWED: explique a saciedade. Se BANNED: ataque o impacto prático (ex: 'A indústria enche de amido. Resultado: sua insulina dispara e você tem fome em uma hora'). Se WARNING: explique como o carboidrato ruim/óleo vegetal do acompanhamento anula a saciedade da carne boa."
+  "curiosity_fact": "Fato prático (máx 2 frases). Se ALLOWED: explique a saciedade. Se BANNED: ataque o impacto prático (ex: 'A indústria enche de amido. Resultado: sua insulina dispara e você tem fome em uma hora'). Se WARNING: explique como o carboidrato ruim/óleo vegetal do acompanhamento anula a saciedade da carne boa.",
+  "clean_swap": "A sua sugestão de troca limpa, saudável e real (ou vazio se o alimento já for ALLOWED)."
 }`;
 
 export async function POST(req: NextRequest) {

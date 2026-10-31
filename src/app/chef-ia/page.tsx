@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { ArrowLeft, ChefHat, Copy, Check, CheckCircle2, Mic } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PaywallModal from '@/components/PaywallModal';
 
@@ -28,7 +29,10 @@ const loadingPhrases = [
   "Finalizando o mapeamento..."
 ];
 
-export default function ChefIAPage() {
+function ChefIAContent() {
+  const searchParams = useSearchParams();
+  const ingredienteDaURL = searchParams.get('ingredientes');
+  
   const [ingredientes, setIngredientes] = useState('');
   const [receita, setReceita] = useState<RecipeData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +51,9 @@ export default function ChefIAPage() {
   const [isListening, setIsListening] = useState(false);
   const [hasMicSupport, setHasMicSupport] = useState(false);
   const recognitionRef = useRef<any>(null);
+  
+  // Ref para controlar se o auto-submit já foi feito
+  const autoSubmitDone = useRef(false);
 
   useEffect(() => {
     // Carrega dados do usuário ou do Visitante
@@ -54,7 +61,6 @@ export default function ChefIAPage() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
       if (authUser) {
-        // CLIENTE VIP OU LOGADO: Puxa do Supabase
         setUser(authUser);
         const { data: profile } = await supabase
         .from('profiles')
@@ -68,7 +74,6 @@ export default function ChefIAPage() {
         setTotalRecipesCount(profile.total_recipes || 0); 
       }
       } else {
-        // 👇 VISITANTE ANÓNIMO: Puxa a contagem de CRÉDITOS GLOBAIS da memória do telemóvel
         const localUsage = localStorage.getItem('primalbase_free_credits');
         if (localUsage) {
           setUsageCount(parseInt(localUsage, 10));
@@ -77,7 +82,6 @@ export default function ChefIAPage() {
     }
     loadChefData();
 
-    // Inicializa a Inteligência de Reconhecimento de Voz Nativa
     if (typeof window !== 'undefined') {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -116,6 +120,19 @@ export default function ChefIAPage() {
     }
   }, []);
 
+  // 👇 PONTE MÁGICA: Lê a URL, preenche o campo e dispara a pesquisa sozinho!
+  useEffect(() => {
+    if (ingredienteDaURL && !autoSubmitDone.current) {
+      setIngredientes(ingredienteDaURL);
+      // Damos um tempo mínimo (ex: 800ms) para os dados do user carregarem antes do auto-submit
+      const timer = setTimeout(() => {
+        handleGerarReceitaOverride(ingredienteDaURL);
+      }, 800);
+      autoSubmitDone.current = true;
+      return () => clearTimeout(timer);
+    }
+  }, [ingredienteDaURL]);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
@@ -137,6 +154,19 @@ export default function ChefIAPage() {
     }
   };
 
+  // Precisamos desta função para o auto-submit, que aceita o parâmetro direto
+  const handleGerarReceitaOverride = async (ingredienteTexto: string) => {
+    if (!ingredienteTexto.trim()) return;
+    
+    // Verificação instantânea do Paywall
+    if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
+      setShowPaywall(true);
+      return;
+    }
+
+    await fetchAndProcessRecipe(ingredienteTexto);
+  };
+
   const handleGerarReceita = async () => {
     if (!ingredientes.trim()) return;
 
@@ -145,12 +175,15 @@ export default function ChefIAPage() {
       setIsListening(false);
     }
 
-    // 👇 TRAVA GLOBAL: Sobe o Paywall lendo a variável mestre
     if (!isSubscriber && usageCount >= LIMITE_USOS_FREE) {
       setShowPaywall(true);
       return;
     }
 
+    await fetchAndProcessRecipe(ingredientes);
+  };
+
+  const fetchAndProcessRecipe = async (texto: string) => {
     setReceita(null);
     setErrorMsg('');
     setLoading(true);
@@ -161,7 +194,7 @@ export default function ChefIAPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ingredientes }),
+        body: JSON.stringify({ ingredientes: texto }),
       });
 
       const data = await response.json();
@@ -176,12 +209,11 @@ export default function ChefIAPage() {
         throw new Error('Formato estruturado não reconhecido.');
       }
 
-      // 👇 ATUALIZA A CONTAGEM
+      // Incrementa os créditos
       const nextCount = usageCount + 1;
       setUsageCount(nextCount);
 
       if (user) {
-        // Se for logado, grava no banco de dados
         const nextTotal = totalRecipesCount + 1; 
         setTotalRecipesCount(nextTotal); 
         
@@ -193,7 +225,6 @@ export default function ChefIAPage() {
           })
           .eq('id', user.id);
       } else {
-        // 👇 SE FOR VISITANTE: Grava a contagem de CRÉDITOS GLOBAIS
         localStorage.setItem('primalbase_free_credits', nextCount.toString());
       }
 
@@ -205,7 +236,7 @@ export default function ChefIAPage() {
   };
 
   const formatRecipeText = (recipe: RecipeData) => {
-    return `*${recipe.title}* 🥩\n⏱️️ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}.${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
+    return `*${recipe.title}* 🥩\n⏱ Preparo: ${recipe.prep_time}\n🔥 ${recipe.macros}\n\n*Ingredientes:*\n${recipe.ingredients.map(i => `• ${i}`).join('\n')}\n\n*Preparo:*\n${recipe.instructions.map((s, i) => `${i + 1}.${s}`).join('\n')}\n\n💡 Dica: ${recipe.tip}\n\n---\nReceita gerada pelo Chef IA do Primal Base. Baixe o app e crie o seu protocolo: [https://www.primalbase.com.br]`;
   };
 
   const handleCopy = async () => {
@@ -404,5 +435,18 @@ export default function ChefIAPage() {
         userId={user?.id || ''} 
       />
     </div>
+  );
+}
+
+export default function ChefIAPageWithSuspense() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center gap-4">
+        <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+        <p className="text-zinc-500 font-medium">Carregando Cozinha...</p>
+      </div>
+    }>
+      <ChefIAContent />
+    </Suspense>
   );
 }
